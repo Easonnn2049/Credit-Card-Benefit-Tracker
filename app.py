@@ -25,6 +25,7 @@ STATUS_COLORS = {
     "Partially Used": ("#fff4d6", "#8a5b00"),
     "Not Used": ("#f3f4f6", "#4b5563"),
     "Expiring Soon": ("#ffe7e2", "#a33421"),
+    "Ignored": ("#ede9fe", "#5b21b6"),
 }
 
 CATEGORY_ICONS = {
@@ -38,6 +39,30 @@ CATEGORY_ICONS = {
     "entertainment": "▶",
     "shopping": "◼",
     "other": "●",
+}
+
+STATUS_ICONS = {
+    "Used": "✓",
+    "Partially Used": "◐",
+    "Not Used": "○",
+    "Expiring Soon": "!",
+    "Ignored": "◇",
+}
+
+SECTION_ICONS = {
+    "Dashboard": "▦",
+    "Edit Benefits": "✎",
+    "Usage Log": "☰",
+    "Add": "+",
+    "Import Excel": "⇩",
+    "Raw Data": "⌘",
+}
+
+DASHBOARD_ICONS = {
+    "Home": "⌂",
+    "Cards": "▣",
+    "Categories": "◈",
+    "Completed / Hidden": "✓",
 }
 
 CARD_ART_COLORS = {
@@ -55,19 +80,6 @@ CARD_ART_COLORS = {
 
 CARD_IMAGE_DIR = DATA_DIR / "card_images"
 STATUSES = ["Not Used", "Partially Used", "Used", "Ignored"]
-STATUS_COLORS["Ignored"] = ("#ede9fe", "#5b21b6")
-CATEGORY_ICONS = {
-    "airline": "AIR",
-    "travel": "TRV",
-    "hotel": "HTL",
-    "dining": "DIN",
-    "rideshare": "RIDE",
-    "uber": "RIDE",
-    "grocery": "GRC",
-    "entertainment": "ENT",
-    "shopping": "SHP",
-    "other": "OTH",
-}
 CARD_ART_STYLES = {
     "amex gold": ("#d8b45b", "#f4df9b", "#302410", "AMEX", "GOLD"),
     "amex platinum": ("#c8ccd2", "#f5f6f7", "#2a3138", "AMEX", "PLATINUM"),
@@ -506,13 +518,41 @@ def inject_styles() -> None:
         div[data-testid="stMetric"] {
             background: #ffffff;
             border: 1px solid #e5e0d5;
-            border-radius: 10px;
+            border-radius: 8px;
             padding: 0.8rem 1rem;
+        }
+        .section-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #5b6558;
+            font-size: .82rem;
+            font-weight: 800;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .section-icon, .status-dot, .category-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 999px;
+            background: #f1eee6;
+            color: #3b4a3d;
+            font-size: .86rem;
+            font-weight: 900;
+        }
+        .metric-label-icon {
+            margin-right: 4px;
+            color: #66785f;
+            font-weight: 900;
         }
         .card-art, .card-image {
             aspect-ratio: 1.586 / 1;
             width: 100%;
-            border-radius: 16px;
+            border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 14px 34px rgba(23, 32, 26, .16);
         }
@@ -546,7 +586,7 @@ def inject_styles() -> None:
         .card-owner { font-size: .78rem; opacity: .84; text-transform: uppercase; letter-spacing: .08em; }
         .benefit-tile {
             border: 1px solid #e5e0d5;
-            border-radius: 10px;
+            border-radius: 8px;
             background: #fff;
             padding: 16px 16px 12px;
             margin-bottom: 10px;
@@ -559,6 +599,11 @@ def inject_styles() -> None:
         }
         .benefit-title { font-weight: 800; font-size: 1.02rem; line-height: 1.2; color: #17201a; }
         .benefit-meta { color: #746d62; font-size: .78rem; margin-top: 4px; }
+        .benefit-heading {
+            display: flex;
+            gap: 9px;
+            align-items: flex-start;
+        }
         .deadline {
             border-radius: 10px;
             padding: 6px 9px;
@@ -574,6 +619,9 @@ def inject_styles() -> None:
         .deadline.done { background: #e7f5ea; color: #1f7a3f; }
         .deadline.hidden { background: #ede9fe; color: #5b21b6; }
         .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             border-radius: 999px;
             padding: 3px 9px;
             font-size: .75rem;
@@ -614,6 +662,15 @@ def inject_styles() -> None:
             font-size: 1.05rem;
             margin: .4rem 0 .6rem;
         }
+        .lane-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 .6rem;
+            font-size: 1rem;
+            font-weight: 900;
+            color: #17201a;
+        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -625,7 +682,7 @@ def format_amount(value: object) -> str:
     return f"${amount:,.0f}" if amount == round(amount) else f"${amount:,.2f}"
 
 
-def clean_display(value: object, fallback: str = "—") -> str:
+def clean_display(value: object, fallback: str = "-") -> str:
     text = normalize_text(value)
     return text if text else fallback
 
@@ -636,6 +693,21 @@ def category_icon(category: object) -> str:
         if key in text:
             return icon
     return CATEGORY_ICONS["other"]
+
+
+def status_icon(status: object, expiring_soon: bool = False) -> str:
+    current_status = clean_display(status, "Not Used")
+    if expiring_soon and current_status not in ["Used", "Ignored"]:
+        current_status = "Expiring Soon"
+    return STATUS_ICONS.get(current_status, "•")
+
+
+def option_with_icon(label: str, icon_map: dict[str, str]) -> str:
+    return f"{icon_map.get(label, '•')} {label}"
+
+
+def option_without_icon(option: str) -> str:
+    return option.split(" ", 1)[1] if " " in option else option
 
 
 def card_art_style(card_name: object, issuer: object = "") -> tuple[str, str, str, str, str]:
@@ -696,7 +768,7 @@ def download_card_image(card: pd.Series, image_url: str) -> Path:
 
 
 def show_card_image_manager(cards: pd.DataFrame) -> None:
-    st.subheader("Card Images")
+    st.subheader("▣ Card Images")
     st.caption("Upload card art or paste a direct image URL. Images are cached locally in data/card_images.")
     if cards.empty:
         st.info("Add or import cards before adding images.")
@@ -723,7 +795,7 @@ def show_card_image_manager(cards: pd.DataFrame) -> None:
         st.rerun()
 
     image_url = st.text_input("Or paste a direct image URL", placeholder="https://example.com/card.png")
-    if st.button("Download image from URL", type="primary"):
+    if st.button("⇩ Download image from URL", type="primary"):
         if not image_url.strip():
             st.warning("Paste an image URL first.")
         else:
@@ -739,7 +811,8 @@ def status_badge(status: object, expiring_soon: bool = False) -> str:
     current_status = clean_display(status, "Not Used")
     label = "Expiring Soon" if expiring_soon and current_status not in ["Used", "Ignored"] else current_status
     background, color = STATUS_COLORS.get(label, STATUS_COLORS["Not Used"])
-    return f'<span class="badge" style="background:{background};color:{color};">{escape(label)}</span>'
+    icon = status_icon(status, expiring_soon)
+    return f'<span class="badge" style="background:{background};color:{color};"><span>{escape(icon)}</span><span>{escape(label)}</span></span>'
 
 
 def due_text_from_days(days: object) -> str:
@@ -756,6 +829,8 @@ def benefit_summary_label(row: pd.Series) -> str:
     name = clean_display(row.get("benefit_name"))
     category = clean_display(row.get("category"), "")
     status = clean_display(row.get("status"), "Not Used")
+    icon = status_icon(status, bool(row.get("is_expiring_soon", False)))
+    category_marker = category_icon(category) if category else ""
     due_text = due_text_from_days(row.get("days_until_expiration"))
     face_value = normalize_money(row.get("face_value"))
     used_amount = normalize_money(row.get("used_amount"))
@@ -763,19 +838,19 @@ def benefit_summary_label(row: pd.Series) -> str:
     progress = int(min(max((used_amount / face_value) * 100 if face_value else 0, 0), 100))
 
     if status == "Used":
-        parts = [f":green[**[Completed] {name}**]"]
+        parts = [f":green[**{icon} Completed · {name}**]"]
     elif status == "Ignored":
-        parts = [f":violet[**[Hidden] {name}**]"]
+        parts = [f":violet[**{icon} Hidden · {name}**]"]
     elif bool(row.get("is_expiring_soon", False)):
-        parts = [f":red[**[Due Soon] {name}**]"]
+        parts = [f":red[**{icon} Due Soon · {name}**]"]
     elif status == "Not Used":
-        parts = [f":gray[**[Unused] {name}**]"]
+        parts = [f":gray[**{icon} Unused · {name}**]"]
     elif status == "Partially Used":
-        parts = [f":orange[**[Partial] {name}**]"]
+        parts = [f":orange[**{icon} Partial · {name}**]"]
     else:
-        parts = [f":blue[**[{status}] {name}**]"]
+        parts = [f":blue[**{icon} {status} · {name}**]"]
     if category:
-        parts.append(category)
+        parts.append(f"{category_marker} {category}")
     parts.extend([status, due_text, f"{format_amount(remaining)} left", f"{progress}%"])
     return "  /  ".join(parts)
 
@@ -799,7 +874,7 @@ def benefit_summary_strip(row: pd.Series, expiring: bool) -> str:
         margin-bottom: 10px;
         font-weight: 800;
     ">
-        {escape(label)} / {escape(clean_display(row.get("benefit_name")))}
+        {escape(status_icon(status, expiring))} {escape(label)} / {escape(clean_display(row.get("benefit_name")))}
     </div>
     """
 
@@ -961,6 +1036,8 @@ def render_benefit_tile(row: pd.Series, key_prefix: str) -> None:
     days = row.get("days_until_expiration")
     days_text = due_text_from_days(days)
     deadline_class = "hidden" if status == "Ignored" else "done" if status == "Used" else "soon" if expiring else ""
+    category = clean_display(row.get("category"), "Other")
+    category_marker = category_icon(category)
 
     with st.expander(benefit_summary_label(row), expanded=False):
         st.markdown(benefit_summary_strip(row, expiring), unsafe_allow_html=True)
@@ -968,9 +1045,12 @@ def render_benefit_tile(row: pd.Series, key_prefix: str) -> None:
             f"""
             <div class="benefit-tile">
               <div class="benefit-topline">
-                <div>
-                  <div class="benefit-title">{escape(clean_display(row.get("benefit_name")))}</div>
-                  <div class="benefit-meta">{escape(clean_display(row.get("category")))} / {escape(clean_display(row.get("frequency")))} / {escape(clean_display(row.get("current_cycle")))}</div>
+                <div class="benefit-heading">
+                  <span class="category-icon">{escape(category_marker)}</span>
+                  <div>
+                    <div class="benefit-title">{escape(clean_display(row.get("benefit_name")))}</div>
+                    <div class="benefit-meta">{escape(category)} / {escape(clean_display(row.get("frequency")))} / {escape(clean_display(row.get("current_cycle")))}</div>
+                  </div>
                 </div>
                 <div class="deadline {deadline_class}">
                     <div>{escape(days_text)}</div>
@@ -992,12 +1072,12 @@ def render_benefit_tile(row: pd.Series, key_prefix: str) -> None:
         if status == "Used":
             st.success("Completed benefit shown because completed/ignored items are visible.")
             st.caption("This benefit is read-only while completed. Reopen it only if you need to track it again.")
-            if st.button("Reopen as not used", key=f"{key_prefix}_{benefit_id}_restore", use_container_width=True):
+            if st.button("↺ Reopen as not used", key=f"{key_prefix}_{benefit_id}_restore", use_container_width=True):
                 update_benefit_status(benefit_id, "Not Used")
         elif status == "Ignored":
             st.warning("Hidden benefit shown because completed/ignored items are visible.")
             st.caption("This benefit is read-only while hidden. Reopen it only if it becomes relevant again.")
-            if st.button("Reopen as not used", key=f"{key_prefix}_{benefit_id}_restore", use_container_width=True):
+            if st.button("↺ Reopen as not used", key=f"{key_prefix}_{benefit_id}_restore", use_container_width=True):
                 update_benefit_status(benefit_id, "Not Used")
         else:
             if face_value > 0:
@@ -1026,13 +1106,13 @@ def render_benefit_tile(row: pd.Series, key_prefix: str) -> None:
             preview_cols[2].metric("Will save as", preview_status)
 
             action_cols = st.columns([1, 1, 1, 1])
-            if action_cols[0].button("Save slider", key=f"{key_prefix}_{benefit_id}_slider_save", type="primary", use_container_width=True):
+            if action_cols[0].button("✓ Save", key=f"{key_prefix}_{benefit_id}_slider_save", type="primary", use_container_width=True):
                 update_benefit_status(benefit_id, preview_status, amount)
-            if action_cols[1].button("Mark used", key=f"{key_prefix}_{benefit_id}_used", use_container_width=True):
+            if action_cols[1].button("✓ Mark used", key=f"{key_prefix}_{benefit_id}_used", use_container_width=True):
                 update_benefit_status(benefit_id, "Used")
-            if action_cols[2].button("Reset", key=f"{key_prefix}_{benefit_id}_reset", use_container_width=True):
+            if action_cols[2].button("↺ Reset", key=f"{key_prefix}_{benefit_id}_reset", use_container_width=True):
                 update_benefit_status(benefit_id, "Not Used")
-            if action_cols[3].button("Hide", key=f"{key_prefix}_{benefit_id}_ignore", use_container_width=True):
+            if action_cols[3].button("◇ Hide", key=f"{key_prefix}_{benefit_id}_ignore", use_container_width=True):
                 update_benefit_status(benefit_id, "Ignored")
 
         notes = clean_display(row.get("notes"), "")
@@ -1042,11 +1122,11 @@ def render_benefit_tile(row: pd.Series, key_prefix: str) -> None:
             if notes:
                 st.caption(notes)
             if source:
-                st.link_button("Source", source)
+                st.link_button("↗ Source", source)
 
 
 def show_importer() -> None:
-    st.subheader("Import Existing Excel Tracker")
+    st.subheader("⇩ Import Existing Excel Tracker")
     st.caption("Upload your existing tracker once. The app preserves the original file and creates local CSV files for daily use.")
     uploaded = st.file_uploader("Excel file", type=["xlsx", "xlsm", "xls"])
     if uploaded is not None:
@@ -1066,7 +1146,7 @@ def show_importer() -> None:
 
 
 def show_dashboard(benefits: pd.DataFrame) -> None:
-    st.header("Dashboard")
+    st.header("▦ Dashboard")
     if benefits.empty:
         st.info("No benefits yet. Import your Excel tracker or add a benefit manually.")
         return
@@ -1081,20 +1161,22 @@ def show_dashboard(benefits: pd.DataFrame) -> None:
     remaining_value = active["remaining_amount"].apply(normalize_money).sum()
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Active benefits", len(active))
-    col2.metric("Expiring soon", len(expiring))
-    col3.metric("Completed", len(used))
-    col4.metric("Value remaining", format_amount(remaining_value))
+    col1.metric("○ Active benefits", len(active))
+    col2.metric("! Expiring soon", len(expiring))
+    col3.metric("✓ Completed", len(used))
+    col4.metric("$ Value remaining", format_amount(remaining_value))
 
     show_hidden = st.toggle("Show completed and ignored in main views", value=False)
     browse_data = flagged if show_hidden else active
+    dashboard_options = [option_with_icon(label, DASHBOARD_ICONS) for label in ["Home", "Cards", "Categories", "Completed / Hidden"]]
 
     dashboard_view = st.radio(
         "Dashboard view",
-        ["Home", "Cards", "Categories", "Completed / Hidden"],
+        dashboard_options,
         horizontal=True,
         label_visibility="collapsed",
     )
+    dashboard_view = option_without_icon(dashboard_view)
 
     if dashboard_view == "Home":
         show_home_view(active, expiring, needs_action)
@@ -1107,6 +1189,7 @@ def show_dashboard(benefits: pd.DataFrame) -> None:
 
 
 def show_home_view(active: pd.DataFrame, expiring: pd.DataFrame, needs_action: pd.DataFrame) -> None:
+    st.markdown('<div class="section-kicker"><span class="section-icon">⌂</span><span>Action center</span></div>', unsafe_allow_html=True)
     st.subheader("Benefits to use next")
     st.caption("A short action list first; drill into Cards or Categories when you want the full picture.")
 
@@ -1132,7 +1215,15 @@ def show_home_view(active: pd.DataFrame, expiring: pd.DataFrame, needs_action: p
 
 
 def show_priority_lane(title: str, benefits: pd.DataFrame, key_prefix: str) -> None:
-    st.markdown(f"#### {title}")
+    lane_icons = {
+        "Expiring soon": "!",
+        "Not used this month": "○",
+        "Partially used": "◐",
+    }
+    st.markdown(
+        f'<div class="lane-title"><span class="section-icon">{escape(lane_icons.get(title, "•"))}</span><span>{escape(title)}</span></div>',
+        unsafe_allow_html=True,
+    )
     if benefits.empty:
         st.info("Nothing here.")
         return
@@ -1141,6 +1232,7 @@ def show_priority_lane(title: str, benefits: pd.DataFrame, key_prefix: str) -> N
 
 
 def show_by_card_view(flagged: pd.DataFrame) -> None:
+    st.markdown('<div class="section-kicker"><span class="section-icon">▣</span><span>Card wallet</span></div>', unsafe_allow_html=True)
     st.caption("Browse benefits under each card. Use the quick buttons to update status without opening the raw editor.")
     if flagged.empty:
         st.info("No active benefits to show. Use the toggle above or open Completed / Hidden.")
@@ -1189,23 +1281,24 @@ def show_by_card_view(flagged: pd.DataFrame) -> None:
                 used_value = tracked_card_benefits["used_amount"].apply(normalize_money).sum()
                 total_value = tracked_card_benefits["face_value"].apply(normalize_money).sum()
                 value_progress = used_value / total_value if total_value else 0
-                st.subheader(clean_display(card.get("card_name")))
+                st.subheader(f"▣ {clean_display(card.get('card_name'))}")
                 st.caption(
-                    f"{clean_display(card.get('owner'), 'Unassigned')} · "
-                    f"{clean_display(card.get('issuer'), 'Issuer unknown')} · "
-                    f"{expiring_count} expiring soon"
+                    f"{clean_display(card.get('owner'), 'Unassigned')} / "
+                    f"{clean_display(card.get('issuer'), 'Issuer unknown')} / "
+                    f"! {expiring_count} expiring soon"
                 )
                 summary_cols = st.columns(3)
-                summary_cols[0].metric("Active", active_count)
-                summary_cols[1].metric("Remaining", format_amount(remaining_value))
-                summary_cols[2].metric("Used value", format_amount(used_value))
+                summary_cols[0].metric("○ Active", active_count)
+                summary_cols[1].metric("$ Remaining", format_amount(remaining_value))
+                summary_cols[2].metric("✓ Used value", format_amount(used_value))
                 st.progress(min(max(value_progress, 0), 1), text=f"{int(value_progress * 100)}% of tracked value used")
-                with st.expander("Show benefits", expanded=expiring_count > 0):
+                with st.expander(f"▾ Show benefits ({len(card_benefits)})", expanded=expiring_count > 0):
                     for _, benefit in card_benefits.sort_values(["status", "expiration_date", "benefit_name"]).iterrows():
                         render_benefit_tile(benefit, f"card_{normalize_text(card.get('card_id')) or normalize_text(card.get('card_name'))}")
 
 
 def show_by_category_view(flagged: pd.DataFrame) -> None:
+    st.markdown('<div class="section-kicker"><span class="section-icon">◈</span><span>Benefit categories</span></div>', unsafe_allow_html=True)
     st.caption("Scan across cards by benefit category.")
     if flagged.empty:
         st.info("No active benefits to show. Use the toggle above or open Completed / Hidden.")
@@ -1227,14 +1320,14 @@ def show_by_category_view(flagged: pd.DataFrame) -> None:
                 unsafe_allow_html=True,
             )
             cols = st.columns(3)
-            cols[0].metric("Needs action", int(group["needs_action"].sum()))
-            cols[1].metric("Expiring", int(group["is_expiring_soon"].sum()))
-            cols[2].metric("Used", used_count)
+            cols[0].metric("○ Needs action", int(group["needs_action"].sum()))
+            cols[1].metric("! Expiring", int(group["is_expiring_soon"].sum()))
+            cols[2].metric("✓ Used", used_count)
 
             benefit_cols = st.columns(2)
             for index, (_, benefit) in enumerate(group.sort_values(["status", "expiration_date", "card_name"]).iterrows()):
                 with benefit_cols[index % 2]:
-                    st.caption(f"{clean_display(benefit.get('owner'))} · {clean_display(benefit.get('card_name'))}")
+                    st.caption(f"{clean_display(benefit.get('owner'))} / {clean_display(benefit.get('card_name'))}")
                     render_benefit_tile(benefit, f"cat_{normalize_text(category)}_{index}")
 
 
@@ -1273,7 +1366,7 @@ def show_completed_hidden_view(hidden: pd.DataFrame) -> None:
 
 
 def show_edit_benefits(benefits: pd.DataFrame) -> None:
-    st.header("Edit Benefits")
+    st.header("✎ Edit Benefits")
     if benefits.empty:
         st.info("No benefits to edit yet.")
         return
@@ -1300,7 +1393,7 @@ def show_edit_benefits(benefits: pd.DataFrame) -> None:
         hide_index=True,
         num_rows="dynamic",
     )
-    if st.button("Save benefit changes", type="primary"):
+    if st.button("✓ Save benefit changes", type="primary"):
         edited = edited.copy()
         edited["expiration_date"] = pd.to_datetime(edited["expiration_date"], errors="coerce").dt.date
         edited["expiration_date"] = edited["expiration_date"].apply(lambda value: value.isoformat() if pd.notna(value) else "")
@@ -1327,11 +1420,11 @@ def show_edit_benefits(benefits: pd.DataFrame) -> None:
 
 
 def show_add_forms(cards: pd.DataFrame, benefits: pd.DataFrame) -> None:
-    st.header("Add New Data")
+    st.header("+ Add New Data")
     left, right = st.columns(2)
 
     with left:
-        st.subheader("Add Credit Card")
+        st.subheader("▣ Add Credit Card")
         with st.form("add_card"):
             owner = st.text_input("Owner / cardholder")
             card_name = st.text_input("Card name")
@@ -1340,7 +1433,7 @@ def show_add_forms(cards: pd.DataFrame, benefits: pd.DataFrame) -> None:
             annual_fee = st.number_input("Annual fee", min_value=0.0, step=1.0)
             status = st.selectbox("Card status", ["Active", "Closed", "Considering"])
             notes = st.text_area("Notes")
-            submitted = st.form_submit_button("Add card")
+            submitted = st.form_submit_button("+ Add card")
         if submitted and card_name:
             new_card = pd.DataFrame(
                 [
@@ -1366,7 +1459,7 @@ def show_add_forms(cards: pd.DataFrame, benefits: pd.DataFrame) -> None:
             st.rerun()
 
     with right:
-        st.subheader("Add Benefit")
+        st.subheader("○ Add Benefit")
         card_labels = {
             f"{row.owner} - {row.card_name}": row
             for row in cards.itertuples(index=False)
@@ -1389,7 +1482,7 @@ def show_add_forms(cards: pd.DataFrame, benefits: pd.DataFrame) -> None:
             priority = st.selectbox("Priority", ["High", "Medium", "Low", ""])
             include_in_alert = st.selectbox("Include in alert?", ["Yes", "No"])
             notes = st.text_area("Benefit notes")
-            submitted = st.form_submit_button("Add benefit")
+            submitted = st.form_submit_button("+ Add benefit")
 
         if submitted and benefit_name:
             if selected == "Manual / no card selected":
@@ -1440,9 +1533,9 @@ def show_add_forms(cards: pd.DataFrame, benefits: pd.DataFrame) -> None:
 
 
 def show_usage_log(usage: pd.DataFrame) -> None:
-    st.header("Usage Log")
+    st.header("☰ Usage Log")
     st.caption("This combines imported usage records with updates made from the dashboard and Edit Benefits.")
-    if st.button("Sync from current benefit statuses"):
+    if st.button("↺ Sync from current benefit statuses"):
         added = sync_usage_log_from_benefits()
         if added:
             st.success(f"Added {added} missing usage record(s).")
@@ -1464,7 +1557,7 @@ def show_usage_log(usage: pd.DataFrame) -> None:
         hide_index=True,
         num_rows="dynamic",
     )
-    if st.button("Save usage log", type="primary"):
+    if st.button("✓ Save usage log", type="primary"):
         edited = edited.copy()
         edited["used_date"] = pd.to_datetime(edited["used_date"], errors="coerce").dt.date
         edited["used_date"] = edited["used_date"].apply(lambda value: value.isoformat() if pd.notna(value) else "")
@@ -1476,10 +1569,11 @@ def show_usage_log(usage: pd.DataFrame) -> None:
 
 
 def main() -> None:
-    st.set_page_config(page_title="Credit Card Benefit Tracker", layout="wide")
+    st.set_page_config(page_title="Credit Card Benefit Tracker", page_icon="▣", layout="wide")
     ensure_data_files()
+    inject_styles()
 
-    st.title("Credit Card Benefit Tracker")
+    st.title("▣ Credit Card Benefit Tracker")
     st.caption("Local-first Streamlit MVP. Data is saved in CSV files on this PC.")
 
     cards = read_csv(CARDS_CSV, CARD_COLUMNS)
@@ -1487,18 +1581,20 @@ def main() -> None:
     usage = read_csv(USAGE_CSV, USAGE_COLUMNS)
 
     with st.sidebar:
-        st.header("Data")
-        st.write(f"Cards: {len(cards)}")
-        st.write(f"Benefits: {len(benefits)}")
-        st.write(f"Usage records: {len(usage)}")
+        st.header("▦ Data")
+        st.write(f"▣ Cards: {len(cards)}")
+        st.write(f"○ Benefits: {len(benefits)}")
+        st.write(f"☰ Usage records: {len(usage)}")
         if ORIGINAL_EXCEL.exists():
-            st.caption(f"Original Excel preserved: {ORIGINAL_EXCEL.name}")
+            st.caption(f"⇩ Original Excel preserved: {ORIGINAL_EXCEL.name}")
         st.divider()
+        section_options = [option_with_icon(label, SECTION_ICONS) for label in ["Dashboard", "Edit Benefits", "Usage Log", "Add", "Import Excel", "Raw Data"]]
         section = st.radio(
             "Section",
-            ["Dashboard", "Edit Benefits", "Usage Log", "Add", "Import Excel", "Raw Data"],
+            section_options,
         )
-        if st.button("Reload CSV files"):
+        section = option_without_icon(section)
+        if st.button("↺ Reload CSV files"):
             st.rerun()
 
     if benefits.empty:
@@ -1516,11 +1612,11 @@ def main() -> None:
     elif section == "Import Excel":
         show_importer()
     else:
-        st.subheader("Cards")
+        st.subheader("▣ Cards")
         st.dataframe(cards, use_container_width=True, hide_index=True)
-        st.subheader("Benefits")
+        st.subheader("○ Benefits")
         st.dataframe(benefits, use_container_width=True, hide_index=True)
-        st.subheader("Usage")
+        st.subheader("☰ Usage")
         st.dataframe(usage, use_container_width=True, hide_index=True)
 
 
