@@ -1,0 +1,7 @@
+usage_id,used_date,owner,card_id,benefit_id,benefit_name,cycle_period,used_amount,fully_used,merchant,notes
+EXAMPLE-001,2026-05-02,Eason,amex_gold_p1,amex_gold_p1_uber_monthly,Uber Cash,2026-05,10.0,Yes,Uber Eats,Replace/delete this sample row.
+usage_55da92d7a8,2026-05-07,Eason,amex_gold_p1,amex_gold_p1_dunkin_monthly,Dunkin Credit,2026-05,7.0,Yes,,Backfilled from current benefit status
+usage_327cb65a4f,2026-05-07,Eason,chase_united_quest_p1,chase_united_quest_p1_united_travel_credit,United Travel Credit,2026,200.0,Yes,,Backfilled from current benefit status
+usage_202233854d,2026-05-07,Eason,amex_platinum_p1,amex_platinum_p1_digital_entertainment,Digital Entertainment Credit,2026-05,25.0,Yes,,Logged from benefit status update
+usage_67c98a0029,2026-05-07,Eason,amex_gold_p1,amex_gold_p1_resy_h1,Resy Credit H1,2026-H1,50.0,Yes,,Logged from benefit status update
+usage_f3ba0fb9e1,2026-05-07,Xinyi,chase_hyatt_p1,chase_hyatt_p1_annual_free_night,Annual Category 1-4 Free Night,2026,250.0,Yes,,Logged from benefit status update
