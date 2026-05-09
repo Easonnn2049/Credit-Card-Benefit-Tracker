@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "inputs": [
+    {
+      "id": "commitMessage",
+      "type": "promptString",
+      "description": "Commit message",
+      "default": "Update benefit tracker"
+    }
+  ],
+  "tasks": [
+    {
+      "label": "Git: Status",
+      "type": "process",
+      "command": "C:\\Users\\yuxua\\AppData\\Local\\GitHubDesktop\\app-3.5.8\\resources\\app\\git\\cmd\\git.exe",
+      "args": ["status", "--short"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Git: Stage all changes",
+      "type": "process",
+      "command": "C:\\Users\\yuxua\\AppData\\Local\\GitHubDesktop\\app-3.5.8\\resources\\app\\git\\cmd\\git.exe",
+      "args": ["add", "-A"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Git: Commit staged changes",
+      "type": "process",
+      "command": "C:\\Users\\yuxua\\AppData\\Local\\GitHubDesktop\\app-3.5.8\\resources\\app\\git\\cmd\\git.exe",
+      "args": ["commit", "-m", "${input:commitMessage}"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Git: Push current branch",
+      "type": "process",
+      "command": "C:\\Users\\yuxua\\AppData\\Local\\GitHubDesktop\\app-3.5.8\\resources\\app\\git\\cmd\\git.exe",
+      "args": ["push"],
+      "problemMatcher": []
+    }
+  ]
+}
