@@ -1,0 +1,19 @@
+usage_id,used_date,owner,card_id,benefit_id,benefit_name,cycle_period,used_amount,fully_used,merchant,notes
+EXAMPLE-001,2026-05-02,Eason,amex_gold_p1,amex_gold_p1_uber_monthly,Uber Cash,2026-05,10.0,Yes,Uber Eats,Replace/delete this sample row.
+usage_55da92d7a8,2026-05-07,Eason,amex_gold_p1,amex_gold_p1_dunkin_monthly,Dunkin Credit,2026-05,7.0,Yes,,Backfilled from current benefit status
+usage_327cb65a4f,2026-05-07,Eason,chase_united_quest_p1,chase_united_quest_p1_united_travel_credit,United Travel Credit,2026,200.0,Yes,,Backfilled from current benefit status
+usage_202233854d,2026-05-07,Eason,amex_platinum_p1,amex_platinum_p1_digital_entertainment,Digital Entertainment Credit,2026-05,25.0,Yes,,Logged from benefit status update
+usage_67c98a0029,2026-05-07,Eason,amex_gold_p1,amex_gold_p1_resy_h1,Resy Credit H1,2026-H1,50.0,Yes,,Logged from benefit status update
+usage_f3ba0fb9e1,2026-05-07,Xinyi,chase_hyatt_p1,chase_hyatt_p1_annual_free_night,Annual Category 1-4 Free Night,2026,250.0,Yes,,Logged from benefit status update
+usage_8f08106e96,2026-05-08,Eason,amex_gold_p1,amex_gold_p1_dining_monthly,Dining Credit,2026-05,5.0,No,,Logged from benefit status update
+usage_fcd3c1d865,2026-05-08,Eason,amex_gold_p1,amex_gold_p1_dining_monthly,Dining Credit,2026-05,5.0,No,,Logged from benefit status update
+usage_387547c517,2026-05-08,Eason,amex_gold_p1,amex_gold_p1_dining_monthly,Dining Credit,2026-05,4.0,No,,Logged from benefit status update
+usage_b03ef1f214,2026-05-08,Eason,amex_platinum_p1,amex_platinum_p1_walmart_plus,Walmart+ Monthly Credit,2026-05,12.95,Yes,,Logged from benefit status update
+usage_8db6eb6a10,2026-05-08,Eason,amex_platinum_p1,amex_platinum_p1_hotel_h1,Hotel Credit H1,2026-H1,300.0,Yes,,Logged from benefit status update
+usage_16ee7ef664,2026-05-08,Eason,amex_platinum_p1,amex_platinum_p1_oura,Oura Ring Credit,2026,200.0,Yes,,Logged from benefit status update
+usage_3e3ed6bb20,2026-05-08,Eason,amex_platinum_p1,amex_platinum_p1_clear_plus,CLEAR+ Credit,2026,209.0,Yes,,Logged from benefit status update
+usage_12a787ab9c,2026-05-08,Eason,amex_platinum_p1,amex_platinum_p1_airline_incidental,Airline Fee Credit,2026,200.0,Yes,,Logged from benefit status update
+usage_7eb5fff71e,2026-05-08,Eason,amex_platinum_p1,amex_platinum_p1_lululemon_quarterly,lululemon Credit Q2,2026-Q2,75.0,Yes,,Logged from benefit status update
+usage_bb64d47dba,2026-05-08,Xinyi,amex_platinum_p2,amex_platinum_p2_airline_incidental,Airline Fee Credit,2026,200.0,Yes,,Logged from benefit status update
+usage_e5cf8c5e0a,2026-05-08,Xinyi,amex_platinum_p2,amex_platinum_p2_clear_plus,CLEAR+ Credit,2026,209.0,Yes,,Logged from benefit status update
+usage_6dcea2b93b,2026-05-08,Xinyi,amex_platinum_p2,amex_platinum_p2_oura,Oura Ring Credit,2026,200.0,Yes,,Logged from benefit status update
