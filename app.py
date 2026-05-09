@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 from html import escape
 from pathlib import Path
 from urllib.parse import urlparse
@@ -643,6 +644,40 @@ def inject_styles() -> None:
         .card-brand { font-size: .8rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; opacity: .9; }
         .card-product { font-size: 1.35rem; font-weight: 900; line-height: 1.1; letter-spacing: .02em; }
         .card-owner { font-size: .78rem; opacity: .84; text-transform: uppercase; letter-spacing: .08em; }
+        .card-cue,
+        .card-cue-fallback {
+            width: 54px;
+            aspect-ratio: 1.586 / 1;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 6px 12px rgba(23, 32, 26, .18);
+            margin-top: 4px;
+        }
+        .card-cue {
+            object-fit: cover;
+            display: block;
+            background: #ece7db;
+        }
+        .card-cue-fallback {
+            position: relative;
+            padding: 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-size: .45rem;
+            font-weight: 900;
+            line-height: 1;
+            text-transform: uppercase;
+        }
+        .card-cue-fallback:after {
+            content: "";
+            width: 11px;
+            height: 8px;
+            border-radius: 2px;
+            background: linear-gradient(135deg, #f4d37e, #9b742a);
+            align-self: flex-end;
+            opacity: .9;
+        }
         .benefit-tile {
             border: 1px solid #e5e0d5;
             border-radius: 8px;
@@ -869,7 +904,7 @@ def find_card_image(card: pd.Series) -> Path | None:
         normalize_text(card.get("card_name")).lower().replace(" ", "_").replace("/", "_"),
     ]
     for stem in [candidate for candidate in candidates if candidate]:
-        for extension in [".png", ".jpg", ".jpeg", ".webp", ".svg"]:
+        for extension in [".png", ".jpg", ".jpeg", ".webp", ".avif", ".svg"]:
             path = CARD_IMAGE_DIR / f"{stem}{extension}"
             if path.exists():
                 return path
@@ -902,6 +937,40 @@ def download_card_image(card: pd.Series, image_url: str) -> Path:
     if extension not in {"png", "jpg", "jpeg", "webp", "svg"}:
         raise ValueError("That URL does not look like a supported image file.")
     return save_card_image(card, response.content, extension)
+
+
+def card_image_data_uri(path: Path) -> str:
+    mime_types = {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".webp": "image/webp",
+        ".avif": "image/avif",
+        ".svg": "image/svg+xml",
+    }
+    mime_type = mime_types.get(path.suffix.lower(), "image/png")
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:{mime_type};base64,{encoded}"
+
+
+def render_card_cue(card: pd.Series) -> None:
+    image_path = find_card_image(card)
+    if image_path:
+        st.markdown(
+            f'<img class="card-cue" src="{card_image_data_uri(image_path)}" alt="{escape(clean_display(card.get("card_name"), "Card"))}">',
+            unsafe_allow_html=True,
+        )
+        return
+
+    start, end, text_color, brand, _ = card_art_style(card.get("card_name"), card.get("issuer"))
+    st.markdown(
+        f"""
+        <div class="card-cue-fallback" style="background: linear-gradient(135deg, {start}, {end}); color: {text_color};">
+            <span>{escape(brand)}</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def show_card_image_manager(cards: pd.DataFrame) -> None:
@@ -1184,7 +1253,12 @@ def render_card_art(card: pd.Series, benefit_count: int) -> None:
     )
 
 
-def render_benefit_tile(row: pd.Series, key_prefix: str, quick_actions_layout: str = "horizontal") -> None:
+def render_benefit_tile(
+    row: pd.Series,
+    key_prefix: str,
+    quick_actions_layout: str = "horizontal",
+    show_card_cue: bool = False,
+) -> None:
     expiring = bool(row.get("is_expiring_soon", False))
     upcoming = bool(row.get("is_upcoming", False))
     due = clean_display(row.get("expiration_date"))
@@ -1214,7 +1288,12 @@ def render_benefit_tile(row: pd.Series, key_prefix: str, quick_actions_layout: s
     expander_host = st
     if status not in ["Used", "Ignored"] and not upcoming:
         if quick_actions_layout == "vertical":
-            title_col, action_col = st.columns([4.6, 1.35], vertical_alignment="top")
+            if show_card_cue:
+                cue_col, title_col, action_col = st.columns([0.85, 3.75, 1.35], vertical_alignment="top")
+                with cue_col:
+                    render_card_cue(row)
+            else:
+                title_col, action_col = st.columns([4.6, 1.35], vertical_alignment="top")
             expander_host = title_col
             with action_col:
                 if st.button("Used", key=f"{key_prefix}_{benefit_id}_quick_used", type="primary", use_container_width=True):
@@ -1415,7 +1494,12 @@ def show_priority_lane(title: str, benefits: pd.DataFrame, key_prefix: str) -> N
         st.info("Nothing here.")
         return
     for index, (_, benefit) in enumerate(benefits.iterrows()):
-        render_benefit_tile(benefit, f"{key_prefix}_{index}", quick_actions_layout="vertical")
+        render_benefit_tile(
+            benefit,
+            f"{key_prefix}_{index}",
+            quick_actions_layout="vertical",
+            show_card_cue=True,
+        )
 
 
 def show_by_card_view(flagged: pd.DataFrame) -> None:
