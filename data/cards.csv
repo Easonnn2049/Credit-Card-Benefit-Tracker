@@ -1,13 +1,14 @@
 card_id,owner,card_name,issuer,card_version,open_date,annual_fee,renewal_month,status,autopay,notes,source_url
-amex_gold_p1,Eason,American Express Gold Card,Amex,Personal Gold,,325.0,,Active,,Owner assumed; edit if needed.,https://www.americanexpress.com/us/credit-cards/card/gold-card/
-amex_platinum_p1,Eason,American Express Platinum Card,Amex,Personal Platinum,,895.0,,Active,,,https://www.americanexpress.com/us/credit-cards/card/platinum/
-amex_platinum_p2,Xinyi,American Express Platinum Card,Amex,Personal Platinum,,895.0,,Active,,,https://www.americanexpress.com/us/credit-cards/card/platinum/
-chase_sapphire_preferred_p1,Eason,Chase Sapphire Preferred,Chase,Preferred,,95.0,,Active,,Owner assumed; edit if needed.,https://account.chase.com/sapphire/preferred/benefits
-chase_sapphire_reserve_p1,Eason,Chase Sapphire Reserve,Chase,Reserve,,795.0,,Active,,,https://account.chase.com/sapphire/reserve/benefits
-chase_sapphire_reserve_p2,Xinyi,Chase Sapphire Reserve,Chase,Reserve,,795.0,,Active,,,https://account.chase.com/sapphire/reserve/benefits
-chase_united_quest_p1,Eason,Chase United Quest,Chase,United Quest,,350.0,,Active,,Owner assumed; edit if needed.,https://www.chase.com/personal/credit-cards/united/united-quest-card
-chase_marriott_boundless_p1,Eason,Chase Marriott Bonvoy,Chase,Assumed: Marriott Bonvoy Boundless,,95.0,,Active,,Please change if your Marriott card is Bold/Bountiful/Ritz.,https://www.marriott.com/credit-cards/chase-credit-cards.mi
-chase_marriott_boundless_p2,Xinyi,Chase Marriott Bonvoy,Chase,Assumed: Marriott Bonvoy Boundless,,95.0,,Active,,Please change if your Marriott card is Bold/Bountiful/Ritz.,https://www.marriott.com/credit-cards/chase-credit-cards.mi
-chase_hyatt_p1,Xinyi,World of Hyatt Credit Card,Chase,World of Hyatt Consumer,,95.0,,Active,,Owner assumed; edit if needed.,https://world.hyatt.com/content/gp/en/rewards/hyatt-credit-card.html
-amex_hilton_p1,Eason,Hilton Honors American Express,Amex,Assumed: Hilton Honors Surpass,,150.0,,Active,,Please change if your Hilton card is no-fee or Aspire.,https://global.americanexpress.com/card-benefits/view-all/hilton-surpass
-usbank_altitude_reserve_p1,Xinyi,U.S. Bank Altitude Reserve Visa Infinite,U.S. Bank,Altitude Reserve Visa Infinite,,400.0,,Active,,Owner assumed; edit if needed.,https://rewards.usbank.com/benefits/card/AltitudeReserveBenefits
+amex_gold_p1,Eason,American Express Gold Card,Amex,Personal Gold,2022-12-12,325.0,,Active,,Owner assumed; edit if needed.,https://www.americanexpress.com/us/credit-cards/card/gold-card/
+amex_platinum_p1,Eason,American Express Platinum Card,Amex,Personal Platinum,2024-05-10,895.0,,Active,,,https://www.americanexpress.com/us/credit-cards/card/platinum/
+amex_platinum_p2,Xinyi,American Express Platinum Card,Amex,Personal Platinum,2023-02-27,895.0,,Active,,,https://www.americanexpress.com/us/credit-cards/card/platinum/
+chase_sapphire_preferred_p1,Eason,Chase Sapphire Preferred,Chase,Preferred,2024-11-01,95.0,,Active,,Owner assumed; edit if needed.,https://account.chase.com/sapphire/preferred/benefits
+chase_sapphire_reserve_p1,Eason,Chase Sapphire Reserve,Chase,Reserve,2026-05-01,795.0,,Active,,,https://account.chase.com/sapphire/reserve/benefits
+chase_sapphire_reserve_p2,Xinyi,Chase Sapphire Reserve,Chase,Reserve,2025-08-01,795.0,,Active,,,https://account.chase.com/sapphire/reserve/benefits
+chase_freedom_flex_p1,Xinyi,Chase Freedom Flex,Chase,Freedom Flex,,0.0,,Active,,,https://creditcards.chase.com/cash-back-credit-cards/freedom/flex
+chase_united_quest_p1,Eason,Chase United Quest,Chase,United Quest,2026-03-01,350.0,,Active,,Owner assumed; edit if needed.,https://www.chase.com/personal/credit-cards/united/united-quest-card
+chase_marriott_boundless_p1,Eason,Marriott Bonvoy Boundless Credit Card,Chase,Marriott Bonvoy Boundless,2024-03-01,95.0,,Active,,,https://creditcards.chase.com/travel-credit-cards/marriott-bonvoy/boundless
+chase_marriott_boundless_p2,Xinyi,Marriott Bonvoy Boundless Credit Card,Chase,Marriott Bonvoy Boundless,2024-04-01,95.0,,Active,,,https://creditcards.chase.com/travel-credit-cards/marriott-bonvoy/boundless
+chase_hyatt_p1,Xinyi,World of Hyatt Credit Card,Chase,World of Hyatt Consumer,2024-11-01,95.0,,Active,,Owner assumed; edit if needed.,https://world.hyatt.com/content/gp/en/rewards/hyatt-credit-card.html
+amex_hilton_p1,Xinyi,Hilton Honors American Express Card,Amex,Hilton Honors no annual fee,,0.0,,Active,,,https://www.americanexpress.com/us/credit-cards/card/hilton-honors/
+usbank_altitude_reserve_p1,Xinyi,U.S. Bank Altitude Reserve Visa Infinite,U.S. Bank,Altitude Reserve Visa Infinite,2024-11-25,400.0,,Active,,Owner assumed; edit if needed.,https://rewards.usbank.com/benefits/card/AltitudeReserveBenefits

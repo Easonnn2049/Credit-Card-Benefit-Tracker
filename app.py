@@ -1189,7 +1189,6 @@ def render_benefit_tile(row: pd.Series, key_prefix: str, quick_actions_layout: s
             with action_col:
                 if st.button("Used", key=f"{key_prefix}_{benefit_id}_quick_used", use_container_width=True):
                     update_benefit_status(benefit_id, "Used")
-                st.write("")
                 if st.button("Ignore", key=f"{key_prefix}_{benefit_id}_quick_ignore", use_container_width=True):
                     update_benefit_status(benefit_id, "Ignored")
         else:
@@ -1723,6 +1722,103 @@ def show_usage_log(usage: pd.DataFrame) -> None:
         st.rerun()
 
 
+def serialize_date_column(df: pd.DataFrame, column: str) -> None:
+    if column not in df.columns:
+        return
+    dates = pd.to_datetime(df[column], errors="coerce").dt.date
+    df[column] = dates.apply(lambda value: value.isoformat() if pd.notna(value) else "")
+
+
+def fill_missing_ids(df: pd.DataFrame, column: str, prefix: str) -> None:
+    if column not in df.columns:
+        df[column] = ""
+    missing = df[column].isna() | (df[column].astype(str).str.strip() == "")
+    df.loc[missing, column] = [f"{prefix}_{uuid4().hex[:10]}" for _ in range(missing.sum())]
+
+
+def show_raw_data(cards: pd.DataFrame, benefits: pd.DataFrame, usage: pd.DataFrame) -> None:
+    title_block("Raw Data", "Edit the local CSV-backed tables directly.")
+    st.caption("Changes are saved to the CSV files in the data folder. The original Excel file is not modified.")
+
+    cards_tab, benefits_tab, usage_tab = st.tabs(["Cards", "Benefits", "Usage"])
+
+    with cards_tab:
+        editable_cards = cards.copy()
+        editable_cards["open_date"] = pd.to_datetime(editable_cards["open_date"], errors="coerce")
+        edited_cards = st.data_editor(
+            editable_cards,
+            column_config={
+                "open_date": st.column_config.DateColumn("open_date", format="YYYY-MM-DD"),
+                "annual_fee": st.column_config.NumberColumn("annual_fee", min_value=0.0, step=1.0),
+                "status": st.column_config.SelectboxColumn("status", options=["Active", "Closed", "Considering", ""]),
+            },
+            use_container_width=True,
+            hide_index=True,
+            num_rows="dynamic",
+            key="raw_cards_editor",
+        )
+        if st.button("Save cards CSV", type="primary"):
+            edited_cards = edited_cards.copy()
+            serialize_date_column(edited_cards, "open_date")
+            fill_missing_ids(edited_cards, "card_id", "card")
+            save_cards(edited_cards)
+            st.success("Saved cards.csv.")
+            st.rerun()
+
+    with benefits_tab:
+        editable_benefits = benefits.copy()
+        editable_benefits["expiration_date"] = pd.to_datetime(editable_benefits["expiration_date"], errors="coerce")
+        edited_benefits = st.data_editor(
+            editable_benefits,
+            column_config={
+                "expiration_date": st.column_config.DateColumn("expiration_date", format="YYYY-MM-DD"),
+                "face_value": st.column_config.NumberColumn("face_value", min_value=0.0, step=1.0),
+                "realistic_value": st.column_config.NumberColumn("realistic_value", min_value=0.0, step=1.0),
+                "used_amount": st.column_config.NumberColumn("used_amount", min_value=0.0, step=1.0),
+                "remaining_amount": st.column_config.NumberColumn("remaining_amount", min_value=0.0, step=1.0),
+                "usage_percent": st.column_config.NumberColumn("usage_percent", min_value=0.0, max_value=1.0, step=0.05),
+                "days_until_expiry": st.column_config.NumberColumn("days_until_expiry", min_value=0.0, step=1.0),
+                "status": st.column_config.SelectboxColumn("status", options=STATUSES),
+                "priority": st.column_config.SelectboxColumn("priority", options=["High", "Medium", "Low", ""]),
+                "include_in_alert": st.column_config.SelectboxColumn("include_in_alert", options=["Yes", "No", ""]),
+            },
+            use_container_width=True,
+            hide_index=True,
+            num_rows="dynamic",
+            key="raw_benefits_editor",
+        )
+        if st.button("Save benefits CSV", type="primary"):
+            edited_benefits = edited_benefits.copy()
+            serialize_date_column(edited_benefits, "expiration_date")
+            fill_missing_ids(edited_benefits, "benefit_id", "benefit")
+            save_benefits(edited_benefits)
+            st.success("Saved benefits.csv.")
+            st.rerun()
+
+    with usage_tab:
+        editable_usage = usage.copy()
+        editable_usage["used_date"] = pd.to_datetime(editable_usage["used_date"], errors="coerce")
+        edited_usage = st.data_editor(
+            editable_usage,
+            column_config={
+                "used_date": st.column_config.DateColumn("used_date", format="YYYY-MM-DD"),
+                "used_amount": st.column_config.NumberColumn("used_amount", min_value=0.0, step=1.0),
+                "fully_used": st.column_config.SelectboxColumn("fully_used", options=["Yes", "No", ""]),
+            },
+            use_container_width=True,
+            hide_index=True,
+            num_rows="dynamic",
+            key="raw_usage_editor",
+        )
+        if st.button("Save usage CSV", type="primary"):
+            edited_usage = edited_usage.copy()
+            serialize_date_column(edited_usage, "used_date")
+            fill_missing_ids(edited_usage, "usage_id", "usage")
+            save_usage(edited_usage)
+            st.success("Saved usage.csv.")
+            st.rerun()
+
+
 def main() -> None:
     st.set_page_config(page_title="Credit Card Benefit Tracker", layout="wide")
     ensure_data_files()
@@ -1772,13 +1868,7 @@ def main() -> None:
     elif section == "Import Excel":
         show_importer()
     else:
-        title_block("Raw Data", "Inspect the local CSV-backed tables.", level=2)
-        st.subheader("Cards")
-        st.dataframe(cards, use_container_width=True, hide_index=True)
-        st.subheader("Benefits")
-        st.dataframe(benefits, use_container_width=True, hide_index=True)
-        st.subheader("Usage")
-        st.dataframe(usage, use_container_width=True, hide_index=True)
+        show_raw_data(cards, benefits, usage)
 
 
 if __name__ == "__main__":
