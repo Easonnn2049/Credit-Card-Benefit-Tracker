@@ -760,6 +760,18 @@ def inject_styles() -> None:
             border-color: #56614f;
             color: #fffdfa;
         }
+        button[kind="secondary"],
+        div[data-testid="stButton"] button[kind="secondary"] {
+            background-color: #f1f2f4;
+            border-color: #d8dde3;
+            color: #374151;
+        }
+        button[kind="secondary"]:hover,
+        div[data-testid="stButton"] button[kind="secondary"]:hover {
+            background-color: #e5e7eb;
+            border-color: #cbd1d8;
+            color: #17201a;
+        }
         .slider-summary {
             background: #f1eee6;
             border-radius: 8px;
@@ -954,6 +966,24 @@ def date_label(value: object) -> str:
     if pd.isna(parsed):
         return ""
     return f"{parsed.strftime('%b')} {parsed.day}"
+
+
+def next_membership_fee_label(card: pd.Series) -> str:
+    annual_fee = normalize_money(card.get("annual_fee"))
+    if annual_fee <= 0:
+        return "No annual fee"
+
+    open_date = pd.to_datetime(card.get("open_date"), errors="coerce")
+    if pd.isna(open_date):
+        return "Fee date not set"
+
+    today = pd.Timestamp.today().date()
+    fee_date = today.replace(month=int(open_date.month), day=int(open_date.day))
+    if fee_date <= today:
+        fee_date = fee_date.replace(year=fee_date.year + 1)
+
+    days = (fee_date - today).days
+    return f"Annual fee in {days} days ({fee_date.strftime('%b')} {fee_date.day})"
 
 
 def benefit_summary_label(row: pd.Series) -> str:
@@ -1184,17 +1214,17 @@ def render_benefit_tile(row: pd.Series, key_prefix: str, quick_actions_layout: s
     expander_host = st
     if status not in ["Used", "Ignored"] and not upcoming:
         if quick_actions_layout == "vertical":
-            title_col, action_col = st.columns([4, 1.6], vertical_alignment="top")
+            title_col, action_col = st.columns([4.6, 1.35], vertical_alignment="top")
             expander_host = title_col
             with action_col:
-                if st.button("Used", key=f"{key_prefix}_{benefit_id}_quick_used", use_container_width=True):
+                if st.button("Used", key=f"{key_prefix}_{benefit_id}_quick_used", type="primary", use_container_width=True):
                     update_benefit_status(benefit_id, "Used")
                 if st.button("Ignore", key=f"{key_prefix}_{benefit_id}_quick_ignore", use_container_width=True):
                     update_benefit_status(benefit_id, "Ignored")
         else:
-            title_col, used_col, ignore_col = st.columns([6, 1.15, 1.25], vertical_alignment="top")
+            title_col, used_col, ignore_col = st.columns([7, 0.85, 0.85], vertical_alignment="top")
             expander_host = title_col
-            if used_col.button("Used", key=f"{key_prefix}_{benefit_id}_quick_used", use_container_width=True):
+            if used_col.button("Used", key=f"{key_prefix}_{benefit_id}_quick_used", type="primary", use_container_width=True):
                 update_benefit_status(benefit_id, "Used")
             if ignore_col.button("Ignore", key=f"{key_prefix}_{benefit_id}_quick_ignore", use_container_width=True):
                 update_benefit_status(benefit_id, "Ignored")
@@ -1441,7 +1471,8 @@ def show_by_card_view(flagged: pd.DataFrame) -> None:
                 st.caption(
                     f"{clean_display(card.get('owner'), 'Unassigned')} · "
                     f"{clean_display(card.get('issuer'), 'Issuer unknown')} · "
-                    f"{expiring_count} expiring soon"
+                    f"{expiring_count} expiring soon · "
+                    f"{next_membership_fee_label(card)}"
                 )
                 summary_cols = st.columns(3)
                 summary_cols[0].metric("Active", active_count)
