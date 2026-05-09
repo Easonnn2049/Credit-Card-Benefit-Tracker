@@ -1,0 +1,520 @@
+.liquid-page {
+    --liquid-text: #eff8ff;
+    --liquid-muted: rgba(232, 246, 255, .72);
+    --liquid-rim: rgba(255, 255, 255, .72);
+    --liquid-rim-soft: rgba(255, 255, 255, .28);
+    --liquid-card-bg: rgba(255, 255, 255, .16);
+    --liquid-panel-bg: rgba(255, 255, 255, .12);
+    --liquid-inner: rgba(255, 255, 255, .34);
+    --liquid-shadow: rgba(4, 18, 42, .34);
+    --liquid-accent: #67e8ff;
+    --liquid-accent-2: #7aa7ff;
+    --liquid-good: #80ffca;
+    --liquid-warn: #ffd28a;
+    --liquid-danger: #ff9dab;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    min-height: 920px;
+    margin: 0 0 28px;
+    padding: 26px;
+    border-radius: 34px;
+    color: var(--liquid-text);
+    background:
+        radial-gradient(circle at 14% 10%, rgba(112, 225, 255, .72), transparent 26%),
+        radial-gradient(circle at 78% 7%, rgba(105, 129, 255, .55), transparent 28%),
+        radial-gradient(circle at 62% 82%, rgba(33, 187, 255, .34), transparent 34%),
+        linear-gradient(145deg, #08356f 0%, #075ca3 45%, #0b1842 100%);
+    box-shadow: 0 34px 120px rgba(4, 20, 50, .28);
+}
+
+.liquid-page:before,
+.liquid-page:after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.liquid-page:before {
+    inset: -18%;
+    background:
+        radial-gradient(circle at 22% 28%, rgba(255, 255, 255, .34), transparent 18%),
+        radial-gradient(circle at 88% 34%, rgba(128, 222, 255, .30), transparent 19%),
+        radial-gradient(circle at 42% 86%, rgba(93, 130, 255, .25), transparent 21%);
+    filter: blur(34px);
+}
+
+.liquid-page:after {
+    inset: 0;
+    background:
+        linear-gradient(110deg, rgba(255,255,255,.16), transparent 22%, rgba(255,255,255,.08) 48%, transparent 68%),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 1px, transparent 1px 86px);
+    opacity: .7;
+}
+
+.liquid-page.wallet {
+    --liquid-text: #f8fbff;
+    --liquid-muted: rgba(230, 237, 248, .68);
+    --liquid-rim: rgba(255, 255, 255, .42);
+    --liquid-rim-soft: rgba(255, 255, 255, .14);
+    --liquid-card-bg: rgba(255, 255, 255, .09);
+    --liquid-panel-bg: rgba(255, 255, 255, .07);
+    --liquid-shadow: rgba(0, 0, 0, .52);
+    --liquid-accent: #6ea8ff;
+    --liquid-accent-2: #b385ff;
+    background:
+        radial-gradient(circle at 14% 10%, rgba(72, 114, 255, .38), transparent 28%),
+        radial-gradient(circle at 82% 7%, rgba(180, 109, 255, .28), transparent 31%),
+        radial-gradient(circle at 70% 82%, rgba(31, 95, 185, .26), transparent 34%),
+        linear-gradient(145deg, #05070d 0%, #101a30 45%, #050914 100%);
+}
+
+.liquid-page.aqua {
+    --liquid-text: #08203d;
+    --liquid-muted: rgba(16, 45, 76, .70);
+    --liquid-rim: rgba(255, 255, 255, .86);
+    --liquid-rim-soft: rgba(66, 150, 205, .18);
+    --liquid-card-bg: rgba(255, 255, 255, .48);
+    --liquid-panel-bg: rgba(255, 255, 255, .40);
+    --liquid-inner: rgba(255, 255, 255, .76);
+    --liquid-shadow: rgba(25, 83, 137, .18);
+    --liquid-accent: #139ed1;
+    --liquid-accent-2: #69cfff;
+    --liquid-good: #0d7f57;
+    --liquid-warn: #9a6100;
+    --liquid-danger: #aa3447;
+    background:
+        radial-gradient(circle at 12% 12%, rgba(113, 219, 255, .62), transparent 26%),
+        radial-gradient(circle at 82% 8%, rgba(255, 255, 255, .82), transparent 29%),
+        radial-gradient(circle at 62% 82%, rgba(119, 177, 255, .30), transparent 34%),
+        linear-gradient(145deg, #e7fbff 0%, #bcecff 48%, #eaf7ff 100%);
+}
+
+.liquid-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.liquid-nav-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 820;
+}
+
+.liquid-nav-dot {
+    width: 13px;
+    height: 13px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ffffff, var(--liquid-accent));
+    box-shadow: 0 0 24px var(--liquid-accent);
+}
+
+.liquid-nav-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.liquid-nav-item,
+.liquid-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid var(--liquid-rim-soft);
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.28), rgba(255,255,255,.08)),
+        var(--liquid-panel-bg);
+    color: var(--liquid-text);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.55),
+        inset 0 -14px 24px rgba(255,255,255,.08),
+        0 12px 28px rgba(4, 18, 42, .12);
+    backdrop-filter: blur(24px) saturate(1.35);
+}
+
+.liquid-nav-item {
+    padding: 8px 12px;
+    font-size: .78rem;
+    font-weight: 760;
+}
+
+.liquid-nav-item.active {
+    border-color: var(--liquid-rim);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.8),
+        0 0 0 1px rgba(255,255,255,.16),
+        0 12px 34px rgba(103, 232, 255, .18);
+}
+
+.liquid-hero,
+.liquid-card,
+.liquid-panel,
+.liquid-benefit-row {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--liquid-rim-soft);
+    background:
+        linear-gradient(140deg, rgba(255,255,255,.28), rgba(255,255,255,.08) 42%, rgba(255,255,255,.15)),
+        var(--liquid-card-bg);
+    box-shadow:
+        inset 0 1px 0 var(--liquid-rim),
+        inset 0 -24px 42px rgba(255,255,255,.08),
+        0 28px 70px var(--liquid-shadow);
+    backdrop-filter: blur(28px) saturate(1.45);
+}
+
+.liquid-hero:before,
+.liquid-card:before,
+.liquid-panel:before,
+.liquid-benefit-row:before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(120deg, rgba(255,255,255,.58), transparent 22%, transparent 58%, rgba(255,255,255,.16)),
+        radial-gradient(circle at 18% 0%, var(--liquid-inner), transparent 24%);
+    opacity: .72;
+    mix-blend-mode: screen;
+}
+
+.liquid-hero > *,
+.liquid-card > *,
+.liquid-panel > *,
+.liquid-benefit-row > * {
+    position: relative;
+    z-index: 1;
+}
+
+.liquid-hero {
+    border-radius: 32px;
+    padding: 26px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(230px, .7fr);
+    gap: 22px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.liquid-kicker {
+    margin-bottom: 8px;
+    color: var(--liquid-muted);
+    font-size: .78rem;
+    font-weight: 780;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.liquid-title {
+    margin: 0;
+    font-size: 2.2rem;
+    line-height: 1.02;
+    letter-spacing: 0;
+}
+
+.liquid-subtitle {
+    max-width: 660px;
+    margin: 10px 0 0;
+    color: var(--liquid-muted);
+    font-size: .98rem;
+}
+
+.liquid-hero-orb {
+    min-height: 150px;
+    border-radius: 30px;
+    background:
+        linear-gradient(135deg, rgba(255,255,255,.66), rgba(255,255,255,.08)),
+        radial-gradient(circle at 22% 14%, rgba(255,255,255,.82), transparent 20%),
+        linear-gradient(145deg, rgba(91, 195, 255, .60), rgba(76, 98, 255, .36));
+    border: 1px solid var(--liquid-rim);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.9),
+        inset 0 -24px 42px rgba(255,255,255,.12),
+        0 24px 54px rgba(5, 24, 58, .26);
+}
+
+.liquid-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.liquid-card {
+    border-radius: 26px;
+    padding: 16px;
+    min-height: 112px;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.liquid-card:hover,
+.liquid-benefit-row:hover {
+    transform: translateY(-3px);
+    border-color: var(--liquid-rim);
+    box-shadow:
+        inset 0 1px 0 var(--liquid-rim),
+        inset 0 -24px 42px rgba(255,255,255,.10),
+        0 34px 82px var(--liquid-shadow);
+}
+
+.liquid-card-label {
+    color: var(--liquid-muted);
+    font-size: .76rem;
+    font-weight: 760;
+}
+
+.liquid-card-value {
+    margin-top: 8px;
+    font-size: 1.72rem;
+    font-weight: 860;
+    line-height: 1;
+}
+
+.liquid-card-note {
+    margin-top: 9px;
+    color: var(--liquid-muted);
+    font-size: .78rem;
+}
+
+.liquid-panel {
+    border-radius: 32px;
+    padding: 20px;
+}
+
+.liquid-benefit-layout {
+    display: grid;
+    grid-template-columns: minmax(220px, .82fr) minmax(0, 1.35fr);
+    gap: 20px;
+}
+
+.liquid-credit-art {
+    min-height: 270px;
+    border-radius: 30px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    background:
+        linear-gradient(118deg, rgba(255,255,255,.50), rgba(255,255,255,.10) 35%, rgba(255,255,255,.22)),
+        radial-gradient(circle at 82% 12%, rgba(255,255,255,.44), transparent 24%),
+        linear-gradient(145deg, rgba(9, 24, 55, .96), rgba(26, 112, 197, .82) 54%, rgba(82, 216, 255, .58));
+    border: 1px solid var(--liquid-rim);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.75),
+        inset 0 -28px 44px rgba(255,255,255,.10),
+        0 30px 80px rgba(4, 13, 30, .38);
+}
+
+.wallet .liquid-credit-art {
+    background:
+        linear-gradient(118deg, rgba(255,255,255,.22), rgba(255,255,255,.05) 35%, rgba(255,255,255,.12)),
+        radial-gradient(circle at 82% 12%, rgba(179, 133, 255, .28), transparent 24%),
+        linear-gradient(145deg, #02040a, #172033 54%, #44526b);
+}
+
+.aqua .liquid-credit-art {
+    color: #081f3d;
+    background:
+        linear-gradient(118deg, rgba(255,255,255,.80), rgba(255,255,255,.20) 35%, rgba(255,255,255,.45)),
+        radial-gradient(circle at 82% 12%, rgba(255,255,255,.70), transparent 24%),
+        linear-gradient(145deg, #f9fdff, #9adfff 54%, #5eaef1);
+}
+
+.liquid-credit-chip {
+    width: 48px;
+    height: 34px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #fff1b4, #b88738);
+    box-shadow: inset 0 0 0 1px rgba(32, 22, 4, .16);
+}
+
+.liquid-credit-bank {
+    color: var(--liquid-muted);
+    font-size: .78rem;
+    font-weight: 820;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+}
+
+.liquid-credit-name {
+    margin-top: 6px;
+    font-size: 1.34rem;
+    font-weight: 880;
+}
+
+.liquid-panel-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: flex-start;
+    margin-bottom: 14px;
+}
+
+.liquid-benefit-title {
+    font-size: 1.4rem;
+    line-height: 1.12;
+    font-weight: 860;
+}
+
+.liquid-meta {
+    margin-top: 7px;
+    color: var(--liquid-muted);
+    font-size: .86rem;
+}
+
+.liquid-pill {
+    padding: 8px 12px;
+    font-size: .76rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.liquid-pill.available {
+    color: var(--liquid-good);
+}
+
+.liquid-pill.used {
+    color: var(--liquid-accent);
+}
+
+.liquid-pill.due {
+    color: var(--liquid-warn);
+}
+
+.liquid-pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.liquid-subcards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.liquid-subcard {
+    border-radius: 22px;
+    padding: 13px;
+    border: 1px solid var(--liquid-rim-soft);
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.20), rgba(255,255,255,.07)),
+        var(--liquid-panel-bg);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.42),
+        0 12px 30px rgba(4, 18, 42, .12);
+}
+
+.liquid-subcard-label {
+    color: var(--liquid-muted);
+    font-size: .72rem;
+    font-weight: 760;
+}
+
+.liquid-subcard-value {
+    margin-top: 6px;
+    font-size: 1.12rem;
+    font-weight: 840;
+}
+
+.liquid-progress-label {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 0 0 8px;
+    color: var(--liquid-muted);
+    font-size: .78rem;
+    font-weight: 780;
+}
+
+.liquid-progress {
+    height: 14px;
+    border-radius: 999px;
+    padding: 2px;
+    border: 1px solid var(--liquid-rim-soft);
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.25), rgba(255,255,255,.06)),
+        rgba(4, 20, 50, .22);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.40),
+        inset 0 0 18px rgba(255,255,255,.10);
+}
+
+.liquid-progress-fill {
+    height: 100%;
+    width: 63%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--liquid-accent), var(--liquid-accent-2), rgba(255,255,255,.86));
+    box-shadow: 0 0 22px rgba(103, 232, 255, .58);
+}
+
+.liquid-benefit-row {
+    margin-top: 14px;
+    border-radius: 24px;
+    padding: 14px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.liquid-row-title {
+    font-weight: 820;
+    margin-bottom: 4px;
+}
+
+.liquid-row-copy {
+    color: var(--liquid-muted);
+    font-size: .82rem;
+}
+
+.liquid-row-action {
+    color: var(--liquid-text);
+    font-weight: 820;
+    font-size: .84rem;
+}
+
+.liquid-variant-caption {
+    margin: 0 0 10px;
+    color: #52667d;
+    font-size: .92rem;
+}
+
+@media (max-width: 1180px) {
+    .liquid-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .liquid-hero,
+    .liquid-benefit-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    .liquid-page {
+        padding: 16px;
+        border-radius: 26px;
+    }
+
+    .liquid-metrics,
+    .liquid-subcards {
+        grid-template-columns: 1fr;
+    }
+
+    .liquid-panel-top,
+    .liquid-nav {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

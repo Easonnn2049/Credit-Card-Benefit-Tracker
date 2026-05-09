@@ -17,15 +17,18 @@ CARDS_CSV = DATA_DIR / "cards.csv"
 BENEFITS_CSV = DATA_DIR / "benefits.csv"
 USAGE_CSV = DATA_DIR / "usage.csv"
 ORIGINAL_EXCEL = DATA_DIR / "original_tracker.xlsx"
+LIQUID_APP_CSS = APP_DIR / "styles" / "liquid_app.css"
+THEME_PREVIEW_CSS = APP_DIR / "styles" / "apple_glass.css"
+LIQUID_GLASS_CSS = APP_DIR / "styles" / "liquid_glass.css"
 
 STATUSES = ["Not Used", "Partially Used", "Used"]
 EXPIRING_SOON_DAYS = 14
 
 STATUS_COLORS = {
-    "Used": ("#e7f5ea", "#1f7a3f"),
-    "Partially Used": ("#fff4d6", "#8a5b00"),
-    "Not Used": ("#f3f4f6", "#4b5563"),
-    "Expiring Soon": ("#ffe7e2", "#a33421"),
+    "Used": ("rgba(209, 250, 229, .62)", "#047857"),
+    "Partially Used": ("rgba(254, 243, 199, .68)", "#b45309"),
+    "Not Used": ("rgba(255, 255, 255, .52)", "#64748b"),
+    "Expiring Soon": ("rgba(255, 228, 230, .66)", "#be4055"),
 }
 
 CATEGORY_ICONS = {
@@ -56,7 +59,7 @@ CARD_ART_COLORS = {
 
 CARD_IMAGE_DIR = DATA_DIR / "card_images"
 STATUSES = ["Not Used", "Partially Used", "Used", "Ignored"]
-STATUS_COLORS["Ignored"] = ("#ede9fe", "#5b21b6")
+STATUS_COLORS["Ignored"] = ("rgba(237, 233, 254, .70)", "#6d5ab8")
 CATEGORY_ICONS = {
     "airline": "AIR",
     "travel": "TRV",
@@ -70,16 +73,16 @@ CATEGORY_ICONS = {
     "other": "OTH",
 }
 CATEGORY_COLORS = {
-    "airline": ("#e8f2ff", "#24527a"),
-    "travel": ("#e8f2ff", "#24527a"),
-    "hotel": ("#efe9ff", "#4c327d"),
-    "dining": ("#fff0df", "#8a4d12"),
-    "rideshare": ("#e8f7f1", "#24684f"),
-    "uber": ("#e8f7f1", "#24684f"),
-    "grocery": ("#edf7df", "#4f6824"),
-    "entertainment": ("#f9e8f2", "#7a2456"),
-    "shopping": ("#eaf0ff", "#314f92"),
-    "other": ("#f1eee6", "#51483d"),
+    "airline": ("rgba(219, 234, 254, .72)", "#3157ad"),
+    "travel": ("rgba(219, 234, 254, .72)", "#3157ad"),
+    "hotel": ("rgba(237, 233, 254, .72)", "#6d5ab8"),
+    "dining": ("rgba(254, 243, 199, .70)", "#9a5c0a"),
+    "rideshare": ("rgba(209, 250, 229, .66)", "#047857"),
+    "uber": ("rgba(209, 250, 229, .66)", "#047857"),
+    "grocery": ("rgba(224, 242, 254, .72)", "#03658c"),
+    "entertainment": ("rgba(255, 228, 230, .68)", "#a23a50"),
+    "shopping": ("rgba(224, 242, 254, .72)", "#2563a8"),
+    "other": ("rgba(255, 255, 255, .56)", "#64748b"),
 }
 CARD_ART_STYLES = {
     "amex gold": ("#d8b45b", "#f4df9b", "#302410", "AMEX", "GOLD"),
@@ -553,281 +556,8 @@ def cycle_start_date(row: pd.Series) -> str:
 
 
 def inject_styles() -> None:
-    st.markdown(
-        """
-        <style>
-        .stApp { background: #fbfaf7; }
-        .block-container { padding-top: 1.4rem; }
-        :root {
-            --primary-color: #66785f;
-        }
-        div[data-testid="stMetric"] {
-            background: #fffdfa;
-            border: 1px solid #e5e0d5;
-            border-radius: 8px;
-            padding: 0.8rem 1rem;
-        }
-        .page-title-block {
-            background: linear-gradient(135deg, #26312a, #56614f);
-            color: #fffdfa;
-            border-radius: 8px;
-            padding: 18px 20px;
-            margin: 0 0 18px;
-        }
-        .page-title-block h1,
-        .page-title-block h2,
-        .section-title-block h2,
-        .section-title-block h3 {
-            margin: 0;
-            line-height: 1.15;
-        }
-        .page-title-block p {
-            color: rgba(255,253,250,.78);
-            margin: 7px 0 0;
-        }
-        .section-title-block {
-            background: #f1eee6;
-            border-left: 6px solid #66785f;
-            border-radius: 8px;
-            color: #17201a;
-            padding: 13px 16px;
-            margin: 12px 0 14px;
-        }
-        .section-title-block p {
-            color: #746d62;
-            margin: 5px 0 0;
-            font-size: .9rem;
-        }
-        .card-art, .card-image {
-            aspect-ratio: 1.586 / 1;
-            width: 100%;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow:
-                0 24px 32px -18px rgba(23, 32, 26, .46),
-                0 8px 18px -10px rgba(23, 32, 26, .24);
-            transform: translateY(-2px);
-        }
-        div[data-testid="stImage"] img {
-            border-radius: 8px;
-            box-shadow:
-                0 24px 32px -18px rgba(23, 32, 26, .46),
-                0 8px 18px -10px rgba(23, 32, 26, .24);
-            transform: translateY(-2px);
-            margin-bottom: 10px;
-        }
-        .card-art {
-            position: relative;
-            padding: 18px;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-        .card-art:before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background:
-                radial-gradient(circle at 88% 20%, rgba(255,255,255,.34), transparent 22%),
-                linear-gradient(115deg, rgba(255,255,255,.22), transparent 38%),
-                repeating-linear-gradient(135deg, rgba(255,255,255,.08) 0 1px, transparent 1px 12px);
-        }
-        .card-art > * { position: relative; z-index: 1; }
-        .card-chip {
-            width: 42px;
-            height: 31px;
-            border-radius: 7px;
-            background: linear-gradient(135deg, #f4d37e, #9b742a);
-            box-shadow: inset 0 0 0 1px rgba(0,0,0,.18);
-        }
-        .card-brand { font-size: .8rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; opacity: .9; }
-        .card-product { font-size: 1.35rem; font-weight: 900; line-height: 1.1; letter-spacing: .02em; }
-        .card-owner { font-size: .78rem; opacity: .84; text-transform: uppercase; letter-spacing: .08em; }
-        .card-cue,
-        .card-cue-fallback {
-            width: 54px;
-            aspect-ratio: 1.586 / 1;
-            border-radius: 5px;
-            overflow: hidden;
-            box-shadow: 0 6px 12px rgba(23, 32, 26, .18);
-            margin-top: 4px;
-        }
-        .card-cue {
-            object-fit: cover;
-            display: block;
-            background: #ece7db;
-        }
-        .card-cue-fallback {
-            position: relative;
-            padding: 5px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            font-size: .45rem;
-            font-weight: 900;
-            line-height: 1;
-            text-transform: uppercase;
-        }
-        .card-cue-fallback:after {
-            content: "";
-            width: 11px;
-            height: 8px;
-            border-radius: 2px;
-            background: linear-gradient(135deg, #f4d37e, #9b742a);
-            align-self: flex-end;
-            opacity: .9;
-        }
-        .benefit-tile {
-            border: 1px solid #e5e0d5;
-            border-radius: 8px;
-            background: #fffdfa;
-            padding: 16px 16px 12px;
-            margin-bottom: 10px;
-            box-shadow: 0 6px 18px rgba(23, 32, 26, .06);
-        }
-        .benefit-topline {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            align-items: flex-start;
-        }
-        .benefit-title { font-weight: 800; font-size: 1.02rem; line-height: 1.2; color: #17201a; }
-        .benefit-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            color: #746d62;
-            font-size: .78rem;
-            margin-top: 8px;
-        }
-        .deadline {
-            border-radius: 10px;
-            padding: 6px 9px;
-            font-size: .75rem;
-            font-weight: 800;
-            line-height: 1.15;
-            text-align: right;
-            min-width: 88px;
-            background: #f8f6f0;
-            color: #493f35;
-        }
-        .deadline.soon { background: #ffe7e2; color: #a33421; }
-        .deadline.done { background: #e7f5ea; color: #1f7a3f; }
-        .deadline.hidden { background: #ede9fe; color: #5b21b6; }
-        .deadline.upcoming { background: #f1f2f4; color: #6b7280; }
-        .benefit-tile.upcoming {
-            background: #f5f6f7;
-            border-color: #d8dde3;
-            color: #6b7280;
-            box-shadow: none;
-        }
-        .benefit-tile.upcoming .benefit-title,
-        .benefit-tile.upcoming .mini-value {
-            color: #4b5563;
-        }
-        .badge, .chip {
-            display: inline-flex;
-            align-items: center;
-            border-radius: 999px;
-            padding: 4px 9px;
-            font-size: .75rem;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-        .chip-muted {
-            background: #f5f2eb;
-            color: #5d554b;
-        }
-        .chip-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 7px;
-            margin-top: 10px;
-        }
-        .mini-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 8px;
-            margin-top: 12px;
-        }
-        .mini-stat {
-            background: #f8f6f0;
-            border-radius: 8px;
-            padding: 8px;
-        }
-        .mini-label { color: #746d62; font-size: .72rem; }
-        .mini-value { font-weight: 700; margin-top: 2px; }
-        .progress-shell {
-            width: 100%;
-            height: 9px;
-            border-radius: 999px;
-            background: #ece7db;
-            overflow: hidden;
-            margin-top: 12px;
-        }
-        .progress-fill {
-            height: 100%;
-            border-radius: 999px;
-            background: linear-gradient(90deg, #3b6f88, #66785f);
-        }
-        div[data-testid="stSlider"] [role="slider"] {
-            background-color: #66785f;
-            border-color: #66785f;
-        }
-        div[data-testid="stSlider"] div[data-baseweb="slider"],
-        div[data-testid="stSlider"] div[data-baseweb="slider"] > div,
-        div[data-testid="stSlider"] div[data-baseweb="slider"] div {
-            color: #66785f;
-        }
-        div[data-testid="stSlider"] [data-testid="stThumbValue"] {
-            color: #66785f !important;
-        }
-        button[kind="primary"],
-        div[data-testid="stButton"] button[kind="primary"] {
-            background-color: #66785f;
-            border-color: #66785f;
-            color: #fffdfa;
-        }
-        button[kind="primary"]:hover,
-        div[data-testid="stButton"] button[kind="primary"]:hover {
-            background-color: #56614f;
-            border-color: #56614f;
-            color: #fffdfa;
-        }
-        button[kind="secondary"],
-        div[data-testid="stButton"] button[kind="secondary"] {
-            background-color: #f1f2f4;
-            border-color: #d8dde3;
-            color: #374151;
-        }
-        button[kind="secondary"]:hover,
-        div[data-testid="stButton"] button[kind="secondary"]:hover {
-            background-color: #e5e7eb;
-            border-color: #cbd1d8;
-            color: #17201a;
-        }
-        .slider-summary {
-            background: #f1eee6;
-            border-radius: 8px;
-            color: #493f35;
-            font-size: .84rem;
-            font-weight: 700;
-            padding: 9px 11px;
-            margin: 2px 0 12px;
-        }
-        .category-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 800;
-            font-size: 1.05rem;
-            margin: .4rem 0 .6rem;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    if LIQUID_APP_CSS.exists():
+        st.markdown(f"<style>{LIQUID_APP_CSS.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
 
 
 def format_amount(value: object) -> str:
@@ -867,6 +597,307 @@ def title_block(title: str, subtitle: str = "", level: int = 2) -> None:
         """,
         unsafe_allow_html=True,
     )
+
+
+def load_theme_preview_css() -> None:
+    if not THEME_PREVIEW_CSS.exists():
+        return
+    st.markdown(f"<style>{THEME_PREVIEW_CSS.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
+
+
+def load_liquid_glass_css() -> None:
+    if not LIQUID_GLASS_CSS.exists():
+        return
+    st.markdown(f"<style>{LIQUID_GLASS_CSS.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
+
+
+def preview_metric_card(label: str, value: str, delta: str) -> str:
+    return f"""
+        <div class="preview-metric">
+            <div class="preview-label">{escape(label)}</div>
+            <div class="preview-value">{escape(value)}</div>
+            <div class="preview-delta">{escape(delta)}</div>
+        </div>
+    """
+
+
+def render_theme_concept(concept: dict[str, str]) -> None:
+    metrics = [
+        ("Remaining", "$428", "Across 9 active credits"),
+        ("Used", "$312", "42% of tracked value"),
+        ("Due Soon", "3", "Next 14 days"),
+        ("Cards", "6", "2 owners tracked"),
+    ]
+    metric_html = "".join(preview_metric_card(label, value, delta) for label, value, delta in metrics)
+    st.markdown(
+        f"""
+        <div class="theme-preview-shell {escape(concept['class'])}">
+            <div class="preview-hero">
+                <div>
+                    <div class="preview-kicker">{escape(concept['kicker'])}</div>
+                    <h2 class="preview-title">{escape(concept['name'])}</h2>
+                    <p class="preview-subtitle">{escape(concept['subtitle'])}</p>
+                </div>
+                <div class="preview-pill">{escape(concept['pill'])}</div>
+            </div>
+            <div class="preview-metrics">
+                {metric_html}
+            </div>
+            <div class="preview-benefit-card">
+                <div class="preview-card-layout">
+                    <div class="preview-card-art">
+                        <div class="preview-chip"></div>
+                        <div>
+                            <div class="preview-card-brand">Personal Wallet</div>
+                            <div class="preview-card-name">Sapphire Reserve</div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="preview-benefit-header">
+                            <div>
+                                <div class="preview-benefit-title">$300 Annual Travel Credit</div>
+                                <div class="preview-meta">Yuxuan - Chase Sapphire Reserve - Travel - 2026 cycle</div>
+                            </div>
+                            <div class="preview-pill">$118 left</div>
+                        </div>
+                        <div class="preview-badges">
+                            <span class="preview-status status-used">Used $182</span>
+                            <span class="preview-status status-available">Available $118</span>
+                            <span class="preview-status status-due">Due Soon</span>
+                        </div>
+                        <div class="preview-progress-header">
+                            <span>Tracked value used</span>
+                            <span>63%</span>
+                        </div>
+                        <div class="preview-progress">
+                            <div class="preview-progress-fill"></div>
+                        </div>
+                        <div class="preview-detail-row">
+                            <div class="preview-detail-title">Expandable benefit row preview</div>
+                            <div class="preview-detail-text">
+                                Annual credit, expires Dec 31. Good for airfare, hotel stays, transit, rideshare, and parking.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    with st.expander(f"Sample expandable benefit row - {concept['name']}"):
+        detail_cols = st.columns([1.2, 1, 1])
+        detail_cols[0].metric("Face value", "$300")
+        detail_cols[1].metric("Remaining", "$118")
+        detail_cols[2].metric("Expires", "Dec 31")
+        st.caption("Owner: Yuxuan - Card: Chase Sapphire Reserve - Priority: High - Source: issuer benefit terms")
+        st.progress(0.63, text="$182 used of $300")
+
+
+def show_theme_preview() -> None:
+    load_theme_preview_css()
+    title_block("UI Theme Preview", "Compare four Apple-inspired dashboard directions before changing the real dashboard.")
+    st.markdown(
+        """
+        <div class="theme-preview-page">
+            <p class="theme-preview-intro">
+                These are static mock components using the same sample data structure. They do not read, save, or modify your tracker data.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    concepts = [
+        {
+            "name": "Soft Apple Glass",
+            "class": "preview-soft",
+            "kicker": "Concept 1",
+            "subtitle": "Airy glass panels, warm highlights, and iOS-widget depth for a calm daily dashboard.",
+            "pill": "Balanced",
+        },
+        {
+            "name": "Dark Glass / Wallet Style",
+            "class": "preview-dark",
+            "kicker": "Concept 2",
+            "subtitle": "A premium dark wallet surface with high-contrast cards and luminous status chips.",
+            "pill": "Premium",
+        },
+        {
+            "name": "Minimal White iOS Dashboard",
+            "class": "preview-minimal",
+            "kicker": "Concept 3",
+            "subtitle": "Crisp white panels, quiet borders, and dense information for fast scanning.",
+            "pill": "Practical",
+        },
+        {
+            "name": "Colorful Gradient Glass",
+            "class": "preview-colorful",
+            "kicker": "Concept 4",
+            "subtitle": "Brighter gradient glass with a more personal finance app feel and playful hierarchy.",
+            "pill": "Expressive",
+        },
+    ]
+
+    first_row = st.columns(2)
+    second_row = st.columns(2)
+    for index, concept in enumerate(concepts):
+        with (first_row + second_row)[index]:
+            render_theme_concept(concept)
+
+    st.markdown(
+        """
+        <p class="preview-section-note">
+            Choose the direction you like best, and Phase 2 can apply that visual system to the real dashboard while preserving the current app logic.
+        </p>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def liquid_metric_card(label: str, value: str, note: str) -> str:
+    return f"""
+        <div class="liquid-card">
+            <div class="liquid-card-label">{escape(label)}</div>
+            <div class="liquid-card-value">{escape(value)}</div>
+            <div class="liquid-card-note">{escape(note)}</div>
+        </div>
+    """
+
+
+def render_liquid_variant(variant: dict[str, str]) -> None:
+    metric_html = "".join(
+        liquid_metric_card(label, value, note)
+        for label, value, note in [
+            ("Active Benefits", "18", "9 need action this cycle"),
+            ("Expiring Soon", "3", "Next deadline in 6 days"),
+            ("Completed", "11", "$312 value captured"),
+            ("Value Remaining", "$428", "Across active tracked credits"),
+        ]
+    )
+    st.markdown(
+        f"""
+        <div class="liquid-page {escape(variant['class'])}">
+            <div class="liquid-nav">
+                <div class="liquid-nav-brand">
+                    <span class="liquid-nav-dot"></span>
+                    <span>Benefit Wallet</span>
+                </div>
+                <div class="liquid-nav-items">
+                    <span class="liquid-nav-item active">Dashboard</span>
+                    <span class="liquid-nav-item">Cards</span>
+                    <span class="liquid-nav-item">Due Soon</span>
+                    <span class="liquid-nav-item">Completed</span>
+                </div>
+            </div>
+
+            <div class="liquid-hero">
+                <div>
+                    <div class="liquid-kicker">{escape(variant['kicker'])}</div>
+                    <h2 class="liquid-title">{escape(variant['name'])}</h2>
+                    <p class="liquid-subtitle">{escape(variant['subtitle'])}</p>
+                </div>
+                <div class="liquid-hero-orb"></div>
+            </div>
+
+            <div class="liquid-metrics">
+                {metric_html}
+            </div>
+
+            <div class="liquid-panel">
+                <div class="liquid-benefit-layout">
+                    <div class="liquid-credit-art">
+                        <div class="liquid-credit-chip"></div>
+                        <div>
+                            <div class="liquid-credit-bank">Chase</div>
+                            <div class="liquid-credit-name">Sapphire Reserve</div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="liquid-panel-top">
+                            <div>
+                                <div class="liquid-benefit-title">$300 Annual Travel Credit</div>
+                                <div class="liquid-meta">Yuxuan - Sapphire Reserve - Travel - 2026 annual cycle</div>
+                            </div>
+                            <span class="liquid-pill available">$118 left</span>
+                        </div>
+
+                        <div class="liquid-pill-row">
+                            <span class="liquid-pill available">Available</span>
+                            <span class="liquid-pill used">Used $182</span>
+                            <span class="liquid-pill due">Due Soon</span>
+                        </div>
+
+                        <div class="liquid-subcards">
+                            <div class="liquid-subcard">
+                                <div class="liquid-subcard-label">Remaining</div>
+                                <div class="liquid-subcard-value">$118</div>
+                            </div>
+                            <div class="liquid-subcard">
+                                <div class="liquid-subcard-label">Used Value</div>
+                                <div class="liquid-subcard-value">$182</div>
+                            </div>
+                            <div class="liquid-subcard">
+                                <div class="liquid-subcard-label">Expires</div>
+                                <div class="liquid-subcard-value">Dec 31</div>
+                            </div>
+                        </div>
+
+                        <div class="liquid-progress-label">
+                            <span>Tracked value used</span>
+                            <span>63%</span>
+                        </div>
+                        <div class="liquid-progress">
+                            <div class="liquid-progress-fill"></div>
+                        </div>
+
+                        <div class="liquid-benefit-row">
+                            <div>
+                                <div class="liquid-row-title">Rideshare, parking, hotel, airfare, and transit purchases qualify.</div>
+                                <div class="liquid-row-copy">Expandable row preview - frequency annual - priority high - include in alert yes.</div>
+                            </div>
+                            <div class="liquid-row-action">View</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def show_liquid_glass_preview() -> None:
+    load_liquid_glass_css()
+    title_block("Liquid Glass Preview", "Three macOS/iOS-inspired directions using the same sample tracker content.")
+    st.caption(
+        "Static visual mockups only. This page does not read, save, or modify dashboard data, and the real dashboard is unchanged."
+    )
+
+    variants = [
+        {
+            "name": "Variant A - Tahoe Blue Liquid Glass",
+            "class": "tahoe",
+            "kicker": "Closest to macOS Tahoe",
+            "subtitle": "Blue and cyan blurred environment, bright glass rims, floating liquid panels, and visible reflection gradients.",
+        },
+        {
+            "name": "Variant B - Apple Wallet Glass",
+            "class": "wallet",
+            "kicker": "Premium finance mode",
+            "subtitle": "Dark navy translucent layers, stronger card depth, luminous accents, and high-contrast wallet-style hierarchy.",
+        },
+        {
+            "name": "Variant C - Light Aqua Glass",
+            "class": "aqua",
+            "kicker": "Daily-use readable mode",
+            "subtitle": "White and aqua glass, softer glow, cleaner contrast, and a calmer personal finance dashboard feel.",
+        },
+    ]
+
+    for variant in variants:
+        st.markdown(f'<p class="liquid-variant-caption">{escape(variant["name"])}</p>', unsafe_allow_html=True)
+        render_liquid_variant(variant)
 
 
 def category_badge(category: object) -> str:
@@ -1963,7 +1994,7 @@ def main() -> None:
         st.divider()
         section = st.radio(
             "Section",
-            ["Dashboard", "Edit Benefits", "Usage Log", "Add", "Import Excel", "Raw Data"],
+            ["Dashboard", "UI Theme Preview", "Liquid Glass Preview", "Edit Benefits", "Usage Log", "Add", "Import Excel", "Raw Data"],
         )
         if st.button("Reload CSV files"):
             st.rerun()
@@ -1974,6 +2005,10 @@ def main() -> None:
 
     if section == "Dashboard":
         show_dashboard(benefits)
+    elif section == "UI Theme Preview":
+        show_theme_preview()
+    elif section == "Liquid Glass Preview":
+        show_liquid_glass_preview()
     elif section == "Edit Benefits":
         show_edit_benefits(benefits)
     elif section == "Usage Log":
