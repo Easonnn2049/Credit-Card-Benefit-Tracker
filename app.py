@@ -1310,7 +1310,7 @@ def render_mobile_benefit_card(row: pd.Series, key_prefix: str) -> None:
     value = remaining if status != "Used" else face_value
     progress = int(min(max(normalize_money(row.get("usage_percent")) * 100, 0), 100))
     label = mobile_status_label(row)
-    action_text = "Reopen" if status == "Used" else "Not active yet" if upcoming else "Mark used"
+    action_text = "Reopen" if status == "Used" else "Not active yet" if upcoming else "Used"
     container_key = f"mobile_card_{key_prefix}_{benefit_id}".replace(" ", "_").replace("-", "_")
 
     with st.container(key=container_key):
@@ -1347,8 +1347,37 @@ def render_mobile_benefit_card(row: pd.Series, key_prefix: str) -> None:
         elif upcoming:
             st.button(action_text, key=f"{container_key}_upcoming", use_container_width=True, disabled=True)
         else:
-            if st.button(action_text, key=f"{container_key}_used", type="primary", use_container_width=True):
-                update_benefit_status(benefit_id, "Used")
+            with st.container(key=f"{container_key}_actions"):
+                used_col, ignore_col = st.columns(2)
+                if used_col.button(action_text, key=f"{container_key}_used", type="primary", use_container_width=True):
+                    update_benefit_status(benefit_id, "Used")
+                if ignore_col.button("Ignore", key=f"{container_key}_ignore", use_container_width=True):
+                    update_benefit_status(benefit_id, "Ignored")
+
+            if face_value >= 100:
+                with st.popover("Adjust amount", use_container_width=True):
+                    amount = st.slider(
+                        "Used amount",
+                        min_value=0.0,
+                        max_value=float(face_value),
+                        value=float(min(normalize_money(row.get("used_amount")), face_value)),
+                        step=1.0,
+                        key=f"{container_key}_mobile_amount",
+                    )
+
+                    preview_remaining = max(face_value - amount, 0)
+                    preview_status = "Used" if amount >= face_value else "Not Used" if amount <= 0 else "Partially Used"
+                    preview_progress = int(min(max((amount / face_value) * 100 if face_value else 0, 0), 100))
+                    st.markdown(
+                        f"""
+                        <div class="mobile-adjust-summary">
+                            {format_amount(amount)} used · {format_amount(preview_remaining)} left · {preview_progress}% used
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+                    if st.button("Save amount", key=f"{container_key}_mobile_save_amount", type="primary", use_container_width=True):
+                        update_benefit_status(benefit_id, preview_status, amount)
 
 
 def mobile_card_group_art(row: pd.Series) -> str:

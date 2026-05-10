@@ -1392,7 +1392,7 @@ hr {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 7px;
-        margin: 8px 0 10px;
+        margin: 14px 0 16px;
     }
 
     .st-key-mobile_dashboard div[data-testid="stRadio"] [data-baseweb="radio"] {
@@ -1419,7 +1419,7 @@ hr {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 7px;
-        margin: 0 0 8px;
+        margin: 0 0 16px;
     }
 
     .mobile-checklist-summary > div {
@@ -1585,14 +1585,14 @@ hr {
     }
 
     .st-key-mobile_dashboard div[data-testid="stExpander"] summary p,
-    .st-key-mobile_dashboard div[data-testid="stExpander"] summary span {
+    .st-key-mobile_dashboard div[data-testid="stExpander"] summary p span {
         color: var(--text-muted) !important;
         font-family: var(--font-primary) !important;
         font-weight: 760 !important;
         letter-spacing: 0 !important;
     }
 
-    .st-key-mobile_dashboard div[data-testid="stExpander"] summary strong {
+    .st-key-mobile_dashboard div[data-testid="stExpander"] summary p strong {
         color: var(--text-muted) !important;
         font-family: var(--font-primary) !important;
         font-weight: 860 !important;
@@ -1601,6 +1601,13 @@ hr {
     .st-key-mobile_dashboard div[data-testid="stExpander"] summary p strong:first-child {
         color: var(--text-main) !important;
         font-weight: 880 !important;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stExpander"] summary [class*="material"],
+    .st-key-mobile_dashboard div[data-testid="stExpander"] summary [data-testid*="Icon"] {
+        font-family: "Material Symbols Rounded", "Material Symbols Outlined", "Material Icons" !important;
+        font-weight: normal !important;
+        color: var(--text-muted) !important;
     }
 
     .st-key-mobile_dashboard div[data-testid="stExpander"] details > div {
@@ -1685,14 +1692,78 @@ hr {
 
     .st-key-mobile_dashboard div[data-testid="stButton"] button {
         min-height: 42px !important;
-        border-radius: 0 0 16px 16px !important;
-        margin-top: -1px;
+        border-radius: 14px !important;
+        margin-top: 2px;
         font-size: .86rem !important;
+    }
+
+    .st-key-mobile_dashboard [data-testid="stHorizontalBlock"],
+    [class*="st-key-mobile_dashboard"] [data-testid="stHorizontalBlock"],
+    .st-key-mobile_dashboard [class*="_actions"] [data-testid="stHorizontalBlock"] {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+        gap: 8px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+    }
+
+    .st-key-mobile_dashboard [data-testid="column"],
+    [class*="st-key-mobile_dashboard"] [data-testid="column"],
+    .st-key-mobile_dashboard [class*="_actions"] [data-testid="column"] {
+        display: block !important;
+        flex: none !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .st-key-mobile_dashboard [data-testid="column"] > div,
+    [class*="st-key-mobile_dashboard"] [data-testid="column"] > div,
+    .st-key-mobile_dashboard [class*="_actions"] div[data-testid="stButton"],
+    .st-key-mobile_dashboard [class*="_actions"] div[data-testid="stButton"] button {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .st-key-mobile_dashboard [class*="_actions"] div[data-testid="stButton"] button {
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+    }
+
+    .st-key-mobile_dashboard [class*="_actions"] div[data-testid="stButton"] button p,
+    .st-key-mobile_dashboard [class*="_actions"] div[data-testid="stButton"] button span {
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
     }
 
     .st-key-mobile_dashboard .element-container:has(.mobile-benefit-card) + div[data-testid="stButton"] button,
     .st-key-mobile_dashboard div[data-testid="stVerticalBlock"] > div:has(.mobile-benefit-card) + div button {
         width: 100%;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stPopover"] button {
+        width: 100%;
+        min-height: 38px !important;
+        border-radius: 14px !important;
+        color: var(--text-muted) !important;
+        font-weight: 820 !important;
+    }
+
+    .mobile-adjust-summary {
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,.46);
+        background: rgba(255,255,255,.28);
+        color: var(--text-muted);
+        font-size: .78rem;
+        font-weight: 780;
+        line-height: 1.25;
+        padding: 9px 10px;
+        margin: 6px 0 10px;
     }
 
     /* Mobile-specific simplification for table-heavy admin sections. */
