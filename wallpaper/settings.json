@@ -1,0 +1,8 @@
+{
+  "overlay": 0.45,
+  "blur": 0,
+  "brightness": 1.1,
+  "saturation": 0.85,
+  "position": "center",
+  "size": "cover"
+}

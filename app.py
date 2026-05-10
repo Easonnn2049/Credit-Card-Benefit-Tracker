@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import json
 from html import escape
 from pathlib import Path
 from urllib.parse import urlparse
@@ -18,6 +19,8 @@ BENEFITS_CSV = DATA_DIR / "benefits.csv"
 USAGE_CSV = DATA_DIR / "usage.csv"
 ORIGINAL_EXCEL = DATA_DIR / "original_tracker.xlsx"
 LIQUID_APP_CSS = APP_DIR / "styles" / "liquid_app.css"
+WALLPAPER_DIR = APP_DIR / "wallpaper"
+WALLPAPER_SETTINGS_JSON = WALLPAPER_DIR / "settings.json"
 
 STATUSES = ["Not Used", "Partially Used", "Used"]
 EXPIRING_SOON_DAYS = 14
@@ -553,9 +556,76 @@ def cycle_start_date(row: pd.Series) -> str:
     return ""
 
 
+def app_wallpaper_data_uri() -> str:
+    preferred = WALLPAPER_DIR / "app_wallpaper.jpg"
+    if preferred.exists():
+        return card_image_data_uri(preferred)
+    for extension in ["*.png", "*.jpg", "*.jpeg", "*.webp"]:
+        matches = sorted(WALLPAPER_DIR.glob(extension))
+        if matches:
+            return card_image_data_uri(matches[0])
+    return ""
+
+
+DEFAULT_WALLPAPER_SETTINGS = {
+    "overlay": 0.30,
+    "blur": 3,
+    "brightness": 1.04,
+    "saturation": 1.05,
+    "position": "center",
+    "size": "cover",
+}
+
+
+def load_wallpaper_settings() -> dict[str, object]:
+    if WALLPAPER_SETTINGS_JSON.exists():
+        try:
+            data = json.loads(WALLPAPER_SETTINGS_JSON.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            data = {}
+    else:
+        data = {}
+    settings = DEFAULT_WALLPAPER_SETTINGS.copy()
+    settings.update({key: data[key] for key in settings if key in data})
+    return settings
+
+
+def active_wallpaper_settings() -> dict[str, object]:
+    return load_wallpaper_settings()
+
+
+def wallpaper_settings_css(settings: dict[str, object]) -> str:
+    overlay = float(settings["overlay"])
+    blur = int(settings["blur"])
+    brightness = float(settings["brightness"])
+    saturation = float(settings["saturation"])
+    position = escape(str(settings["position"]))
+    size = escape(str(settings["size"]))
+    return f"""
+    <style>
+    :root {{
+        --wallpaper-overlay: {overlay};
+        --wallpaper-blur: {blur}px;
+        --wallpaper-brightness: {brightness};
+        --wallpaper-saturation: {saturation};
+        --wallpaper-position: {position};
+        --wallpaper-size: {size};
+    }}
+    </style>
+    """
+
+
 def inject_styles() -> None:
     if LIQUID_APP_CSS.exists():
-        st.markdown(f"<style>{LIQUID_APP_CSS.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
+        css = LIQUID_APP_CSS.read_text(encoding="utf-8")
+        wallpaper_uri = app_wallpaper_data_uri()
+        if wallpaper_uri:
+            css = css.replace(
+                'url("../wallpaper/app_wallpaper.jpg")',
+                f'url("{wallpaper_uri}")',
+            )
+        st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+        st.markdown(wallpaper_settings_css(active_wallpaper_settings()), unsafe_allow_html=True)
 
 
 def format_amount(value: object) -> str:
@@ -599,8 +669,7 @@ def title_block(title: str, subtitle: str = "", level: int = 2) -> None:
 
 def category_badge(category: object) -> str:
     label = clean_display(category, "Other")
-    background, color = category_color(label)
-    return f'<span class="chip" style="background:{background};color:{color};">{escape(label)}</span>'
+    return f'<span class="chip">{escape(category_icon(label))} {escape(label)}</span>'
 
 
 def muted_chip(value: object) -> str:
@@ -981,6 +1050,20 @@ def render_card_art(card: pd.Series, benefit_count: int) -> None:
     )
 
 
+def render_liquid_progress(value: float, text: str) -> None:
+    clamped = min(max(float(value), 0), 1)
+    percent = clamped * 100
+    st.markdown(
+        f"""
+        <div class="liquid-progress-label">{escape(text)}</div>
+        <div class="liquid-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{percent:.0f}">
+            <div class="liquid-progress-fill" style="width:{percent:.2f}%;"></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def render_benefit_tile(
     row: pd.Series,
     key_prefix: str,
@@ -1017,11 +1100,11 @@ def render_benefit_tile(
     if status not in ["Used", "Ignored"] and not upcoming:
         if quick_actions_layout == "vertical":
             if show_card_cue:
-                cue_col, title_col, action_col = st.columns([0.85, 3.75, 1.35], vertical_alignment="top")
+                cue_col, title_col, action_col = st.columns([0.85, 3.55, 1.55], vertical_alignment="top")
                 with cue_col:
                     render_card_cue(row)
             else:
-                title_col, action_col = st.columns([4.6, 1.35], vertical_alignment="top")
+                title_col, action_col = st.columns([4.35, 1.55], vertical_alignment="top")
             expander_host = title_col
             with action_col:
                 if st.button("Used", key=f"{key_prefix}_{benefit_id}_quick_used", type="primary", use_container_width=True):
@@ -1029,7 +1112,7 @@ def render_benefit_tile(
                 if st.button("Ignore", key=f"{key_prefix}_{benefit_id}_quick_ignore", use_container_width=True):
                     update_benefit_status(benefit_id, "Ignored")
         else:
-            title_col, used_col, ignore_col = st.columns([7, 0.85, 0.85], vertical_alignment="top")
+            title_col, used_col, spacer_col, ignore_col = st.columns([6.65, 1, 0.16, 1], vertical_alignment="top")
             expander_host = title_col
             if used_col.button("Used", key=f"{key_prefix}_{benefit_id}_quick_used", type="primary", use_container_width=True):
                 update_benefit_status(benefit_id, "Used")
@@ -1219,7 +1302,7 @@ def show_home_view(active: pd.DataFrame, expiring: pd.DataFrame, needs_action: p
 def show_priority_lane(title: str, benefits: pd.DataFrame, key_prefix: str) -> None:
     st.markdown(f"#### {title}")
     if benefits.empty:
-        st.info("Nothing here.")
+        st.markdown('<div class="empty-chip">Nothing here.</div>', unsafe_allow_html=True)
         return
     for index, (_, benefit) in enumerate(benefits.iterrows()):
         render_benefit_tile(
@@ -1270,7 +1353,7 @@ def show_by_card_view(flagged: pd.DataFrame) -> None:
                 used_count = int((card_benefits["status"] == "Used").sum())
                 done_count = int(all_card_benefits["status"].isin(["Used", "Ignored"]).sum())
                 total_count = max(len(all_card_benefits), 1)
-                st.progress(done_count / total_count, text=f"{done_count}/{total_count} complete or hidden")
+                render_liquid_progress(done_count / total_count, f"{done_count}/{total_count} complete or hidden")
             with right:
                 expiring_count = int(card_benefits["is_expiring_soon"].sum())
                 tracked_card_benefits = all_card_benefits[all_card_benefits["status"] != "Ignored"]
@@ -1290,7 +1373,7 @@ def show_by_card_view(flagged: pd.DataFrame) -> None:
                 summary_cols[0].metric("Active", active_count)
                 summary_cols[1].metric("Remaining", format_amount(remaining_value))
                 summary_cols[2].metric("Used value", format_amount(used_value))
-                st.progress(min(max(value_progress, 0), 1), text=f"{int(value_progress * 100)}% of tracked value used")
+                render_liquid_progress(value_progress, f"{int(value_progress * 100)}% of tracked value used")
                 with st.expander("Show benefits", expanded=expiring_count > 0):
                     for _, benefit in card_benefits.sort_values(["status", "expiration_date", "benefit_name"]).iterrows():
                         render_benefit_tile(benefit, f"card_{normalize_text(card.get('card_id')) or normalize_text(card.get('card_name'))}")
@@ -1663,7 +1746,7 @@ def show_raw_data(cards: pd.DataFrame, benefits: pd.DataFrame, usage: pd.DataFra
 
 
 def main() -> None:
-    st.set_page_config(page_title="Credit Card Benefit Tracker", layout="wide")
+    st.set_page_config(page_title="Credit Card Benefit Tracker", layout="wide", initial_sidebar_state="expanded")
     ensure_data_files()
     inject_styles()
 
