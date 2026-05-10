@@ -1233,8 +1233,7 @@ def show_importer() -> None:
         st.rerun()
 
 
-def show_dashboard(benefits: pd.DataFrame) -> None:
-    title_block("Dashboard")
+def show_dashboard(benefits: pd.DataFrame, cards: pd.DataFrame) -> None:
     if benefits.empty:
         st.info("No benefits yet. Import your Excel tracker or add a benefit manually.")
         return
@@ -1247,16 +1246,21 @@ def show_dashboard(benefits: pd.DataFrame) -> None:
     used = flagged[flagged["status"] == "Used"]
     ignored = flagged[flagged["status"] == "Ignored"]
     remaining_value = active["remaining_amount"].apply(normalize_money).sum()
+    annual_fee_cards = cards.copy()
+    if "status" in annual_fee_cards:
+        annual_fee_cards = annual_fee_cards[annual_fee_cards["status"].fillna("").astype(str).str.lower() != "closed"]
+    total_annual_fee = annual_fee_cards["annual_fee"].apply(normalize_money).sum() if "annual_fee" in annual_fee_cards else 0
 
     with st.container(key="mobile_dashboard"):
         show_mobile_checklist(flagged, active, expiring, used, remaining_value)
 
     with st.container(key="desktop_dashboard"):
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4, col5 = st.columns(5)
         col1.metric("Active benefits", len(active))
         col2.metric("Expiring soon", len(expiring))
         col3.metric("Completed", len(used))
         col4.metric("Value remaining", format_amount(remaining_value))
+        col5.metric("Annual fees", format_amount(total_annual_fee))
 
         show_hidden = st.toggle("Show completed and ignored in main views", value=False)
         browse_data = flagged if show_hidden else active
@@ -1347,6 +1351,54 @@ def render_mobile_benefit_card(row: pd.Series, key_prefix: str) -> None:
                 update_benefit_status(benefit_id, "Used")
 
 
+def mobile_card_group_art(row: pd.Series) -> str:
+    image_path = find_card_image(row)
+    card_name = clean_display(row.get("card_name"), "Card")
+    if image_path:
+        return f'<img class="mobile-card-group-image" src="{card_image_data_uri(image_path)}" alt="{escape(card_name)}">'
+
+    start, end, text_color, brand, _ = card_art_style(row.get("card_name"), row.get("issuer"))
+    return f"""
+    <div class="mobile-card-group-fallback" style="background: linear-gradient(135deg, {start}, {end}); color: {text_color};">
+        <span>{escape(brand)}</span>
+    </div>
+    """
+
+
+def render_mobile_card_group(card_label: str, group: pd.DataFrame, key_prefix: str) -> None:
+    expiring_count = int(group["is_expiring_soon"].sum()) if "is_expiring_soon" in group else 0
+    available_count = int(((group["status"] != "Used") & (~group["is_upcoming"])).sum()) if "is_upcoming" in group else 0
+    remaining_value = group["remaining_amount"].apply(normalize_money).sum()
+    owner = clean_display(group["owner"].dropna().iloc[0], "") if "owner" in group and not group["owner"].dropna().empty else ""
+    first_row = group.iloc[0]
+    owner_label = f" - {owner}" if owner else ""
+    expander_label = (
+        f"**{card_label}**{owner_label}  \n"
+        f":gray[**{available_count} open** - **{expiring_count} soon** - **{format_amount(remaining_value)} left**]"
+    )
+
+    with st.expander(expander_label, expanded=True):
+        st.markdown(
+            f"""
+            <div class="mobile-card-group-header">
+                {mobile_card_group_art(first_row)}
+                <div>
+                    <div class="mobile-card-group-title">{escape(card_label)}</div>
+                    {f'<div class="mobile-card-group-owner">{escape(owner)}</div>' if owner else ''}
+                </div>
+                <div class="mobile-card-group-stats">
+                    <span>{available_count} open</span>
+                    <span>{expiring_count} soon</span>
+                    <strong>{format_amount(remaining_value)}</strong>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        for index, (_, benefit) in enumerate(group.iterrows()):
+            render_mobile_benefit_card(benefit, f"{key_prefix}_{index}")
+
+
 def show_mobile_checklist(
     flagged: pd.DataFrame,
     active: pd.DataFrame,
@@ -1388,8 +1440,11 @@ def show_mobile_checklist(
         st.markdown('<div class="mobile-empty-state">Nothing here right now.</div>', unsafe_allow_html=True)
         return
 
-    for index, (_, benefit) in enumerate(selected.iterrows()):
-        render_mobile_benefit_card(benefit, f"checklist_{index}")
+    selected = selected.copy()
+    selected["_card_group"] = selected["card_name"].map(lambda value: clean_display(value, "No card set"))
+    grouped = selected.groupby("_card_group", sort=False)
+    for group_index, (card_label, group) in enumerate(grouped):
+        render_mobile_card_group(card_label, group, f"checklist_card_{group_index}")
 
 
 def show_home_view(active: pd.DataFrame, expiring: pd.DataFrame, needs_action: pd.DataFrame) -> None:
@@ -1432,14 +1487,11 @@ def show_priority_lane(title: str, benefits: pd.DataFrame, key_prefix: str) -> N
 
 
 def show_by_card_view(flagged: pd.DataFrame) -> None:
-    st.caption("Browse benefits under each card. Use the quick buttons to update status without opening the raw editor.")
     if flagged.empty:
         st.info("No active benefits to show. Use the toggle above or open Completed / Hidden.")
         return
     cards = read_csv(CARDS_CSV, CARD_COLUMNS)
     all_benefits = benefit_status_flags(read_csv(BENEFITS_CSV, BENEFIT_COLUMNS))
-    with st.expander("Manage card images", expanded=False):
-        show_card_image_manager(cards)
 
     if cards.empty:
         cards = flagged[["owner", "card_name"]].drop_duplicates().copy()
@@ -1887,30 +1939,18 @@ def main() -> None:
         st.write(f"Cards: {len(cards)}")
         st.write(f"Benefits: {len(benefits)}")
         st.write(f"Usage records: {len(usage)}")
-        if ORIGINAL_EXCEL.exists():
-            st.caption(f"Original Excel preserved: {ORIGINAL_EXCEL.name}")
         st.divider()
         section = st.radio(
             "Section",
-            ["Dashboard", "Edit Benefits", "Usage Log", "Add", "Import Excel", "Raw Data"],
+            ["Dashboard", "Raw Data"],
         )
-        if st.button("Reload CSV files"):
-            st.rerun()
 
     if benefits.empty:
         show_importer()
         st.divider()
 
     if section == "Dashboard":
-        show_dashboard(benefits)
-    elif section == "Edit Benefits":
-        show_edit_benefits(benefits)
-    elif section == "Usage Log":
-        show_usage_log(usage)
-    elif section == "Add":
-        show_add_forms(cards, benefits)
-    elif section == "Import Excel":
-        show_importer()
+        show_dashboard(benefits, cards)
     else:
         show_raw_data(cards, benefits, usage)
 

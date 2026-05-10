@@ -433,6 +433,7 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
         var(--glass-shadow-soft);
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
+    margin-bottom: 24px;
 }
 
 /* Credit card art and image areas. */
@@ -1147,6 +1148,16 @@ div[data-testid="stToggle"] [role="switch"] {
     backdrop-filter: blur(16px) saturate(1.10);
 }
 
+div[data-testid="stToggle"] {
+    margin: 16px 0 14px;
+}
+
+div[data-testid="stToggle"] label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 div[data-testid="stCheckbox"] [role="switch"][aria-checked="true"],
 div[data-testid="stToggle"] [role="switch"][aria-checked="true"] {
     background:
@@ -1552,6 +1563,119 @@ hr {
         font-weight: 760;
         padding: 13px;
         text-align: center;
+    }
+
+    /* Mobile-specific card dropdowns: keep long checklists collapsible by card. */
+    .st-key-mobile_dashboard div[data-testid="stExpander"] {
+        border-radius: 16px;
+        margin-top: 10px;
+        background:
+            linear-gradient(145deg, rgba(255,255,255,.40), rgba(255,255,255,.22), rgba(142,197,255,.08)),
+            rgba(255,255,255,.22);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.64), 0 8px 20px rgba(71,85,105,.08);
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stExpander"] summary {
+        min-height: 48px;
+        padding: 8px 10px;
+        color: var(--text-main);
+        font-size: .86rem;
+        font-weight: 820;
+        line-height: 1.22;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stExpander"] summary p,
+    .st-key-mobile_dashboard div[data-testid="stExpander"] summary span {
+        color: var(--text-muted) !important;
+        font-family: var(--font-primary) !important;
+        font-weight: 760 !important;
+        letter-spacing: 0 !important;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stExpander"] summary strong {
+        color: var(--text-muted) !important;
+        font-family: var(--font-primary) !important;
+        font-weight: 860 !important;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stExpander"] summary p strong:first-child {
+        color: var(--text-main) !important;
+        font-weight: 880 !important;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stExpander"] details > div {
+        padding: 0 8px 8px;
+    }
+
+    /* Mobile-specific card grouping: organize checklist rows by the card they belong to. */
+    .mobile-card-group-header {
+        display: grid;
+        grid-template-columns: 52px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 10px;
+        margin: 4px 0 2px;
+        padding: 4px 2px 3px;
+        border-bottom: 1px solid rgba(148,163,184,.22);
+    }
+
+    .mobile-card-group-image,
+    .mobile-card-group-fallback {
+        width: 52px;
+        aspect-ratio: 1.586 / 1;
+        border-radius: 8px;
+        box-shadow: 0 6px 14px rgba(71,85,105,.16);
+        overflow: hidden;
+    }
+
+    .mobile-card-group-image {
+        display: block;
+        object-fit: cover;
+        background: rgba(255,255,255,.18);
+    }
+
+    .mobile-card-group-fallback {
+        display: flex;
+        align-items: flex-end;
+        justify-content: flex-start;
+        padding: 5px;
+        font-size: .48rem;
+        font-weight: 900;
+        line-height: 1;
+        text-transform: uppercase;
+    }
+
+    .mobile-card-group-title {
+        color: var(--text-muted);
+        font-size: .94rem;
+        font-weight: 860;
+        line-height: 1.16;
+        overflow-wrap: anywhere;
+    }
+
+    .mobile-card-group-owner {
+        color: var(--text-soft);
+        font-size: .68rem;
+        font-weight: 720;
+        line-height: 1.1;
+        margin-top: 3px;
+    }
+
+    .mobile-card-group-stats {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+        color: var(--text-muted);
+        font-size: .64rem;
+        font-weight: 760;
+        line-height: 1.05;
+        white-space: nowrap;
+    }
+
+    .mobile-card-group-stats strong {
+        color: var(--text-main);
+        font-size: .78rem;
+        font-weight: 860;
     }
 
     /* Mobile-specific tap targets: large enough for phone use without bulky desktop spacing. */
