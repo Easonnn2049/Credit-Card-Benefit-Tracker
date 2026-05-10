@@ -1248,30 +1248,148 @@ def show_dashboard(benefits: pd.DataFrame) -> None:
     ignored = flagged[flagged["status"] == "Ignored"]
     remaining_value = active["remaining_amount"].apply(normalize_money).sum()
 
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Active benefits", len(active))
-    col2.metric("Expiring soon", len(expiring))
-    col3.metric("Completed", len(used))
-    col4.metric("Value remaining", format_amount(remaining_value))
+    with st.container(key="mobile_dashboard"):
+        show_mobile_checklist(flagged, active, expiring, used, remaining_value)
 
-    show_hidden = st.toggle("Show completed and ignored in main views", value=False)
-    browse_data = flagged if show_hidden else active
+    with st.container(key="desktop_dashboard"):
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Active benefits", len(active))
+        col2.metric("Expiring soon", len(expiring))
+        col3.metric("Completed", len(used))
+        col4.metric("Value remaining", format_amount(remaining_value))
 
-    dashboard_view = st.radio(
-        "Dashboard view",
-        ["Home", "Cards", "Categories", "Completed / Hidden"],
-        horizontal=True,
-        label_visibility="collapsed",
+        show_hidden = st.toggle("Show completed and ignored in main views", value=False)
+        browse_data = flagged if show_hidden else active
+
+        dashboard_view = st.radio(
+            "Dashboard view",
+            ["Home", "Cards", "Categories", "Completed / Hidden"],
+            horizontal=True,
+            label_visibility="collapsed",
+        )
+
+        if dashboard_view == "Home":
+            show_home_view(active, expiring, needs_action)
+        elif dashboard_view == "Cards":
+            show_by_card_view(browse_data)
+        elif dashboard_view == "Categories":
+            show_by_category_view(browse_data)
+        else:
+            show_completed_hidden_view(hidden)
+
+
+def mobile_status_label(row: pd.Series) -> str:
+    status = clean_display(row.get("status"), "Not Used")
+    if status == "Used":
+        return "Used"
+    if bool(row.get("is_expiring_soon", False)):
+        return "Expiring Soon"
+    return "Available"
+
+
+def mobile_status_class(label: str) -> str:
+    return label.lower().replace(" ", "-")
+
+
+def render_mobile_benefit_card(row: pd.Series, key_prefix: str) -> None:
+    benefit_id = clean_display(row.get("benefit_id"), "")
+    benefit_name = clean_display(row.get("benefit_name"), "Unnamed benefit")
+    card_name = clean_display(row.get("card_name"), "Card not set")
+    owner = clean_display(row.get("owner"), "")
+    status = clean_display(row.get("status"), "Not Used")
+    upcoming = bool(row.get("is_upcoming", False))
+    start_label = date_label(row.get("cycle_start_date"))
+    due_text = f"Starts {start_label}" if upcoming and start_label else due_text_from_days(row.get("days_until_expiration"))
+    due_date = date_label(row.get("expiration_date")) or "No date"
+    remaining = normalize_money(row.get("remaining_amount"))
+    face_value = normalize_money(row.get("face_value"))
+    value = remaining if status != "Used" else face_value
+    progress = int(min(max(normalize_money(row.get("usage_percent")) * 100, 0), 100))
+    label = mobile_status_label(row)
+    action_text = "Reopen" if status == "Used" else "Not active yet" if upcoming else "Mark used"
+    container_key = f"mobile_card_{key_prefix}_{benefit_id}".replace(" ", "_").replace("-", "_")
+
+    with st.container(key=container_key):
+        st.markdown(
+            f"""
+            <div class="mobile-benefit-card">
+                <div class="mobile-benefit-main">
+                    <div>
+                        <div class="mobile-benefit-name">{escape(benefit_name)}</div>
+                        <div class="mobile-benefit-card-name">{escape(card_name)}</div>
+                        {f'<div class="mobile-benefit-owner">{escape(owner)}</div>' if owner else ''}
+                    </div>
+                    <span class="mobile-status mobile-status-{mobile_status_class(label)}">{escape(label)}</span>
+                </div>
+                <div class="mobile-benefit-facts">
+                    <div>
+                        <span>Due</span>
+                        <strong>{escape(due_text)}</strong>
+                        <small>{escape(due_date)}</small>
+                    </div>
+                    <div>
+                        <span>Value</span>
+                        <strong>{format_amount(value)}</strong>
+                        <small>{progress}% used</small>
+                    </div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if status == "Used":
+            if st.button(action_text, key=f"{container_key}_reopen", use_container_width=True):
+                update_benefit_status(benefit_id, "Not Used")
+        elif upcoming:
+            st.button(action_text, key=f"{container_key}_upcoming", use_container_width=True, disabled=True)
+        else:
+            if st.button(action_text, key=f"{container_key}_used", type="primary", use_container_width=True):
+                update_benefit_status(benefit_id, "Used")
+
+
+def show_mobile_checklist(
+    flagged: pd.DataFrame,
+    active: pd.DataFrame,
+    expiring: pd.DataFrame,
+    used: pd.DataFrame,
+    remaining_value: float,
+) -> None:
+    checklist_data = flagged[flagged["status"] != "Ignored"].copy()
+    available = active[(active["status"] != "Used") & (~active["is_upcoming"])]
+    all_items = checklist_data[checklist_data["status"] != "Ignored"]
+
+    st.markdown(
+        f"""
+        <div class="mobile-checklist-summary">
+            <div><span>Available</span><strong>{len(available)}</strong></div>
+            <div><span>Expiring</span><strong>{len(expiring)}</strong></div>
+            <div><span>Left</span><strong>{format_amount(remaining_value)}</strong></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    if dashboard_view == "Home":
-        show_home_view(active, expiring, needs_action)
-    elif dashboard_view == "Cards":
-        show_by_card_view(browse_data)
-    elif dashboard_view == "Categories":
-        show_by_category_view(browse_data)
-    else:
-        show_completed_hidden_view(hidden)
+    filter_options = {
+        f"Available ({len(available)})": available.sort_values(["expiration_date", "priority", "benefit_name"]),
+        f"Expiring Soon ({len(expiring)})": expiring.sort_values(["expiration_date", "priority", "benefit_name"]),
+        f"Used ({len(used)})": used.sort_values(["expiration_date", "card_name", "benefit_name"], ascending=[False, True, True]),
+        f"All ({len(all_items)})": all_items.sort_values(["status", "expiration_date", "benefit_name"]),
+    }
+    selected_filter = st.radio(
+        "Mobile benefit filter",
+        list(filter_options.keys()),
+        horizontal=True,
+        label_visibility="collapsed",
+        key="mobile_benefit_filter",
+    )
+    selected = filter_options[selected_filter]
+
+    if selected.empty:
+        st.markdown('<div class="mobile-empty-state">Nothing here right now.</div>', unsafe_allow_html=True)
+        return
+
+    for index, (_, benefit) in enumerate(selected.iterrows()):
+        render_mobile_benefit_card(benefit, f"checklist_{index}")
 
 
 def show_home_view(active: pd.DataFrame, expiring: pd.DataFrame, needs_action: pd.DataFrame) -> None:

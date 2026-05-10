@@ -1,4 +1,6 @@
 :root {
+    --font-primary: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+    --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
     --app-bg-1: #f6f8fc;
     --app-bg-2: #eef3f9;
     --app-bg-3: #e7edf7;
@@ -61,6 +63,7 @@
 }
 
 .stApp {
+    font-family: var(--font-primary);
     color: var(--text-main);
     background:
         var(--app-wallpaper),
@@ -69,6 +72,49 @@
     background-position: var(--wallpaper-position, center);
     background-repeat: no-repeat;
     background-attachment: fixed;
+}
+
+.stApp *,
+.stApp button,
+.stApp input,
+.stApp textarea,
+.stApp select,
+.stApp [data-baseweb],
+.stApp [data-testid] {
+    font-family: var(--font-primary) !important;
+}
+
+.page-title-block h1,
+.page-title-block h2,
+.section-title-block h2,
+.section-title-block h3,
+div[data-testid="stMetric"] [data-testid="stMetricValue"],
+.metric-card,
+.benefit-title,
+.mini-value,
+.type-display {
+    font-family: var(--font-display) !important;
+}
+
+.stApp .material-icons,
+.stApp .material-symbols-rounded,
+.stApp .material-symbols-outlined,
+.stApp [class*="material-icons"],
+.stApp [class*="material-symbols"],
+.stApp [data-testid="stIconMaterial"],
+.stApp [data-testid="stIconMaterial"] * {
+    font-family: "Material Symbols Rounded", "Material Symbols Outlined", "Material Icons" !important;
+    font-weight: normal !important;
+    font-style: normal !important;
+    letter-spacing: normal !important;
+    line-height: 1 !important;
+    text-transform: none !important;
+    white-space: nowrap !important;
+    word-wrap: normal !important;
+    direction: ltr !important;
+    font-feature-settings: "liga" !important;
+    -webkit-font-feature-settings: "liga" !important;
+    -webkit-font-smoothing: antialiased !important;
 }
 
 .stApp:before {
@@ -1245,6 +1291,16 @@ hr {
     border-color: rgba(148,163,184,.24);
 }
 
+.st-key-mobile_dashboard,
+[class*="st-key-mobile_dashboard"] {
+    display: none;
+}
+
+.st-key-desktop_dashboard,
+[class*="st-key-desktop_dashboard"] {
+    display: block;
+}
+
 @media (max-width: 1100px) {
     .block-container {
         padding-left: 1rem;
@@ -1258,9 +1314,49 @@ hr {
     .mini-grid {
         grid-template-columns: 1fr;
     }
+
 }
 
-@media (max-width: 760px) {
+@media (max-width: 767px) {
+    /* Mobile-specific layout: show the compact checklist and hide the desktop dashboard. */
+    .st-key-mobile_dashboard,
+    [class*="st-key-mobile_dashboard"] {
+        display: block;
+    }
+
+    .st-key-desktop_dashboard,
+    [class*="st-key-desktop_dashboard"] {
+        display: none;
+    }
+
+    /* Mobile-specific spacing: keep the phone view dense and avoid dashboard-style air. */
+    .block-container {
+        max-width: 100%;
+        padding: .55rem .7rem 1.5rem;
+    }
+
+    .stApp,
+    .stApp > div {
+        overflow-x: hidden;
+    }
+
+    .page-title-block {
+        padding: 13px 14px;
+        margin-bottom: 10px;
+        border-radius: 18px;
+    }
+
+    .page-title-block h1 {
+        font-size: 1.35rem;
+        line-height: 1.12;
+    }
+
+    .page-title-block p {
+        font-size: .84rem;
+        line-height: 1.32;
+        margin-top: 5px;
+    }
+
     .page-title-block,
     .section-title-block,
     div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -1278,5 +1374,207 @@ hr {
     .deadline {
         text-align: left;
         min-width: 0;
+    }
+
+    /* Mobile-specific filter tabs: make Dashboard browsing feel like a checklist app. */
+    .st-key-mobile_dashboard div[data-testid="stRadio"] [role="radiogroup"] {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 7px;
+        margin: 8px 0 10px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stRadio"] [data-baseweb="radio"] {
+        min-height: 38px;
+        justify-content: center;
+        padding: 4px 8px;
+        border-radius: 12px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stRadio"] [data-baseweb="radio"] > div:first-child {
+        display: none;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stRadio"] label,
+    .st-key-mobile_dashboard div[data-testid="stRadio"] p {
+        width: 100%;
+        font-size: .78rem;
+        line-height: 1.1;
+        text-align: center;
+    }
+
+    /* Mobile-specific summary: replace desktop metrics with glanceable counters. */
+    .mobile-checklist-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 7px;
+        margin: 0 0 8px;
+    }
+
+    .mobile-checklist-summary > div {
+        min-width: 0;
+        border: 1px solid rgba(255,255,255,.48);
+        border-radius: 14px;
+        background: var(--glass-control-bg), rgba(255,255,255,.24);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.58), 0 6px 16px rgba(71,85,105,.07);
+        padding: 8px 9px;
+    }
+
+    .mobile-checklist-summary span {
+        display: block;
+        color: var(--text-muted);
+        font-size: .68rem;
+        font-weight: 760;
+        line-height: 1;
+    }
+
+    .mobile-checklist-summary strong {
+        display: block;
+        color: var(--text-main);
+        font-size: 1rem;
+        font-weight: 860;
+        line-height: 1.1;
+        margin-top: 5px;
+        overflow-wrap: anywhere;
+    }
+
+    /* Mobile-specific benefit cards: single-column checklist rows, not shrunken desktop cards. */
+    .mobile-benefit-card {
+        border: 1px solid rgba(255,255,255,.52);
+        border-radius: 16px 16px 12px 12px;
+        background:
+            linear-gradient(145deg, rgba(255,255,255,.46), rgba(255,255,255,.24), rgba(142,197,255,.10)),
+            rgba(255,255,255,.24);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.68), 0 10px 24px rgba(71,85,105,.10);
+        padding: 11px 11px 10px;
+        margin-top: 9px;
+        overflow: hidden;
+    }
+
+    .mobile-benefit-main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        gap: 9px;
+    }
+
+    .mobile-benefit-name {
+        color: var(--text-main);
+        font-size: .98rem;
+        font-weight: 840;
+        line-height: 1.22;
+        overflow-wrap: anywhere;
+    }
+
+    .mobile-benefit-card-name,
+    .mobile-benefit-owner {
+        color: var(--text-muted);
+        font-size: .76rem;
+        line-height: 1.22;
+        margin-top: 3px;
+        overflow-wrap: anywhere;
+    }
+
+    .mobile-benefit-owner {
+        color: var(--text-soft);
+        font-size: .7rem;
+    }
+
+    .mobile-status {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 25px;
+        border-radius: 999px;
+        padding: 5px 8px;
+        border: 1px solid rgba(255,255,255,.52);
+        font-size: .66rem;
+        font-weight: 840;
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+    .mobile-status-available {
+        color: #3157ad;
+        background: rgba(219, 234, 254, .72);
+    }
+
+    .mobile-status-expiring-soon {
+        color: var(--danger);
+        background: rgba(255, 228, 230, .74);
+    }
+
+    .mobile-status-used {
+        color: var(--success);
+        background: rgba(209, 250, 229, .72);
+    }
+
+    .mobile-benefit-facts {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px;
+        margin-top: 10px;
+    }
+
+    .mobile-benefit-facts > div {
+        min-width: 0;
+        border-radius: 12px;
+        background: rgba(255,255,255,.30);
+        border: 1px solid rgba(255,255,255,.38);
+        padding: 8px;
+    }
+
+    .mobile-benefit-facts span,
+    .mobile-benefit-facts small {
+        display: block;
+        color: var(--text-muted);
+        font-size: .66rem;
+        font-weight: 720;
+        line-height: 1.1;
+    }
+
+    .mobile-benefit-facts strong {
+        display: block;
+        color: var(--text-main);
+        font-size: .88rem;
+        font-weight: 840;
+        line-height: 1.15;
+        margin: 4px 0 3px;
+        overflow-wrap: anywhere;
+    }
+
+    .mobile-empty-state {
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,.46);
+        background: var(--glass-control-bg), rgba(255,255,255,.22);
+        color: var(--text-muted);
+        font-size: .86rem;
+        font-weight: 760;
+        padding: 13px;
+        text-align: center;
+    }
+
+    /* Mobile-specific tap targets: large enough for phone use without bulky desktop spacing. */
+    .st-key-mobile_dashboard div[data-testid="stButton"] {
+        margin-bottom: 4px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stButton"] button {
+        min-height: 42px !important;
+        border-radius: 0 0 16px 16px !important;
+        margin-top: -1px;
+        font-size: .86rem !important;
+    }
+
+    .st-key-mobile_dashboard .element-container:has(.mobile-benefit-card) + div[data-testid="stButton"] button,
+    .st-key-mobile_dashboard div[data-testid="stVerticalBlock"] > div:has(.mobile-benefit-card) + div button {
+        width: 100%;
+    }
+
+    /* Mobile-specific simplification for table-heavy admin sections. */
+    div[data-testid="stDataFrame"],
+    div[data-testid="stDataEditor"] {
+        max-width: 100%;
+        overflow-x: auto;
     }
 }

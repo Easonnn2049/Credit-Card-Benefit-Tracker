@@ -36,6 +36,46 @@ Then open the local Streamlit URL shown in the terminal, usually:
 http://localhost:8501
 ```
 
+## Access from phone on same Wi-Fi
+
+Install dependencies if needed:
+
+```powershell
+py -m pip install -r requirements.txt
+```
+
+Start the app in local-network mode with either:
+
+```powershell
+streamlit run app.py --server.address 0.0.0.0 --server.port 8501
+```
+
+or:
+
+```powershell
+.\run_mobile.bat
+```
+
+Find your laptop's local IP address on Windows:
+
+```powershell
+ipconfig
+```
+
+Look for the `IPv4 Address` under your active Wi-Fi adapter. On your phone, open:
+
+```text
+http://<laptop-local-ip>:8501
+```
+
+For example, if the laptop IP is `192.168.1.25`, use:
+
+```text
+http://192.168.1.25:8501
+```
+
+Your phone and laptop must be connected to the same Wi-Fi network. If Windows Firewall asks for permission, allow access on **Private networks** so your phone can reach the app locally.
+
 ## Excel Import
 
 If your Excel tracker is not already in the project folder, open the app and use the **Import Excel** tab.
