@@ -26,10 +26,10 @@ STATUSES = ["Not Used", "Partially Used", "Used"]
 EXPIRING_SOON_DAYS = 14
 
 STATUS_COLORS = {
-    "Used": ("rgba(209, 250, 229, .62)", "#047857"),
-    "Partially Used": ("rgba(254, 243, 199, .68)", "#b45309"),
-    "Not Used": ("rgba(255, 255, 255, .52)", "#64748b"),
-    "Expiring Soon": ("rgba(255, 228, 230, .66)", "#be4055"),
+    "Used": ("rgba(209, 250, 229, .58)", "#047857"),
+    "Partially Used": ("rgba(254, 243, 199, .62)", "#9a5c0a"),
+    "Not Used": ("rgba(224, 242, 254, .62)", "#3157ad"),
+    "Expiring Soon": ("rgba(254, 243, 199, .72)", "#b45309"),
 }
 
 CATEGORY_ICONS = {
@@ -60,7 +60,7 @@ CARD_ART_COLORS = {
 
 CARD_IMAGE_DIR = DATA_DIR / "card_images"
 STATUSES = ["Not Used", "Partially Used", "Used", "Ignored"]
-STATUS_COLORS["Ignored"] = ("rgba(237, 233, 254, .70)", "#6d5ab8")
+STATUS_COLORS["Ignored"] = ("rgba(226, 232, 240, .70)", "#64748b")
 CATEGORY_ICONS = {
     "airline": "AIR",
     "travel": "TRV",
@@ -667,6 +667,44 @@ def title_block(title: str, subtitle: str = "", level: int = 2) -> None:
     )
 
 
+def render_dashboard_kpis(
+    active_count: int,
+    expiring_count: int,
+    completed_count: int,
+    remaining_value: float,
+    annual_fees: float,
+) -> None:
+    """Render the desktop KPI strip with a deliberate finance-dashboard hierarchy."""
+    expiring_tone = "calm" if expiring_count == 0 else "warning"
+    st.markdown(
+        f"""
+        <div class="dashboard-kpi-grid">
+            <div class="dashboard-kpi-card secondary">
+                <span>Active benefits</span>
+                <strong>{active_count}</strong>
+            </div>
+            <div class="dashboard-kpi-card {expiring_tone}">
+                <span>Expiring soon</span>
+                <strong>{expiring_count}</strong>
+            </div>
+            <div class="dashboard-kpi-card secondary">
+                <span>Completed</span>
+                <strong>{completed_count}</strong>
+            </div>
+            <div class="dashboard-kpi-card emphasis">
+                <span>Value remaining</span>
+                <strong>{format_amount(remaining_value)}</strong>
+            </div>
+            <div class="dashboard-kpi-card emphasis fee">
+                <span>Annual fees</span>
+                <strong>{format_amount(annual_fees)}</strong>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def category_badge(category: object) -> str:
     label = clean_display(category, "Other")
     return f'<span class="chip">{escape(category_icon(label))} {escape(label)}</span>'
@@ -814,7 +852,8 @@ def status_badge(status: object, expiring_soon: bool = False) -> str:
     current_status = clean_display(status, "Not Used")
     label = "Expiring Soon" if expiring_soon and current_status not in ["Used", "Ignored"] else current_status
     background, color = STATUS_COLORS.get(label, STATUS_COLORS["Not Used"])
-    return f'<span class="badge" style="background:{background};color:{color};">{escape(label)}</span>'
+    display_label = "Available" if label == "Not Used" else "Hidden" if label == "Ignored" else label
+    return f'<span class="badge" style="background:{background};color:{color};">{escape(display_label)}</span>'
 
 
 def due_text_from_days(days: object) -> str:
@@ -864,21 +903,19 @@ def benefit_summary_label(row: pd.Series) -> str:
     progress = int(min(max((used_amount / face_value) * 100 if face_value else 0, 0), 100))
 
     if upcoming:
-        label = ":gray[**[Upcoming]**]"
+        label = "Upcoming"
     elif status == "Used":
-        label = ":green[**[Completed]**]"
+        label = "Completed"
     elif status == "Ignored":
-        label = ":violet[**[Ignored]**]"
+        label = "Hidden"
     elif bool(row.get("is_expiring_soon", False)):
-        label = ":red[**[Due Soon]**]"
-    elif status == "Not Used":
-        label = ":gray[**[Unused]**]"
+        label = "Expiring soon"
     elif status == "Partially Used":
-        label = ":orange[**[Partial]**]"
+        label = "Partially used"
     else:
-        label = f":blue[**[{status}]**]"
+        label = "Available"
 
-    return f"{label} **{name} · {format_amount(remaining)}**  \n:gray[{due_text} · {progress}% used]"
+    return f"**{name}**  \n:gray[{label} · {format_amount(remaining)} left · {due_text} · {progress}% used]"
 
 
 def benefit_summary_strip(row: pd.Series, expiring: bool) -> str:
@@ -1085,6 +1122,9 @@ def render_benefit_tile(
     deadline_class = "upcoming" if upcoming else "hidden" if status == "Ignored" else "done" if status == "Used" else "soon" if expiring else ""
     category = clean_display(row.get("category"), "Other")
     frequency = clean_display(row.get("frequency"), "")
+    benefit_type = clean_display(row.get("benefit_type"), "Benefit")
+    current_cycle = clean_display(row.get("current_cycle"), "")
+    status_html = status_badge(status, expiring)
     read_only_progress = ""
     if status in ["Used", "Ignored"]:
         read_only_progress = f"""
@@ -1107,16 +1147,16 @@ def render_benefit_tile(
                 title_col, action_col = st.columns([4.35, 1.55], vertical_alignment="top")
             expander_host = title_col
             with action_col:
-                if st.button("Used", key=f"{key_prefix}_{benefit_id}_quick_used", type="primary", use_container_width=True):
+                if st.button("Mark Used", key=f"{key_prefix}_{benefit_id}_quick_used", type="primary", use_container_width=True):
                     update_benefit_status(benefit_id, "Used")
-                if st.button("Ignore", key=f"{key_prefix}_{benefit_id}_quick_ignore", use_container_width=True):
+                if st.button("Hide", key=f"{key_prefix}_{benefit_id}_quick_ignore", use_container_width=True):
                     update_benefit_status(benefit_id, "Ignored")
         else:
-            title_col, used_col, spacer_col, ignore_col = st.columns([6.65, 1, 0.16, 1], vertical_alignment="top")
+            title_col, used_col, spacer_col, ignore_col = st.columns([6.2, 1.25, 0.16, 1], vertical_alignment="top")
             expander_host = title_col
-            if used_col.button("Used", key=f"{key_prefix}_{benefit_id}_quick_used", type="primary", use_container_width=True):
+            if used_col.button("Mark Used", key=f"{key_prefix}_{benefit_id}_quick_used", type="primary", use_container_width=True):
                 update_benefit_status(benefit_id, "Used")
-            if ignore_col.button("Ignore", key=f"{key_prefix}_{benefit_id}_quick_ignore", use_container_width=True):
+            if ignore_col.button("Hide", key=f"{key_prefix}_{benefit_id}_quick_ignore", use_container_width=True):
                 update_benefit_status(benefit_id, "Ignored")
 
     with expander_host.expander(benefit_summary_label(row), expanded=False):
@@ -1126,7 +1166,11 @@ def render_benefit_tile(
               <div class="benefit-topline">
                 <div>
                   <div class="benefit-title">{escape(clean_display(row.get("benefit_name")))}</div>
+                  <div class="benefit-secondary">
+                    {escape(benefit_type)} · {format_amount(face_value)} value{f" · {escape(current_cycle)}" if current_cycle else ""}
+                  </div>
                   <div class="benefit-meta">
+                    {status_html}
                     {category_badge(category)}
                     {muted_chip(frequency)}
                     <span class="chip chip-muted">{format_amount(remaining_amount)} left</span>
@@ -1146,12 +1190,12 @@ def render_benefit_tile(
         if upcoming:
             st.info("This benefit has not reached its start window yet. Usage actions will unlock when the cycle starts.")
         elif status == "Used":
-            st.success("Completed benefit shown because completed/ignored items are visible.")
+            st.success("Completed benefit shown because archived items are visible.")
             st.caption("This benefit is read-only while completed. Reopen it only if you need to track it again.")
             if st.button("Reopen as not used", key=f"{key_prefix}_{benefit_id}_restore", use_container_width=True):
                 update_benefit_status(benefit_id, "Not Used")
         elif status == "Ignored":
-            st.warning("Hidden benefit shown because completed/ignored items are visible.")
+            st.warning("Hidden benefit shown because archived items are visible.")
             st.caption("This benefit is read-only while hidden. Reopen it only if it becomes relevant again.")
             if st.button("Reopen as not used", key=f"{key_prefix}_{benefit_id}_restore", use_container_width=True):
                 update_benefit_status(benefit_id, "Not Used")
@@ -1190,9 +1234,9 @@ def render_benefit_tile(
             )
 
             action_cols = st.columns([1, 1, 1, 1])
-            if action_cols[0].button("Save slider", key=f"{key_prefix}_{benefit_id}_slider_save", type="primary", use_container_width=True):
+            if action_cols[0].button("Save Amount", key=f"{key_prefix}_{benefit_id}_slider_save", type="primary", use_container_width=True):
                 update_benefit_status(benefit_id, preview_status, amount)
-            if action_cols[1].button("Mark used", key=f"{key_prefix}_{benefit_id}_used", use_container_width=True):
+            if action_cols[1].button("Mark Used", key=f"{key_prefix}_{benefit_id}_used", use_container_width=True):
                 update_benefit_status(benefit_id, "Used")
             if action_cols[2].button("Reset", key=f"{key_prefix}_{benefit_id}_reset", use_container_width=True):
                 st.session_state[slider_reset_key] = slider_token + 1
@@ -1255,22 +1299,27 @@ def show_dashboard(benefits: pd.DataFrame, cards: pd.DataFrame) -> None:
         show_mobile_checklist(flagged, active, expiring, used, remaining_value)
 
     with st.container(key="desktop_dashboard"):
-        col1, col2, col3, col4, col5 = st.columns(5)
-        col1.metric("Active benefits", len(active))
-        col2.metric("Expiring soon", len(expiring))
-        col3.metric("Completed", len(used))
-        col4.metric("Value remaining", format_amount(remaining_value))
-        col5.metric("Annual fees", format_amount(total_annual_fee))
+        render_dashboard_kpis(len(active), len(expiring), len(used), remaining_value, total_annual_fee)
+        st.markdown('<div class="desktop-stack-spacer"></div>', unsafe_allow_html=True)
 
-        show_hidden = st.toggle("Show completed and ignored in main views", value=False)
+        # Desktop layout refinement: split primary navigation from archive scope controls.
+        with st.container(key="dashboard_controls"):
+            nav_col, archive_col = st.columns([2.75, 1.45], vertical_alignment="bottom")
+            with nav_col:
+                dashboard_view = st.radio(
+                    "View",
+                    ["Home", "Cards", "Categories", "Archived"],
+                    horizontal=True,
+                    key="dashboard_view",
+                )
+            with archive_col:
+                show_hidden = st.toggle(
+                    "Show archived benefits",
+                    value=False,
+                    key="show_archived_benefits",
+                )
+
         browse_data = flagged if show_hidden else active
-
-        dashboard_view = st.radio(
-            "Dashboard view",
-            ["Home", "Cards", "Categories", "Completed / Hidden"],
-            horizontal=True,
-            label_visibility="collapsed",
-        )
 
         if dashboard_view == "Home":
             show_home_view(active, expiring, needs_action)
@@ -1310,7 +1359,7 @@ def render_mobile_benefit_card(row: pd.Series, key_prefix: str) -> None:
     value = remaining if status != "Used" else face_value
     progress = int(min(max(normalize_money(row.get("usage_percent")) * 100, 0), 100))
     label = mobile_status_label(row)
-    action_text = "Reopen" if status == "Used" else "Not active yet" if upcoming else "Used"
+    action_text = "Reopen" if status == "Used" else "Not active yet" if upcoming else "Mark Used"
     container_key = f"mobile_card_{key_prefix}_{benefit_id}".replace(" ", "_").replace("-", "_")
 
     with st.container(key=container_key):
@@ -1351,7 +1400,7 @@ def render_mobile_benefit_card(row: pd.Series, key_prefix: str) -> None:
                 used_col, ignore_col = st.columns(2)
                 if used_col.button(action_text, key=f"{container_key}_used", type="primary", use_container_width=True):
                     update_benefit_status(benefit_id, "Used")
-                if ignore_col.button("Ignore", key=f"{container_key}_ignore", use_container_width=True):
+                if ignore_col.button("Hide", key=f"{container_key}_ignore", use_container_width=True):
                     update_benefit_status(benefit_id, "Ignored")
 
             if face_value >= 100:
@@ -1406,7 +1455,7 @@ def render_mobile_card_group(card_label: str, group: pd.DataFrame, key_prefix: s
         f":gray[**{available_count} open** - **{expiring_count} soon** - **{format_amount(remaining_value)} left**]"
     )
 
-    with st.expander(expander_label, expanded=True):
+    with st.expander(expander_label, expanded=False):
         st.markdown(
             f"""
             <div class="mobile-card-group-header">
@@ -1470,9 +1519,10 @@ def show_mobile_checklist(
         return
 
     selected = selected.copy()
-    selected["_card_group"] = selected["card_name"].map(lambda value: clean_display(value, "No card set"))
-    grouped = selected.groupby("_card_group", sort=False)
-    for group_index, (card_label, group) in enumerate(grouped):
+    selected["_card_group_owner"] = selected["owner"].map(lambda value: clean_display(value, ""))
+    selected["_card_group_name"] = selected["card_name"].map(lambda value: clean_display(value, "No card set"))
+    grouped = selected.groupby(["_card_group_owner", "_card_group_name"], sort=False)
+    for group_index, ((_, card_label), group) in enumerate(grouped):
         render_mobile_card_group(card_label, group, f"checklist_card_{group_index}")
 
 
@@ -1517,7 +1567,7 @@ def show_priority_lane(title: str, benefits: pd.DataFrame, key_prefix: str) -> N
 
 def show_by_card_view(flagged: pd.DataFrame) -> None:
     if flagged.empty:
-        st.info("No active benefits to show. Use the toggle above or open Completed / Hidden.")
+        st.info("No active benefits to show. Use the toggle above or open Archived.")
         return
     cards = read_csv(CARDS_CSV, CARD_COLUMNS)
     all_benefits = benefit_status_flags(read_csv(BENEFITS_CSV, BENEFIT_COLUMNS))
@@ -1528,7 +1578,8 @@ def show_by_card_view(flagged: pd.DataFrame) -> None:
         cards["card_id"] = ""
 
     owners = ["All owners"] + sorted([owner for owner in flagged["owner"].dropna().unique() if normalize_text(owner)])
-    selected_owner = st.selectbox("Owner", owners, key="by_card_owner_filter")
+    with st.container(key="card_view_filters"):
+        selected_owner = st.selectbox("Owner", owners, key="by_card_owner_filter")
     visible_cards = cards.copy()
     if selected_owner != "All owners":
         visible_cards = visible_cards[visible_cards["owner"] == selected_owner]
@@ -1545,11 +1596,14 @@ def show_by_card_view(flagged: pd.DataFrame) -> None:
         if card_benefits.empty:
             continue
 
-        with st.container(border=True):
-            left, right = st.columns([1, 2.2])
+        card_key = (
+            normalize_text(card.get("card_id"))
+            or f"{normalize_text(card.get('owner'))}_{normalize_text(card.get('card_name'))}".replace(" ", "_")
+        )
+        with st.container(border=True, key=f"card_section_{card_key}"):
+            left, right = st.columns([0.78, 2.85], vertical_alignment="top")
             with left:
                 render_card_art(card, len(card_benefits))
-                used_count = int((card_benefits["status"] == "Used").sum())
                 done_count = int(all_card_benefits["status"].isin(["Used", "Ignored"]).sum())
                 total_count = max(len(all_card_benefits), 1)
                 render_liquid_progress(done_count / total_count, f"{done_count}/{total_count} complete or hidden")
@@ -1561,17 +1615,30 @@ def show_by_card_view(flagged: pd.DataFrame) -> None:
                 used_value = tracked_card_benefits["used_amount"].apply(normalize_money).sum()
                 total_value = tracked_card_benefits["face_value"].apply(normalize_money).sum()
                 value_progress = used_value / total_value if total_value else 0
-                st.subheader(clean_display(card.get("card_name")))
-                st.caption(
-                    f"{clean_display(card.get('owner'), 'Unassigned')} · "
-                    f"{clean_display(card.get('issuer'), 'Issuer unknown')} · "
-                    f"{expiring_count} expiring soon · "
-                    f"{next_membership_fee_label(card)}"
+                issuer = clean_display(card.get("issuer"), "Issuer unknown")
+                version = clean_display(card.get("card_version"), "")
+                network_label = f"{issuer} · {version}" if version else issuer
+                owner = clean_display(card.get("owner"), "Unassigned")
+                st.markdown(
+                    f"""
+                    <div class="card-section-header">
+                        <div>
+                            <div class="card-section-owner">{escape(owner)}</div>
+                            <h3>{escape(clean_display(card.get("card_name")))}</h3>
+                            <p>{escape(network_label)} · {escape(next_membership_fee_label(card))}</p>
+                        </div>
+                        <div class="card-section-status">
+                            <span>{expiring_count} expiring soon</span>
+                        </div>
+                    </div>
+                    <div class="card-stat-grid">
+                        <div><span>Active</span><strong>{active_count}</strong></div>
+                        <div class="emphasis"><span>Remaining</span><strong>{format_amount(remaining_value)}</strong></div>
+                        <div><span>Used value</span><strong>{format_amount(used_value)}</strong></div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
                 )
-                summary_cols = st.columns(3)
-                summary_cols[0].metric("Active", active_count)
-                summary_cols[1].metric("Remaining", format_amount(remaining_value))
-                summary_cols[2].metric("Used value", format_amount(used_value))
                 render_liquid_progress(value_progress, f"{int(value_progress * 100)}% of tracked value used")
                 with st.expander("Show benefits", expanded=expiring_count > 0):
                     for _, benefit in card_benefits.sort_values(["status", "expiration_date", "benefit_name"]).iterrows():
@@ -1581,7 +1648,7 @@ def show_by_card_view(flagged: pd.DataFrame) -> None:
 def show_by_category_view(flagged: pd.DataFrame) -> None:
     st.caption("Scan across cards by benefit category.")
     if flagged.empty:
-        st.info("No active benefits to show. Use the toggle above or open Completed / Hidden.")
+        st.info("No active benefits to show. Use the toggle above or open Archived.")
         return
     category_order = ["Dining", "Rideshare", "Travel", "Hotel", "Airline", "Shopping", "Entertainment", "Other"]
     categories = sorted([category for category in flagged["category"].dropna().unique() if normalize_text(category)])
@@ -1629,14 +1696,14 @@ def show_action_view(needs_action: pd.DataFrame, expiring: pd.DataFrame) -> None
 
 
 def show_completed_hidden_view(hidden: pd.DataFrame) -> None:
-    st.caption("Completed and ignored benefits stay recoverable here.")
+    st.caption("Completed and hidden benefits stay recoverable here.")
     if hidden.empty:
-        st.info("No completed or ignored benefits yet.")
+        st.info("No completed or hidden benefits yet.")
         return
 
     completed = hidden[hidden["status"] == "Used"]
     ignored = hidden[hidden["status"] == "Ignored"]
-    completed_tab, ignored_tab = st.tabs([f"Completed ({len(completed)})", f"Ignored ({len(ignored)})"])
+    completed_tab, ignored_tab = st.tabs([f"Completed ({len(completed)})", f"Hidden ({len(ignored)})"])
     with completed_tab:
         for index, (_, benefit) in enumerate(completed.sort_values(["card_name", "benefit_name"]).iterrows()):
             render_benefit_tile(benefit, f"completed_{index}")
@@ -1964,14 +2031,30 @@ def main() -> None:
     usage = read_csv(USAGE_CSV, USAGE_COLUMNS)
 
     with st.sidebar:
-        st.header("Data")
-        st.write(f"Cards: {len(cards)}")
-        st.write(f"Benefits: {len(benefits)}")
-        st.write(f"Usage records: {len(usage)}")
-        st.divider()
+        # Desktop sidebar polish: separate app navigation from secondary local data counts.
+        st.markdown(
+            """
+            <div class="sidebar-brand">
+                <div class="sidebar-eyebrow">Local tracker</div>
+                <div class="sidebar-title">Benefit desk</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         section = st.radio(
-            "Section",
+            "App",
             ["Dashboard", "Raw Data"],
+        )
+        st.markdown(
+            f"""
+            <div class="sidebar-data-summary">
+                <div class="sidebar-section-label">Data summary</div>
+                <div><span>Cards</span><strong>{len(cards)}</strong></div>
+                <div><span>Benefits</span><strong>{len(benefits)}</strong></div>
+                <div><span>Usage records</span><strong>{len(usage)}</strong></div>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
 
     if benefits.empty:
