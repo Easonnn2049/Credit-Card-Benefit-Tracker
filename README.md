@@ -62,6 +62,34 @@ Never commit `.streamlit/secrets.toml` to GitHub. It contains private credential
 
 For Streamlit Community Cloud, paste the same TOML content from your local `.streamlit/secrets.toml` into the app's **Secrets** settings.
 
+## Streamlit Community Cloud Deployment
+
+Use Google Sheets as the backend for deployed cloud use. Streamlit Community Cloud's local filesystem is not durable, so local files should not be treated as persistent cloud storage.
+
+Deployment steps:
+
+1. Push this repo to GitHub.
+2. Create a new Streamlit Community Cloud app from the GitHub repo.
+3. Set the main file path to `app.py`.
+4. Open the app's **Secrets** settings.
+5. Paste the same TOML content from your local `.streamlit/secrets.toml`.
+6. Confirm the secrets include:
+
+```toml
+DATA_BACKEND = "google_sheets"
+```
+
+7. Confirm `GOOGLE_SHEET_ID` points to the intended tracker spreadsheet.
+8. Share the Google Sheet with the service account `client_email` as **Editor**.
+
+Deployment smoke test checklist:
+
+- App starts without dependency or secrets errors.
+- Dashboard loads.
+- Google Sheets row counts match the expected `cards`, `benefits`, and `usage` tabs.
+- Mark Used writes the update back to Google Sheets.
+- Restart or reboot the Streamlit app and confirm the persisted Google Sheets data loads again.
+
 ## Access from phone on same Wi-Fi
 
 Install dependencies if needed:
