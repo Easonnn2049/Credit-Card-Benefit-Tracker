@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import json
 import os
+from hashlib import sha256
 from collections.abc import Mapping
 from typing import Any
 
 import pandas as pd
+import streamlit as st
 
-from .base import StorageBackend, prepare_table
+from .base import BENEFIT_COLUMNS, CARD_COLUMNS, USAGE_COLUMNS, StorageBackend, prepare_for_write, prepare_table
 
 
 REQUIRED_SERVICE_ACCOUNT_KEYS = {
@@ -21,6 +23,12 @@ REQUIRED_SERVICE_ACCOUNT_KEYS = {
     "token_uri",
     "auth_provider_x509_cert_url",
     "client_x509_cert_url",
+}
+
+TABLE_COLUMNS = {
+    "cards": CARD_COLUMNS,
+    "benefits": BENEFIT_COLUMNS,
+    "usage": USAGE_COLUMNS,
 }
 
 
@@ -88,50 +96,110 @@ def _service_account_info() -> dict[str, Any]:
     return account
 
 
+def _credential_fingerprint(account: dict[str, Any]) -> str:
+    payload = json.dumps(account, sort_keys=True, default=str)
+    return sha256(payload.encode("utf-8")).hexdigest()
+
+
+@st.cache_resource(show_spinner=False)
+def _cached_spreadsheet(
+    spreadsheet_id: str,
+    spreadsheet_url: str,
+    credential_fingerprint: str,
+    _account_info: dict[str, Any],
+):
+    try:
+        import gspread
+    except ImportError as exc:
+        raise RuntimeError(
+            "Install gspread and google-auth before using DATA_BACKEND=google_sheets."
+        ) from exc
+
+    client = gspread.service_account_from_dict(_account_info)
+    if spreadsheet_id:
+        return client.open_by_key(spreadsheet_id)
+    return client.open_by_url(spreadsheet_url)
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def _cached_table_bundle(
+    spreadsheet_id: str,
+    spreadsheet_url: str,
+    credential_fingerprint: str,
+    _account_info: dict[str, Any],
+) -> dict[str, pd.DataFrame]:
+    spreadsheet = _cached_spreadsheet(
+        spreadsheet_id,
+        spreadsheet_url,
+        credential_fingerprint,
+        _account_info,
+    )
+    tables = {}
+    for table_name, columns in TABLE_COLUMNS.items():
+        values = spreadsheet.worksheet(table_name).get_all_values()
+        if values:
+            tables[table_name] = prepare_table(pd.DataFrame(values[1:], columns=values[0]), columns)
+        else:
+            tables[table_name] = prepare_table(pd.DataFrame(columns=columns), columns)
+    return tables
+
+
 class GoogleSheetsStorage(StorageBackend):
     def __init__(self, spreadsheet_id: str = "", spreadsheet_url: str = "") -> None:
         self.spreadsheet_id = spreadsheet_id or _secret_value("GOOGLE_SHEET_ID") or os.environ.get("GOOGLE_SHEET_ID", "")
         self.spreadsheet_url = spreadsheet_url or _secret_value("GOOGLE_SHEET_URL") or os.environ.get("GOOGLE_SHEET_URL", "")
         if not self.spreadsheet_id and not self.spreadsheet_url:
             raise RuntimeError("Set GOOGLE_SHEET_ID or GOOGLE_SHEET_URL to use DATA_BACKEND=google_sheets.")
-        self._spreadsheet = None
+        self._account_info = _service_account_info()
+        self._credential_fingerprint = _credential_fingerprint(self._account_info)
 
     def ensure_data_files(self) -> None:
         return None
 
-    def _client(self):
-        try:
-            import gspread
-        except ImportError as exc:
-            raise RuntimeError(
-                "Install gspread and google-auth before using DATA_BACKEND=google_sheets."
-            ) from exc
-        return gspread.service_account_from_dict(_service_account_info())
-
     def _open_spreadsheet(self):
-        if self._spreadsheet is not None:
-            return self._spreadsheet
+        return _cached_spreadsheet(
+            self.spreadsheet_id,
+            self.spreadsheet_url,
+            self._credential_fingerprint,
+            self._account_info,
+        )
 
-        client = self._client()
-        if self.spreadsheet_id:
-            self._spreadsheet = client.open_by_key(self.spreadsheet_id)
-        else:
-            self._spreadsheet = client.open_by_url(self.spreadsheet_url)
-        return self._spreadsheet
+    def _worksheet(self, table_name: str):
+        return self._open_spreadsheet().worksheet(table_name)
 
     def read_table(self, table_name: str, columns: list[str]) -> pd.DataFrame:
-        worksheet = self._open_spreadsheet().worksheet(table_name)
-        values = worksheet.get_all_values()
-        if not values:
-            return prepare_table(pd.DataFrame(columns=columns), columns)
-
-        header = values[0]
-        rows = values[1:]
-        df = pd.DataFrame(rows, columns=header)
-        return prepare_table(df, columns)
+        tables = _cached_table_bundle(
+            self.spreadsheet_id,
+            self.spreadsheet_url,
+            self._credential_fingerprint,
+            self._account_info,
+        )
+        if table_name in tables:
+            return prepare_table(tables[table_name], columns)
+        values = self._worksheet(table_name).get_all_values()
+        if values:
+            return prepare_table(pd.DataFrame(values[1:], columns=values[0]), columns)
+        return prepare_table(pd.DataFrame(columns=columns), columns)
 
     def save_table(self, table_name: str, df: pd.DataFrame, columns: list[str]) -> None:
-        raise RuntimeError(
-            "The Google Sheets backend is read-only in Phase 2. "
-            "Switch DATA_BACKEND=local before saving changes."
+        try:
+            from gspread_dataframe import set_with_dataframe
+        except ImportError as exc:
+            raise RuntimeError(
+                "Install gspread, google-auth, and gspread-dataframe before writing to Google Sheets."
+            ) from exc
+
+        worksheet = self._worksheet(table_name)
+        prepared = prepare_for_write(df, columns).fillna("")
+
+        # Whole-table writes keep this storage backend simple for a single-user app.
+        # Concurrent editing is not supported: the last save wins for the full tab.
+        worksheet.clear()
+        set_with_dataframe(
+            worksheet,
+            prepared,
+            include_index=False,
+            include_column_header=True,
+            resize=True,
         )
+        _cached_table_bundle.clear()
