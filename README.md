@@ -36,6 +36,32 @@ Then open the local Streamlit URL shown in the terminal, usually:
 http://localhost:8501
 ```
 
+## Google Sheets Secrets
+
+The app can read from Google Sheets when `DATA_BACKEND` is set to `google_sheets`.
+Local CSV files remain the default when this setting is not provided.
+
+To configure Google Sheets locally:
+
+1. Create a Google service account and download its JSON key file.
+2. Share your Google Sheet with the service account email, usually the `client_email` value in the JSON key.
+3. Copy the example secrets file:
+
+```powershell
+Copy-Item .streamlit/secrets.example.toml .streamlit/secrets.toml
+```
+
+4. Open `.streamlit/secrets.toml` and replace the placeholder values with values from the downloaded service account JSON key.
+5. Set `GOOGLE_SHEET_ID` to the ID from your Google Sheet URL. The Sheet should have tabs named:
+
+- `cards`
+- `benefits`
+- `usage`
+
+Never commit `.streamlit/secrets.toml` to GitHub. It contains private credentials and is intentionally ignored by git. Downloaded Google key files such as `*.json` are also ignored and should not be committed.
+
+For Streamlit Community Cloud, paste the same TOML content from your local `.streamlit/secrets.toml` into the app's **Secrets** settings.
+
 ## Access from phone on same Wi-Fi
 
 Install dependencies if needed:

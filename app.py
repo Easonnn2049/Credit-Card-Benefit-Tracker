@@ -11,16 +11,16 @@ import pandas as pd
 import requests
 import streamlit as st
 
+from storage import BENEFIT_COLUMNS, CARD_COLUMNS, USAGE_COLUMNS, get_storage
+
 
 APP_DIR = Path(__file__).parent
 DATA_DIR = APP_DIR / "data"
-CARDS_CSV = DATA_DIR / "cards.csv"
-BENEFITS_CSV = DATA_DIR / "benefits.csv"
-USAGE_CSV = DATA_DIR / "usage.csv"
 ORIGINAL_EXCEL = DATA_DIR / "original_tracker.xlsx"
 LIQUID_APP_CSS = APP_DIR / "styles" / "liquid_app.css"
 WALLPAPER_DIR = APP_DIR / "wallpaper"
 WALLPAPER_SETTINGS_JSON = WALLPAPER_DIR / "settings.json"
+STORAGE = get_storage(DATA_DIR)
 
 STATUSES = ["Not Used", "Partially Used", "Used"]
 EXPIRING_SOON_DAYS = 14
@@ -100,116 +100,32 @@ CARD_ART_STYLES = {
     "default": ("#26312a", "#8f9a87", "#ffffff", "CARD", "BENEFITS"),
 }
 
-CARD_COLUMNS = [
-    "card_id",
-    "owner",
-    "card_name",
-    "issuer",
-    "card_version",
-    "open_date",
-    "annual_fee",
-    "renewal_month",
-    "status",
-    "autopay",
-    "notes",
-    "source_url",
-]
-BENEFIT_COLUMNS = [
-    "benefit_id",
-    "card_id",
-    "owner",
-    "card_name",
-    "benefit_name",
-    "benefit_type",
-    "category",
-    "frequency",
-    "cycle_rule",
-    "current_cycle",
-    "expiration_date",
-    "face_value",
-    "realistic_value",
-    "used_amount",
-    "remaining_amount",
-    "usage_percent",
-    "status",
-    "days_until_expiry",
-    "priority",
-    "include_in_alert",
-    "notes",
-    "source_url",
-    "review_needed",
-]
-USAGE_COLUMNS = [
-    "usage_id",
-    "used_date",
-    "owner",
-    "card_id",
-    "benefit_id",
-    "benefit_name",
-    "cycle_period",
-    "used_amount",
-    "fully_used",
-    "merchant",
-    "notes",
-]
-
-NUMERIC_COLUMNS = {
-    "annual_fee",
-    "face_value",
-    "realistic_value",
-    "used_amount",
-    "remaining_amount",
-    "usage_percent",
-    "days_until_expiry",
-}
-
-
 def ensure_data_files() -> None:
-    DATA_DIR.mkdir(exist_ok=True)
-    if not CARDS_CSV.exists():
-        pd.DataFrame(columns=CARD_COLUMNS).to_csv(CARDS_CSV, index=False)
-    if not BENEFITS_CSV.exists():
-        pd.DataFrame(columns=BENEFIT_COLUMNS).to_csv(BENEFITS_CSV, index=False)
-    if not USAGE_CSV.exists():
-        pd.DataFrame(columns=USAGE_COLUMNS).to_csv(USAGE_CSV, index=False)
+    STORAGE.ensure_data_files()
 
 
-def read_csv(path: Path, columns: list[str]) -> pd.DataFrame:
-    ensure_data_files()
-    try:
-        df = pd.read_csv(path)
-    except pd.errors.EmptyDataError:
-        df = pd.DataFrame(columns=columns)
+def read_cards() -> pd.DataFrame:
+    return STORAGE.read_cards()
 
-    for column in columns:
-        if column not in df.columns:
-            df[column] = ""
 
-    for column in NUMERIC_COLUMNS.intersection(df.columns):
-        df[column] = pd.to_numeric(df[column], errors="coerce").fillna(0)
+def read_benefits() -> pd.DataFrame:
+    return STORAGE.read_benefits()
 
-    return df[columns].copy()
+
+def read_usage() -> pd.DataFrame:
+    return STORAGE.read_usage()
 
 
 def save_cards(df: pd.DataFrame) -> None:
-    for column in CARD_COLUMNS:
-        if column not in df.columns:
-            df[column] = ""
-    df[CARD_COLUMNS].to_csv(CARDS_CSV, index=False)
+    STORAGE.save_cards(df)
 
 
 def save_benefits(df: pd.DataFrame) -> None:
-    for column in BENEFIT_COLUMNS:
-        if column not in df.columns:
-            df[column] = ""
-    df[BENEFIT_COLUMNS].to_csv(BENEFITS_CSV, index=False)
+    STORAGE.save_benefits(df)
 
 
 def save_usage(df: pd.DataFrame) -> None:
-    for column in USAGE_COLUMNS:
-        if column not in df.columns:
-            df[column] = ""
-    df[USAGE_COLUMNS].to_csv(USAGE_CSV, index=False)
+    STORAGE.save_usage(df)
 
 
 def normalize_text(value: object) -> str:
@@ -361,7 +277,7 @@ def import_template_workbook(file_path: Path, sheets: dict[str, pd.DataFrame], s
 
     save_cards(cards)
     save_benefits(benefits)
-    usage[USAGE_COLUMNS].to_csv(USAGE_CSV, index=False)
+    save_usage(usage)
 
     return {
         "rows": len(benefits),
@@ -495,7 +411,7 @@ def import_excel_to_csv(file_path: Path) -> dict[str, object]:
     cards = pd.DataFrame(card_rows, columns=CARD_COLUMNS)
     save_cards(cards)
     save_benefits(benefits)
-    read_csv(USAGE_CSV, USAGE_COLUMNS).to_csv(USAGE_CSV, index=False)
+    save_usage(read_usage())
 
     skipped = [column for column in columns if column not in set(value for value in mapped.values() if value)]
     return {"rows": len(benefits), "summary": summary, "mapped": mapped, "skipped": skipped}
@@ -946,7 +862,7 @@ def append_usage_record(benefit: pd.Series, amount_used: float, fully_used: bool
     if amount_used <= 0:
         return
 
-    usage = read_csv(USAGE_CSV, USAGE_COLUMNS)
+    usage = read_usage()
     today = pd.Timestamp.today().date().isoformat()
     record = pd.DataFrame(
         [
@@ -970,8 +886,8 @@ def append_usage_record(benefit: pd.Series, amount_used: float, fully_used: bool
 
 
 def sync_usage_log_from_benefits() -> int:
-    benefits = read_csv(BENEFITS_CSV, BENEFIT_COLUMNS)
-    usage = read_csv(USAGE_CSV, USAGE_COLUMNS)
+    benefits = read_benefits()
+    usage = read_usage()
     new_records = []
 
     for _, benefit in benefits.iterrows():
@@ -1013,7 +929,7 @@ def sync_usage_log_from_benefits() -> int:
 
 
 def update_benefit_status(benefit_id: str, status: str, used_amount: float | None = None) -> None:
-    benefits = read_csv(BENEFITS_CSV, BENEFIT_COLUMNS)
+    benefits = read_benefits()
     match = benefits["benefit_id"].astype(str) == str(benefit_id)
     if not match.any():
         st.error("Could not find that benefit in the local CSV.")
@@ -1569,8 +1485,8 @@ def show_by_card_view(flagged: pd.DataFrame) -> None:
     if flagged.empty:
         st.info("No active benefits to show. Use the toggle above or open Archived.")
         return
-    cards = read_csv(CARDS_CSV, CARD_COLUMNS)
-    all_benefits = benefit_status_flags(read_csv(BENEFITS_CSV, BENEFIT_COLUMNS))
+    cards = read_cards()
+    all_benefits = benefit_status_flags(read_benefits())
 
     if cards.empty:
         cards = flagged[["owner", "card_name"]].drop_duplicates().copy()
@@ -2026,9 +1942,9 @@ def main() -> None:
         unsafe_allow_html=True,
     )
 
-    cards = read_csv(CARDS_CSV, CARD_COLUMNS)
-    benefits = read_csv(BENEFITS_CSV, BENEFIT_COLUMNS)
-    usage = read_csv(USAGE_CSV, USAGE_COLUMNS)
+    cards = read_cards()
+    benefits = read_benefits()
+    usage = read_usage()
 
     with st.sidebar:
         # Desktop sidebar polish: separate app navigation from secondary local data counts.
