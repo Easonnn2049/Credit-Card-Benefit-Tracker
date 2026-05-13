@@ -1,0 +1,1 @@
+alert_id,alert_type,entity_type,entity_id,card_id,benefit_id,reminder_window,scheduled_for_date,sent_at,recipient_email,status,error_message

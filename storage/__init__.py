@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from typing import Any, Mapping
 
-from .base import BENEFIT_COLUMNS, CARD_COLUMNS, USAGE_COLUMNS, StorageBackend
+from .base import ALERT_LOG_COLUMNS, BENEFIT_COLUMNS, CARD_COLUMNS, USAGE_COLUMNS, StorageBackend
 from .local_storage import LocalStorage
 
 
@@ -46,6 +46,7 @@ def get_storage(data_dir: Path, backend: str | None = None) -> StorageBackend:
 __all__ = [
     "BENEFIT_COLUMNS",
     "CARD_COLUMNS",
+    "ALERT_LOG_COLUMNS",
     "USAGE_COLUMNS",
     "StorageBackend",
     "get_storage",

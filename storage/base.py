@@ -57,6 +57,20 @@ USAGE_COLUMNS = [
     "merchant",
     "notes",
 ]
+ALERT_LOG_COLUMNS = [
+    "alert_id",
+    "alert_type",
+    "entity_type",
+    "entity_id",
+    "card_id",
+    "benefit_id",
+    "reminder_window",
+    "scheduled_for_date",
+    "sent_at",
+    "recipient_email",
+    "status",
+    "error_message",
+]
 
 NUMERIC_COLUMNS = {
     "annual_fee",
@@ -111,6 +125,9 @@ class StorageBackend(ABC):
     def read_usage(self) -> pd.DataFrame:
         return self.read_table("usage", USAGE_COLUMNS)
 
+    def read_alert_log(self) -> pd.DataFrame:
+        return self.read_table("alert_log", ALERT_LOG_COLUMNS)
+
     def save_cards(self, df: pd.DataFrame) -> None:
         self.save_table("cards", df, CARD_COLUMNS)
 
@@ -119,3 +136,6 @@ class StorageBackend(ABC):
 
     def save_usage(self, df: pd.DataFrame) -> None:
         self.save_table("usage", df, USAGE_COLUMNS)
+
+    def save_alert_log(self, df: pd.DataFrame) -> None:
+        self.save_table("alert_log", df, ALERT_LOG_COLUMNS)

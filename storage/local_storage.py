@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from .base import (
+    ALERT_LOG_COLUMNS,
     BENEFIT_COLUMNS,
     CARD_COLUMNS,
     USAGE_COLUMNS,
@@ -21,6 +22,7 @@ class LocalStorage(StorageBackend):
             "cards": self.data_dir / "cards.csv",
             "benefits": self.data_dir / "benefits.csv",
             "usage": self.data_dir / "usage.csv",
+            "alert_log": self.data_dir / "alert_log.csv",
         }
 
     def ensure_data_files(self) -> None:
@@ -31,6 +33,8 @@ class LocalStorage(StorageBackend):
             pd.DataFrame(columns=BENEFIT_COLUMNS).to_csv(self.paths["benefits"], index=False)
         if not self.paths["usage"].exists():
             pd.DataFrame(columns=USAGE_COLUMNS).to_csv(self.paths["usage"], index=False)
+        if not self.paths["alert_log"].exists():
+            pd.DataFrame(columns=ALERT_LOG_COLUMNS).to_csv(self.paths["alert_log"], index=False)
 
     def read_table(self, table_name: str, columns: list[str]) -> pd.DataFrame:
         self.ensure_data_files()

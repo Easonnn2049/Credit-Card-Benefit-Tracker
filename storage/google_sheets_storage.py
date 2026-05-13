@@ -9,7 +9,15 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
-from .base import BENEFIT_COLUMNS, CARD_COLUMNS, USAGE_COLUMNS, StorageBackend, prepare_for_write, prepare_table
+from .base import (
+    ALERT_LOG_COLUMNS,
+    BENEFIT_COLUMNS,
+    CARD_COLUMNS,
+    USAGE_COLUMNS,
+    StorageBackend,
+    prepare_for_write,
+    prepare_table,
+)
 
 
 REQUIRED_SERVICE_ACCOUNT_KEYS = {
@@ -29,6 +37,7 @@ TABLE_COLUMNS = {
     "cards": CARD_COLUMNS,
     "benefits": BENEFIT_COLUMNS,
     "usage": USAGE_COLUMNS,
+    "alert_log": ALERT_LOG_COLUMNS,
 }
 
 
@@ -136,7 +145,14 @@ def _cached_table_bundle(
     )
     tables = {}
     for table_name, columns in TABLE_COLUMNS.items():
-        values = spreadsheet.worksheet(table_name).get_all_values()
+        try:
+            worksheet = spreadsheet.worksheet(table_name)
+        except Exception as exc:
+            if table_name == "alert_log" and exc.__class__.__name__ == "WorksheetNotFound":
+                tables[table_name] = prepare_table(pd.DataFrame(columns=columns), columns)
+                continue
+            raise
+        values = worksheet.get_all_values()
         if values:
             tables[table_name] = prepare_table(pd.DataFrame(values[1:], columns=values[0]), columns)
         else:
@@ -165,7 +181,14 @@ class GoogleSheetsStorage(StorageBackend):
         )
 
     def _worksheet(self, table_name: str):
-        return self._open_spreadsheet().worksheet(table_name)
+        spreadsheet = self._open_spreadsheet()
+        try:
+            return spreadsheet.worksheet(table_name)
+        except Exception as exc:
+            if table_name == "alert_log" and exc.__class__.__name__ == "WorksheetNotFound":
+                columns = TABLE_COLUMNS[table_name]
+                return spreadsheet.add_worksheet(title=table_name, rows=1, cols=len(columns))
+            raise
 
     def read_table(self, table_name: str, columns: list[str]) -> pd.DataFrame:
         tables = _cached_table_bundle(
