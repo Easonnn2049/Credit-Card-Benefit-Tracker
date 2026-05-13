@@ -85,9 +85,32 @@ ALERT_GREETING_NAME = "Xinyi"
 
 For Gmail, use an app password rather than your normal Google account password. Do not commit secrets.
 
-## Manual Email Alerts
+## Email Alerts
 
-Scheduling is not implemented yet. To run alerts manually, use:
+GitHub Actions runs email alerts once per day from `.github/workflows/send-alerts.yml`.
+The workflow must live on the repository's default branch before scheduled or manual runs are available.
+GitHub cron schedules use UTC; the configured schedule is `0 13 * * *`.
+
+Add these repository secrets in GitHub under **Settings > Secrets and variables > Actions > Repository secrets**:
+
+- `DATA_BACKEND`
+- `GOOGLE_SHEET_ID`
+- `GCP_SERVICE_ACCOUNT_JSON`
+- `ALERT_SMTP_HOST`
+- `ALERT_SMTP_PORT`
+- `ALERT_SMTP_USERNAME`
+- `ALERT_SMTP_PASSWORD`
+- `ALERT_SENDER_EMAIL`
+- `ALERT_SENDER_NAME`
+- `ALERT_SMTP_USE_TLS`
+- `ALERT_SMTP_USE_SSL`
+- `ALERT_APP_URL`
+- `ALERT_GREETING_NAME`
+- `ALERT_RECIPIENT_EMAIL`
+
+To run the workflow manually, open GitHub **Actions**, choose **Send credit card benefit alerts**, select **Run workflow**, and run it from the default branch. Manual runs support an optional `run_date` and a `test_email` option that sends a test message without writing `alert_log` rows.
+
+To run alerts locally, use:
 
 ```powershell
 py scripts/send_alerts.py

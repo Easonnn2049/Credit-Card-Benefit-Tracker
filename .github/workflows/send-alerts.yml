@@ -1,0 +1,66 @@
+name: Send credit card benefit alerts
+
+on:
+  schedule:
+    - cron: "0 13 * * *"
+  workflow_dispatch:
+    inputs:
+      test_email:
+        description: "Send SMTP test email without writing alert_log rows"
+        required: false
+        type: boolean
+        default: false
+      run_date:
+        description: "Optional alert run date in YYYY-MM-DD format"
+        required: false
+        type: string
+
+concurrency:
+  group: credit-card-benefit-alerts
+  cancel-in-progress: true
+
+jobs:
+  send-alerts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      DATA_BACKEND: ${{ secrets.DATA_BACKEND }}
+      GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+      GCP_SERVICE_ACCOUNT_JSON: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+      ALERT_SMTP_HOST: ${{ secrets.ALERT_SMTP_HOST }}
+      ALERT_SMTP_PORT: ${{ secrets.ALERT_SMTP_PORT }}
+      ALERT_SMTP_USERNAME: ${{ secrets.ALERT_SMTP_USERNAME }}
+      ALERT_SMTP_PASSWORD: ${{ secrets.ALERT_SMTP_PASSWORD }}
+      ALERT_SENDER_EMAIL: ${{ secrets.ALERT_SENDER_EMAIL }}
+      ALERT_SENDER_NAME: ${{ secrets.ALERT_SENDER_NAME }}
+      ALERT_SMTP_USE_TLS: ${{ secrets.ALERT_SMTP_USE_TLS }}
+      ALERT_SMTP_USE_SSL: ${{ secrets.ALERT_SMTP_USE_SSL }}
+      ALERT_APP_URL: ${{ secrets.ALERT_APP_URL }}
+      ALERT_GREETING_NAME: ${{ secrets.ALERT_GREETING_NAME }}
+      ALERT_RECIPIENT_EMAIL: ${{ secrets.ALERT_RECIPIENT_EMAIL }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run alert sender
+        run: |
+          command=(python scripts/send_alerts.py)
+          if [[ "${{ github.event.inputs.test_email }}" == "true" ]]; then
+            command+=(--test-email)
+          fi
+          if [[ -n "${{ github.event.inputs.run_date }}" ]]; then
+            command+=(--date "${{ github.event.inputs.run_date }}")
+          fi
+          "${command[@]}"
