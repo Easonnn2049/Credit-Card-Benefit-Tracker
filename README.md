@@ -62,6 +62,61 @@ Never commit `.streamlit/secrets.toml` to GitHub. It contains private credential
 
 For Streamlit Community Cloud, paste the same TOML content from your local `.streamlit/secrets.toml` into the app's **Secrets** settings.
 
+## Email Alert Secrets
+
+Email alerts are sent by the manual runner script, not from the main Streamlit UI.
+Set `ALERT_RECIPIENT_EMAIL` to the email address that should receive alerts.
+
+Add these values to Streamlit secrets or environment variables:
+
+```toml
+ALERT_RECIPIENT_EMAIL = "recipient@example.com"
+ALERT_SMTP_HOST = "smtp.gmail.com"
+ALERT_SMTP_PORT = "587"
+ALERT_SMTP_USERNAME = "your-sender-email@gmail.com"
+ALERT_SMTP_PASSWORD = "your-app-password"
+ALERT_SENDER_EMAIL = "your-sender-email@gmail.com"
+ALERT_SENDER_NAME = "Credit Card Benefit Tracker"
+ALERT_SMTP_USE_TLS = "true"
+ALERT_SMTP_USE_SSL = "false"
+ALERT_APP_URL = "https://your-app.streamlit.app"
+ALERT_GREETING_NAME = "Xinyi"
+```
+
+For Gmail, use an app password rather than your normal Google account password. Do not commit secrets.
+
+## Manual Email Alerts
+
+Scheduling is not implemented yet. To run alerts manually, use:
+
+```powershell
+py scripts/send_alerts.py
+```
+
+The script reads the configured storage backend, calculates due benefit and annual-fee alerts for today, sends one HTML email only when alerts are due, and writes successful sends to `alert_log`.
+
+To verify SMTP without waiting for a real alert date:
+
+```powershell
+py scripts/send_alerts.py --test-email
+```
+
+Test mode sends a clearly labeled test email and does not write `alert_log` rows.
+
+To inspect a specific alert date without changing rules:
+
+```powershell
+py scripts/send_alerts.py --date 2026-05-24
+```
+
+For local CSV smoke tests, override the configured backend:
+
+```powershell
+py scripts/send_alerts.py --backend local --date 2026-05-12
+```
+
+Duplicate prevention uses the deterministic `alert_id` generated from alert type, entity, reminder window, due/fee date, and recipient email. Rows with `status` of `sent`, `success`, or `delivered` suppress repeat sends for the same reminder. Failed rows are retained for troubleshooting but do not suppress future sends.
+
 ## Streamlit Community Cloud Deployment
 
 Use Google Sheets as the backend for deployed cloud use. Streamlit Community Cloud's local filesystem is not durable, so local files should not be treated as persistent cloud storage.

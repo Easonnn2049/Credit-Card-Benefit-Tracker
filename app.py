@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import base64
 import json
-import os
 from html import escape
 from pathlib import Path
 from urllib.parse import urlparse
@@ -11,10 +10,8 @@ from uuid import uuid4
 import pandas as pd
 import requests
 import streamlit as st
-import streamlit.components.v1 as components
 
-from alerts import build_alert_preview, render_email_html, subject_for_preview
-from storage import ALERT_LOG_COLUMNS, BENEFIT_COLUMNS, CARD_COLUMNS, USAGE_COLUMNS, get_storage
+from storage import BENEFIT_COLUMNS, CARD_COLUMNS, USAGE_COLUMNS, get_storage
 
 
 APP_DIR = Path(__file__).parent
@@ -119,10 +116,6 @@ def read_usage() -> pd.DataFrame:
     return STORAGE.read_usage()
 
 
-def read_alert_log() -> pd.DataFrame:
-    return STORAGE.read_alert_log()
-
-
 def save_cards(df: pd.DataFrame) -> None:
     STORAGE.save_cards(df)
 
@@ -133,10 +126,6 @@ def save_benefits(df: pd.DataFrame) -> None:
 
 def save_usage(df: pd.DataFrame) -> None:
     STORAGE.save_usage(df)
-
-
-def save_alert_log(df: pd.DataFrame) -> None:
-    STORAGE.save_alert_log(df)
 
 
 def normalize_text(value: object) -> str:
@@ -175,21 +164,6 @@ def yes_no(value: object) -> str:
     if text.lower() in {"false", "0", "no", "n"}:
         return "No"
     return text
-
-
-def config_value(*names: str) -> str:
-    for name in names:
-        value = ""
-        try:
-            value = st.secrets.get(name, "")
-        except Exception:
-            value = ""
-        if value:
-            return str(value).strip()
-        env_value = os.environ.get(name, "").strip()
-        if env_value:
-            return env_value
-    return ""
 
 
 def normalize_header(column: object) -> str:
@@ -1856,116 +1830,6 @@ def show_usage_log(usage: pd.DataFrame) -> None:
         st.rerun()
 
 
-def show_alert_dataframe(df: pd.DataFrame, columns: list[str], empty_message: str) -> None:
-    if df.empty:
-        st.info(empty_message)
-        return
-
-    display = df.copy()
-    for column in columns:
-        if column not in display.columns:
-            display[column] = ""
-    st.dataframe(display[columns], use_container_width=True, hide_index=True)
-
-
-def show_alert_preview(cards: pd.DataFrame, benefits: pd.DataFrame) -> None:
-    title_block("Alert Preview", "Dry-run reminder checks for benefits and annual fees. No emails are sent from this page.")
-
-    alert_log = read_alert_log()
-    default_recipient = config_value("ALERT_RECIPIENT_EMAIL", "RECIPIENT_EMAIL")
-    default_app_url = config_value("ALERT_APP_URL", "STREAMLIT_APP_URL", "APP_URL")
-    default_greeting = config_value("ALERT_GREETING_NAME") or "Xinyi"
-
-    controls = st.columns([1, 1.25, 1.25])
-    with controls[0]:
-        run_date = st.date_input("Run date", value=pd.Timestamp.today().date(), format="YYYY-MM-DD")
-    with controls[1]:
-        recipient_email = st.text_input(
-            "Recipient email for duplicate checks",
-            value=default_recipient,
-            placeholder="name@example.com",
-        ).strip()
-    with controls[2]:
-        app_url = st.text_input(
-            "Tracker app URL",
-            value=default_app_url,
-            placeholder="https://your-app.streamlit.app",
-        ).strip()
-
-    greeting_name = st.text_input("Greeting name", value=default_greeting)
-    if not recipient_email:
-        st.warning("Add a recipient email for accurate duplicate-key previews. This does not send email.")
-
-    preview = build_alert_preview(
-        benefits=benefits,
-        cards=cards,
-        alert_log=alert_log,
-        run_date=run_date,
-        recipient_email=recipient_email,
-    )
-
-    st.caption("Preview only: Phase B calculates and renders reminders but does not send or write sent log rows.")
-    metric_cols = st.columns(4)
-    metric_cols[0].metric("Benefit reminders", preview.benefit_count)
-    metric_cols[1].metric("Remaining value", format_amount(preview.total_remaining_value))
-    metric_cols[2].metric("Annual fee reminders", preview.annual_fee_count)
-    metric_cols[3].metric(
-        "Skipped duplicates",
-        len(preview.skipped_benefits) + len(preview.skipped_annual_fees),
-    )
-
-    with st.expander("Alert log worksheet schema", expanded=False):
-        st.write(", ".join(ALERT_LOG_COLUMNS))
-        st.caption("Google Sheets backend will treat a missing alert_log worksheet as empty for previews.")
-        if st.button("Create or refresh empty alert_log table"):
-            save_alert_log(alert_log)
-            st.success("alert_log table is available.")
-            st.rerun()
-
-    st.subheader("Would include in this run")
-    benefit_columns = [
-        "alert_type",
-        "reminder_window",
-        "owner",
-        "card_name",
-        "benefit_name",
-        "remaining_amount",
-        "due_date",
-        "days_left",
-        "frequency",
-        "status",
-        "action_hint",
-    ]
-    show_alert_dataframe(preview.benefits, benefit_columns, "No benefit reminders match this run date.")
-
-    annual_fee_columns = [
-        "alert_type",
-        "reminder_window",
-        "owner",
-        "card_name",
-        "annual_fee",
-        "annual_fee_date",
-        "days_left",
-        "action_hint",
-    ]
-    show_alert_dataframe(preview.annual_fees, annual_fee_columns, "No annual fee reminders match this run date.")
-
-    st.subheader("Skipped because already sent")
-    skipped_columns = ["alert_id", "alert_type", "reminder_window", "entity_type", "entity_id", "card_name"]
-    show_alert_dataframe(
-        pd.concat([preview.skipped_benefits, preview.skipped_annual_fees], ignore_index=True),
-        skipped_columns,
-        "No matching reminders were skipped by the alert log.",
-    )
-
-    email_html = render_email_html(preview, greeting_name=greeting_name, app_url=app_url)
-    st.subheader("HTML email preview")
-    st.caption(f"Subject: {subject_for_preview(preview)}")
-    components.html(email_html, height=780, scrolling=True)
-    with st.expander("HTML source"):
-        st.code(email_html, language="html")
-
-
 def serialize_date_column(df: pd.DataFrame, column: str) -> None:
     if column not in df.columns:
         return
@@ -2095,7 +1959,7 @@ def main() -> None:
         )
         section = st.radio(
             "App",
-            ["Dashboard", "Alerts", "Raw Data"],
+            ["Dashboard", "Raw Data"],
         )
         st.markdown(
             f"""
@@ -2115,8 +1979,6 @@ def main() -> None:
 
     if section == "Dashboard":
         show_dashboard(benefits, cards)
-    elif section == "Alerts":
-        show_alert_preview(cards, benefits)
     else:
         show_raw_data(cards, benefits, usage)
 
