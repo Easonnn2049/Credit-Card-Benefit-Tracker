@@ -39,6 +39,7 @@ TABLE_COLUMNS = {
     "usage": USAGE_COLUMNS,
     "alert_log": ALERT_LOG_COLUMNS,
 }
+APP_TABLE_NAMES = ("cards", "benefits", "usage")
 
 
 def _streamlit_secrets() -> Mapping[str, Any]:
@@ -136,6 +137,7 @@ def _cached_table_bundle(
     spreadsheet_url: str,
     credential_fingerprint: str,
     _account_info: dict[str, Any],
+    table_names: tuple[str, ...],
 ) -> dict[str, pd.DataFrame]:
     spreadsheet = _cached_spreadsheet(
         spreadsheet_id,
@@ -144,7 +146,8 @@ def _cached_table_bundle(
         _account_info,
     )
     tables = {}
-    for table_name, columns in TABLE_COLUMNS.items():
+    for table_name in table_names:
+        columns = TABLE_COLUMNS[table_name]
         try:
             worksheet = spreadsheet.worksheet(table_name)
         except Exception as exc:
@@ -191,11 +194,13 @@ class GoogleSheetsStorage(StorageBackend):
             raise
 
     def read_table(self, table_name: str, columns: list[str]) -> pd.DataFrame:
+        table_names = ("alert_log",) if table_name == "alert_log" else APP_TABLE_NAMES
         tables = _cached_table_bundle(
             self.spreadsheet_id,
             self.spreadsheet_url,
             self._credential_fingerprint,
             self._account_info,
+            table_names,
         )
         if table_name in tables:
             return prepare_table(tables[table_name], columns)

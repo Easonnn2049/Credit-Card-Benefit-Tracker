@@ -1982,6 +1982,17 @@ hr {
         background: rgba(209, 250, 229, .72);
     }
 
+    .mobile-status-partially-used {
+        color: #9a5c0a;
+        background: rgba(254, 243, 199, .72);
+    }
+
+    .mobile-status-upcoming,
+    .mobile-status-hidden {
+        color: var(--text-muted);
+        background: rgba(226, 232, 240, .76);
+    }
+
     .mobile-benefit-facts {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -2025,6 +2036,14 @@ hr {
         font-weight: 760;
         padding: 13px;
         text-align: center;
+    }
+
+    .mobile-section-heading {
+        color: var(--text-main);
+        font-size: .92rem;
+        font-weight: 880;
+        line-height: 1.1;
+        margin: 17px 0 3px;
     }
 
     /* Mobile-specific card dropdowns: keep long checklists collapsible by card. */

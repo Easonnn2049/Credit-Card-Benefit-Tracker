@@ -11,6 +11,7 @@ import pandas as pd
 import requests
 import streamlit as st
 
+from alerts.rules import annual_fee_date, benefit_attention_window
 from storage import BENEFIT_COLUMNS, CARD_COLUMNS, USAGE_COLUMNS, get_storage
 
 
@@ -690,7 +691,8 @@ def download_card_image(card: pd.Series, image_url: str) -> Path:
     return save_card_image(card, response.content, extension)
 
 
-def card_image_data_uri(path: Path) -> str:
+@st.cache_data(show_spinner=False)
+def _cached_image_data_uri(path_text: str, modified_ns: int) -> str:
     mime_types = {
         ".png": "image/png",
         ".jpg": "image/jpeg",
@@ -699,9 +701,14 @@ def card_image_data_uri(path: Path) -> str:
         ".avif": "image/avif",
         ".svg": "image/svg+xml",
     }
+    path = Path(path_text)
     mime_type = mime_types.get(path.suffix.lower(), "image/png")
     encoded = base64.b64encode(path.read_bytes()).decode("ascii")
     return f"data:{mime_type};base64,{encoded}"
+
+
+def card_image_data_uri(path: Path) -> str:
+    return _cached_image_data_uri(str(path), path.stat().st_mtime_ns)
 
 
 def render_card_cue(card: pd.Series) -> None:
@@ -805,6 +812,148 @@ def next_membership_fee_label(card: pd.Series) -> str:
 
     days = (fee_date - today).days
     return f"Annual fee in {days} days ({fee_date.strftime('%b')} {fee_date.day})"
+
+
+def query_param_flag(name: str) -> bool | None:
+    try:
+        value = st.query_params.get(name)
+    except Exception:
+        return None
+
+    if isinstance(value, list):
+        value = value[0] if value else ""
+    text = normalize_text(value).lower()
+    if text in {"1", "true", "yes", "y", "on"}:
+        return True
+    if text in {"0", "false", "no", "n", "off"}:
+        return False
+    return None
+
+
+def is_mobile_request() -> bool:
+    override = query_param_flag("mobile")
+    if override is not None:
+        return override
+
+    try:
+        headers = st.context.headers
+        user_agent = headers.get("user-agent", "") if hasattr(headers, "get") else ""
+    except Exception:
+        return False
+
+    agent = user_agent.lower()
+    if not agent:
+        return False
+    if any(token in agent for token in ["ipad", "tablet", "kindle"]):
+        return False
+    if any(token in agent for token in ["iphone", "ipod", "windows phone", "opera mini"]):
+        return True
+    return "android" in agent and "mobile" in agent
+
+
+def force_mobile_dashboard_css() -> None:
+    st.markdown(
+        """
+        <style>
+        .st-key-mobile_dashboard,
+        [class*="st-key-mobile_dashboard"] {
+            display: block !important;
+        }
+
+        .st-key-desktop_dashboard,
+        [class*="st-key-desktop_dashboard"] {
+            display: none !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def mobile_attention_benefits(active: pd.DataFrame) -> pd.DataFrame:
+    if active.empty:
+        return active.copy()
+
+    due = active.copy()
+    due["_attention_window"] = due["frequency"].map(benefit_attention_window)
+    due["_days_until_expiration"] = pd.to_numeric(due["days_until_expiration"], errors="coerce")
+    remaining = due["remaining_amount"].apply(normalize_money) if "remaining_amount" in due else 0
+    eligible_status = due["status"].isin(["Not Used", "Partially Used"])
+    mask = (
+        eligible_status
+        & (~due["is_upcoming"])
+        & due["_attention_window"].gt(0)
+        & due["_days_until_expiration"].ge(0)
+        & due["_days_until_expiration"].le(due["_attention_window"])
+        & remaining.gt(0)
+    )
+    return due[mask].drop(columns=["_attention_window", "_days_until_expiration"]).copy()
+
+
+def mobile_monthly_not_used(active: pd.DataFrame) -> pd.DataFrame:
+    if active.empty:
+        return active.copy()
+
+    frequency = active["frequency"].fillna("").astype(str).str.lower()
+    remaining = active["remaining_amount"].apply(normalize_money) if "remaining_amount" in active else 0
+    return active[
+        active["status"].eq("Not Used")
+        & frequency.str.contains("monthly", na=False)
+        & (~active["is_upcoming"])
+        & remaining.gt(0)
+    ].copy()
+
+
+def sort_mobile_benefits(benefits: pd.DataFrame) -> pd.DataFrame:
+    if benefits.empty:
+        return benefits.copy()
+
+    sorted_benefits = benefits.copy()
+    priority_rank = {"High": 0, "Medium": 1, "Low": 2}
+    sorted_benefits["_priority_rank"] = sorted_benefits["priority"].map(priority_rank).fillna(3)
+    sorted_benefits["_days_until_expiration"] = pd.to_numeric(
+        sorted_benefits["days_until_expiration"],
+        errors="coerce",
+    ).fillna(99999)
+    sorted_benefits = sorted_benefits.sort_values(
+        ["_days_until_expiration", "_priority_rank", "card_name", "benefit_name"],
+        na_position="last",
+    )
+    return sorted_benefits.drop(columns=["_priority_rank", "_days_until_expiration"])
+
+
+def annual_fee_reminders(cards: pd.DataFrame, within_days: int = 30) -> pd.DataFrame:
+    rows = []
+    if cards.empty:
+        return pd.DataFrame(rows)
+
+    today = pd.Timestamp.today().date()
+    for _, card in cards.iterrows():
+        if clean_display(card.get("status"), "").lower() == "closed":
+            continue
+
+        annual_fee = normalize_money(card.get("annual_fee"))
+        if annual_fee <= 0:
+            continue
+
+        fee_date = annual_fee_date(card.get("open_date"), today)
+        if not fee_date:
+            continue
+
+        days_left = (fee_date - today).days
+        if 0 <= days_left <= within_days:
+            rows.append(
+                {
+                    **card.to_dict(),
+                    "annual_fee_date": fee_date.isoformat(),
+                    "days_left": days_left,
+                }
+            )
+
+    reminders = pd.DataFrame(rows)
+    if reminders.empty:
+        return reminders
+    return reminders.sort_values(["days_left", "card_name"])
 
 
 def benefit_summary_label(row: pd.Series) -> str:
@@ -1211,8 +1360,11 @@ def show_dashboard(benefits: pd.DataFrame, cards: pd.DataFrame) -> None:
         annual_fee_cards = annual_fee_cards[annual_fee_cards["status"].fillna("").astype(str).str.lower() != "closed"]
     total_annual_fee = annual_fee_cards["annual_fee"].apply(normalize_money).sum() if "annual_fee" in annual_fee_cards else 0
 
-    with st.container(key="mobile_dashboard"):
-        show_mobile_checklist(flagged, active, expiring, used, remaining_value)
+    if is_mobile_request():
+        force_mobile_dashboard_css()
+        with st.container(key="mobile_dashboard"):
+            show_mobile_checklist(flagged, active, expiring, used, remaining_value, cards)
+        return
 
     with st.container(key="desktop_dashboard"):
         render_dashboard_kpis(len(active), len(expiring), len(used), remaining_value, total_annual_fee)
@@ -1240,7 +1392,7 @@ def show_dashboard(benefits: pd.DataFrame, cards: pd.DataFrame) -> None:
         if dashboard_view == "Home":
             show_home_view(active, expiring, needs_action)
         elif dashboard_view == "Cards":
-            show_by_card_view(browse_data)
+            show_by_card_view(browse_data, cards, flagged)
         elif dashboard_view == "Categories":
             show_by_category_view(browse_data)
         else:
@@ -1251,8 +1403,14 @@ def mobile_status_label(row: pd.Series) -> str:
     status = clean_display(row.get("status"), "Not Used")
     if status == "Used":
         return "Used"
+    if status == "Ignored":
+        return "Hidden"
+    if bool(row.get("is_upcoming", False)):
+        return "Upcoming"
     if bool(row.get("is_expiring_soon", False)):
         return "Expiring Soon"
+    if status == "Partially Used":
+        return "Partially Used"
     return "Available"
 
 
@@ -1272,7 +1430,7 @@ def render_mobile_benefit_card(row: pd.Series, key_prefix: str) -> None:
     due_date = date_label(row.get("expiration_date")) or "No date"
     remaining = normalize_money(row.get("remaining_amount"))
     face_value = normalize_money(row.get("face_value"))
-    value = remaining if status != "Used" else face_value
+    estimated_value = normalize_money(row.get("realistic_value")) or face_value or remaining
     progress = int(min(max(normalize_money(row.get("usage_percent")) * 100, 0), 100))
     label = mobile_status_label(row)
     action_text = "Reopen" if status == "Used" else "Not active yet" if upcoming else "Mark Used"
@@ -1297,9 +1455,9 @@ def render_mobile_benefit_card(row: pd.Series, key_prefix: str) -> None:
                         <small>{escape(due_date)}</small>
                     </div>
                     <div>
-                        <span>Value</span>
-                        <strong>{format_amount(value)}</strong>
-                        <small>{progress}% used</small>
+                        <span>Est. value</span>
+                        <strong>{format_amount(estimated_value)}</strong>
+                        <small>{format_amount(remaining)} left - {progress}% used</small>
                     </div>
                 </div>
             </div>
@@ -1393,45 +1551,131 @@ def render_mobile_card_group(card_label: str, group: pd.DataFrame, key_prefix: s
             render_mobile_benefit_card(benefit, f"{key_prefix}_{index}")
 
 
+def render_mobile_section(title: str, benefits: pd.DataFrame, key_prefix: str, limit: int | None = None) -> None:
+    st.markdown(f'<div class="mobile-section-heading">{escape(title)}</div>', unsafe_allow_html=True)
+    if benefits.empty:
+        st.markdown('<div class="mobile-empty-state">Nothing here right now.</div>', unsafe_allow_html=True)
+        return
+
+    visible = sort_mobile_benefits(benefits)
+    if limit is not None:
+        visible = visible.head(limit)
+    for index, (_, benefit) in enumerate(visible.iterrows()):
+        render_mobile_benefit_card(benefit, f"{key_prefix}_{index}")
+
+
+def render_mobile_annual_fee_card(row: pd.Series, key_prefix: str) -> None:
+    card_name = clean_display(row.get("card_name"), "Card not set")
+    owner = clean_display(row.get("owner"), "")
+    annual_fee = normalize_money(row.get("annual_fee"))
+    fee_date = date_label(row.get("annual_fee_date")) or "No date"
+    days_left = int(normalize_money(row.get("days_left")))
+    due_text = "Due today" if days_left == 0 else f"Due in {days_left} days"
+    label = "Due today" if days_left == 0 else "Fee soon"
+
+    with st.container(key=f"mobile_fee_{key_prefix}".replace(" ", "_").replace("-", "_")):
+        st.markdown(
+            f"""
+            <div class="mobile-benefit-card">
+                <div class="mobile-benefit-main">
+                    <div>
+                        <div class="mobile-benefit-name">{escape(card_name)}</div>
+                        <div class="mobile-benefit-card-name">Annual fee reminder</div>
+                        {f'<div class="mobile-benefit-owner">{escape(owner)}</div>' if owner else ''}
+                    </div>
+                    <span class="mobile-status mobile-status-expiring-soon">{escape(label)}</span>
+                </div>
+                <div class="mobile-benefit-facts">
+                    <div>
+                        <span>Due</span>
+                        <strong>{escape(due_text)}</strong>
+                        <small>{escape(fee_date)}</small>
+                    </div>
+                    <div>
+                        <span>Annual fee</span>
+                        <strong>{format_amount(annual_fee)}</strong>
+                        <small>Review card value</small>
+                    </div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+def render_mobile_annual_fees(fee_reminders: pd.DataFrame, limit: int | None = None) -> None:
+    st.markdown('<div class="mobile-section-heading">Annual Fees</div>', unsafe_allow_html=True)
+    if fee_reminders.empty:
+        st.markdown('<div class="mobile-empty-state">No annual fees due soon.</div>', unsafe_allow_html=True)
+        return
+
+    visible = fee_reminders.head(limit) if limit is not None else fee_reminders
+    for index, (_, fee) in enumerate(visible.iterrows()):
+        render_mobile_annual_fee_card(fee, f"annual_fee_{index}")
+
+
 def show_mobile_checklist(
     flagged: pd.DataFrame,
     active: pd.DataFrame,
     expiring: pd.DataFrame,
     used: pd.DataFrame,
     remaining_value: float,
+    cards: pd.DataFrame,
 ) -> None:
+    due_soon = mobile_attention_benefits(active)
+    this_month = mobile_monthly_not_used(active)
+    fee_reminders = annual_fee_reminders(cards)
     checklist_data = flagged[flagged["status"] != "Ignored"].copy()
-    available = active[(active["status"] != "Used") & (~active["is_upcoming"])]
     all_items = checklist_data[checklist_data["status"] != "Ignored"]
 
     st.markdown(
         f"""
         <div class="mobile-checklist-summary">
-            <div><span>Available</span><strong>{len(available)}</strong></div>
-            <div><span>Expiring</span><strong>{len(expiring)}</strong></div>
-            <div><span>Left</span><strong>{format_amount(remaining_value)}</strong></div>
+            <div><span>Soon</span><strong>{len(due_soon)}</strong></div>
+            <div><span>This month</span><strong>{len(this_month)}</strong></div>
+            <div><span>Fees</span><strong>{len(fee_reminders)}</strong></div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    filter_options = {
-        f"Available ({len(available)})": available.sort_values(["expiration_date", "priority", "benefit_name"]),
-        f"Expiring Soon ({len(expiring)})": expiring.sort_values(["expiration_date", "priority", "benefit_name"]),
-        f"Used ({len(used)})": used.sort_values(["expiration_date", "card_name", "benefit_name"], ascending=[False, True, True]),
-        f"All ({len(all_items)})": all_items.sort_values(["status", "expiration_date", "benefit_name"]),
-    }
-    selected_filter = st.radio(
-        "Mobile benefit filter",
-        list(filter_options.keys()),
+    selected_view = st.radio(
+        "Mobile view",
+        [
+            "Action Home",
+            f"Expiring Soon ({len(due_soon)})",
+            f"This Month ({len(this_month)})",
+            f"Annual Fees ({len(fee_reminders)})",
+            "All Cards",
+        ],
         horizontal=True,
         label_visibility="collapsed",
-        key="mobile_benefit_filter",
+        key="mobile_benefit_view",
     )
-    selected = filter_options[selected_filter]
 
+    if selected_view == "Action Home":
+        render_mobile_section("Priority Reminders", due_soon, "mobile_home_due", limit=6)
+        render_mobile_section("Not Used This Month", this_month, "mobile_home_month", limit=6)
+        render_mobile_annual_fees(fee_reminders, limit=4)
+        if due_soon.empty and this_month.empty and fee_reminders.empty:
+            st.success("No urgent benefit actions right now.")
+        return
+
+    if selected_view.startswith("Expiring Soon"):
+        render_mobile_section("Expiring Soon", due_soon, "mobile_due")
+        return
+
+    if selected_view.startswith("This Month"):
+        render_mobile_section("Not Used This Month", this_month, "mobile_month")
+        return
+
+    if selected_view.startswith("Annual Fees"):
+        render_mobile_annual_fees(fee_reminders)
+        return
+
+    selected = all_items.sort_values(["status", "expiration_date", "benefit_name"])
     if selected.empty:
-        st.markdown('<div class="mobile-empty-state">Nothing here right now.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="mobile-empty-state">No card benefits to show.</div>', unsafe_allow_html=True)
         return
 
     selected = selected.copy()
@@ -1481,12 +1725,18 @@ def show_priority_lane(title: str, benefits: pd.DataFrame, key_prefix: str) -> N
         )
 
 
-def show_by_card_view(flagged: pd.DataFrame) -> None:
+def show_by_card_view(
+    flagged: pd.DataFrame,
+    cards: pd.DataFrame | None = None,
+    all_benefits: pd.DataFrame | None = None,
+) -> None:
     if flagged.empty:
         st.info("No active benefits to show. Use the toggle above or open Archived.")
         return
-    cards = read_cards()
-    all_benefits = benefit_status_flags(read_benefits())
+    if cards is None:
+        cards = read_cards()
+    if all_benefits is None:
+        all_benefits = benefit_status_flags(read_benefits())
 
     if cards.empty:
         cards = flagged[["owner", "card_name"]].drop_duplicates().copy()

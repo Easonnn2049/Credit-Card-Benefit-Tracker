@@ -87,6 +87,13 @@ def _benefit_rules_for_frequency(frequency: object) -> list[tuple[str, str, int]
     return []
 
 
+def benefit_attention_window(frequency: object) -> int:
+    rules = _benefit_rules_for_frequency(frequency)
+    if not rules:
+        return 0
+    return max(target_days for _, _, target_days in rules)
+
+
 def _action_hint(frequency: object, benefit_type: object, category: object) -> str:
     frequency_text = _clean(frequency).lower()
     benefit_type_text = _clean(benefit_type).lower()

@@ -196,6 +196,8 @@ Deployment smoke test checklist:
 - Mark Used writes the update back to Google Sheets.
 - Restart or reboot the Streamlit app and confirm the persisted Google Sheets data loads again.
 
+Branding note: Streamlit Community Cloud may show a hosted-by-Streamlit badge. The app hides only standard Streamlit menu/header controls with stable CSS; it does not use brittle CSS or JavaScript hacks to remove the hosted badge. Removing that badge reliably would require a different hosting setup, such as self-hosting.
+
 ## Access from phone on same Wi-Fi
 
 Install dependencies if needed:
