@@ -25,6 +25,7 @@ jobs:
     timeout-minutes: 10
 
     env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       DATA_BACKEND: ${{ secrets.DATA_BACKEND }}
       GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
       GCP_SERVICE_ACCOUNT_JSON: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}

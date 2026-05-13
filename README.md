@@ -62,6 +62,32 @@ Never commit `.streamlit/secrets.toml` to GitHub. It contains private credential
 
 For Streamlit Community Cloud, paste the same TOML content from your local `.streamlit/secrets.toml` into the app's **Secrets** settings.
 
+If the Google service account is deleted or recreated, replace every old credential with the new JSON key values:
+
+- Local `.streamlit/secrets.toml`: update the full `[gcp_service_account]` table.
+- Streamlit Community Cloud Secrets: update the same `[gcp_service_account]` table.
+- GitHub Actions repository secrets: replace `GCP_SERVICE_ACCOUNT_JSON` with the complete new JSON key content.
+- Google Sheets sharing: share the tracker spreadsheet with the new service account `client_email` as **Editor**.
+
+Do not commit downloaded JSON key files or `.streamlit/secrets.toml`.
+
+Credential refresh checks:
+
+```powershell
+# Local Streamlit Google Sheets backend test
+$env:DATA_BACKEND = "google_sheets"
+py -m streamlit run app.py
+
+# Confirm the alert runner can read Google Sheets without sending email
+py scripts/send_alerts.py --backend google_sheets --date 1900-01-02
+
+# Confirm no local secrets are tracked by git
+git check-ignore -v .streamlit/secrets.toml
+git ls-files "*.json" ".streamlit/secrets.toml"
+```
+
+After updating Streamlit Community Cloud Secrets, reboot the Streamlit app from the app management page and confirm the dashboard loads from Google Sheets. After updating GitHub Actions secrets, run **Send credit card benefit alerts** manually from the GitHub Actions tab with `test_email` enabled.
+
 ## Email Alert Secrets
 
 Email alerts are sent by the manual runner script, not from the main Streamlit UI.
@@ -107,6 +133,8 @@ Add these repository secrets in GitHub under **Settings > Secrets and variables 
 - `ALERT_APP_URL`
 - `ALERT_GREETING_NAME`
 - `ALERT_RECIPIENT_EMAIL`
+
+Set `DATA_BACKEND` to `google_sheets`. Set `GCP_SERVICE_ACCOUNT_JSON` to the full JSON text from the new Google service account key, not a file path. The workflow passes it into the alert script as an environment variable and does not print the value.
 
 To run the workflow manually, open GitHub **Actions**, choose **Send credit card benefit alerts**, select **Run workflow**, and run it from the default branch. Manual runs support an optional `run_date` and a `test_email` option that sends a test message without writing `alert_log` rows.
 
