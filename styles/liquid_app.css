@@ -1758,10 +1758,10 @@ hr {
         display: none;
     }
 
-    /* Mobile-specific spacing: keep the phone view dense and avoid dashboard-style air. */
+    /* Mobile-only safe area: keep content clear of browser chrome and Streamlit's hosted badge. */
     .block-container {
         max-width: 100%;
-        padding: .55rem .7rem 1.5rem;
+        padding: calc(env(safe-area-inset-top, 0px) + 1rem) .62rem calc(env(safe-area-inset-bottom, 0px) + 5.25rem);
     }
 
     .stApp,
@@ -1769,21 +1769,37 @@ hr {
         overflow-x: hidden;
     }
 
+    header[data-testid="stHeader"],
+    .stAppHeader {
+        display: none !important;
+    }
+
+    /* Mobile-only: hide Streamlit's sidebar shell so its collapse control does not float over the checklist. */
+    section[data-testid="stSidebar"],
+    aside[data-testid="stSidebar"],
+    div[data-testid="stSidebar"] {
+        display: none !important;
+    }
+
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="collapsedControl"],
+    [data-testid="stSidebarCollapseButton"] {
+        display: none !important;
+    }
+
     .page-title-block {
-        padding: 13px 14px;
-        margin-bottom: 10px;
-        border-radius: 18px;
+        padding: 10px 12px;
+        margin-bottom: 9px;
+        border-radius: 15px;
     }
 
     .page-title-block h1 {
-        font-size: 1.35rem;
-        line-height: 1.12;
+        font-size: 1.05rem;
+        line-height: 1.1;
     }
 
     .page-title-block p {
-        font-size: .84rem;
-        line-height: 1.32;
-        margin-top: 5px;
+        display: none;
     }
 
     .page-title-block,
@@ -1805,12 +1821,17 @@ hr {
         min-width: 0;
     }
 
-    /* Mobile-specific filter tabs: make Dashboard browsing feel like a checklist app. */
+    /* Mobile-specific nav: compact segmented control for action views. */
     .st-key-mobile_dashboard div[data-testid="stRadio"] [role="radiogroup"] {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 9px;
-        margin: 16px 0 18px;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 5px;
+        margin: 8px 0 15px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stRadio"] label[data-testid="stWidgetLabel"],
+    [class*="st-key-mobile_dashboard"] div[data-testid="stRadio"] label[data-testid="stWidgetLabel"] {
+        display: none !important;
     }
 
     .st-key-mobile_dashboard div[data-testid="stRadio"] [data-baseweb="radio"] {
@@ -1818,20 +1839,18 @@ hr {
         align-items: center !important;
         justify-content: center !important;
         min-width: 0 !important;
-        min-height: 42px;
-        padding: 0 10px !important;
-        border-radius: 15px;
-        border: 1px solid rgba(255,255,255,.54);
+        min-height: 34px;
+        padding: 0 5px !important;
+        border-radius: 11px;
+        border: 1px solid rgba(255,255,255,.44);
         background:
-            radial-gradient(circle at 24% 0%, rgba(255,255,255,.62), transparent 42%),
-            linear-gradient(145deg, rgba(255,255,255,.36), rgba(255,255,255,.18), rgba(142,197,255,.10)),
-            rgba(255,255,255,.22);
+            linear-gradient(145deg, rgba(255,255,255,.34), rgba(255,255,255,.16)),
+            rgba(255,255,255,.18);
         box-shadow:
-            inset 0 1px 0 rgba(255,255,255,.74),
-            inset 0 -1px 0 rgba(148,163,184,.12),
-            0 8px 18px rgba(71,85,105,.09);
-        backdrop-filter: blur(22px) saturate(1.18);
-        -webkit-backdrop-filter: blur(22px) saturate(1.18);
+            inset 0 1px 0 rgba(255,255,255,.60),
+            0 4px 10px rgba(71,85,105,.06);
+        backdrop-filter: blur(18px) saturate(1.12);
+        -webkit-backdrop-filter: blur(18px) saturate(1.12);
     }
 
     .st-key-mobile_dashboard div[data-testid="stRadio"] [data-baseweb="radio"] > div:first-child {
@@ -1847,8 +1866,8 @@ hr {
         min-height: 100%;
         color: var(--text-muted) !important;
         font-family: var(--font-primary) !important;
-        font-size: .82rem;
-        font-weight: 780;
+        font-size: .7rem;
+        font-weight: 790;
         line-height: 1 !important;
         margin: 0 !important;
         text-align: center !important;
@@ -1859,16 +1878,13 @@ hr {
     }
 
     .st-key-mobile_dashboard div[data-testid="stRadio"] [data-baseweb="radio"]:has(input:checked) {
-        border-color: rgba(124,156,245,.42);
+        border-color: rgba(124,156,245,.40);
         background:
-            radial-gradient(circle at 24% 0%, rgba(255,255,255,.76), transparent 44%),
-            linear-gradient(145deg, rgba(255,255,255,.44), rgba(124,156,245,.18), rgba(142,197,255,.14)),
-            rgba(124,156,245,.14);
+            linear-gradient(145deg, rgba(255,255,255,.48), rgba(124,156,245,.16)),
+            rgba(124,156,245,.12);
         box-shadow:
-            inset 0 1px 0 rgba(255,255,255,.82),
-            inset 0 -1px 0 rgba(96,165,250,.16),
-            0 1px 0 rgba(255,255,255,.70),
-            0 9px 20px rgba(110,168,254,.14);
+            inset 0 1px 0 rgba(255,255,255,.76),
+            0 5px 12px rgba(110,168,254,.10);
     }
 
     .st-key-mobile_dashboard div[data-testid="stRadio"] [data-baseweb="radio"]:has(input:checked) p {
@@ -1880,23 +1896,23 @@ hr {
     .mobile-checklist-summary {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 7px;
-        margin: 0 0 16px;
+        gap: 6px;
+        margin: 2px 0 8px;
     }
 
     .mobile-checklist-summary > div {
         min-width: 0;
-        border: 1px solid rgba(255,255,255,.48);
-        border-radius: 14px;
-        background: var(--glass-control-bg), rgba(255,255,255,.24);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.58), 0 6px 16px rgba(71,85,105,.07);
-        padding: 8px 9px;
+        border: 1px solid rgba(255,255,255,.42);
+        border-radius: 12px;
+        background: linear-gradient(145deg, rgba(255,255,255,.34), rgba(255,255,255,.18)), rgba(255,255,255,.18);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.56), 0 4px 10px rgba(71,85,105,.055);
+        padding: 7px 8px;
     }
 
     .mobile-checklist-summary span {
         display: block;
         color: var(--text-muted);
-        font-size: .68rem;
+        font-size: .62rem;
         font-weight: 760;
         line-height: 1;
     }
@@ -1904,23 +1920,23 @@ hr {
     .mobile-checklist-summary strong {
         display: block;
         color: var(--text-main);
-        font-size: 1rem;
+        font-size: .9rem;
         font-weight: 860;
         line-height: 1.1;
-        margin-top: 5px;
+        margin-top: 3px;
         overflow-wrap: anywhere;
     }
 
     /* Mobile-specific benefit cards: single-column checklist rows, not shrunken desktop cards. */
     .mobile-benefit-card {
-        border: 1px solid rgba(255,255,255,.52);
-        border-radius: 16px 16px 12px 12px;
+        border: 1px solid rgba(255,255,255,.46);
+        border-radius: 13px;
         background:
-            linear-gradient(145deg, rgba(255,255,255,.46), rgba(255,255,255,.24), rgba(142,197,255,.10)),
-            rgba(255,255,255,.24);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.68), 0 10px 24px rgba(71,85,105,.10);
-        padding: 11px 11px 10px;
-        margin-top: 9px;
+            linear-gradient(145deg, rgba(255,255,255,.38), rgba(255,255,255,.20), rgba(142,197,255,.07)),
+            rgba(255,255,255,.20);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.62), 0 6px 15px rgba(71,85,105,.075);
+        padding: 9px 9px 8px;
+        margin-top: 8px;
         overflow: hidden;
     }
 
@@ -1928,40 +1944,40 @@ hr {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;
-        gap: 9px;
+        gap: 7px;
     }
 
     .mobile-benefit-name {
         color: var(--text-main);
-        font-size: .98rem;
+        font-size: .9rem;
         font-weight: 840;
-        line-height: 1.22;
+        line-height: 1.18;
         overflow-wrap: anywhere;
     }
 
     .mobile-benefit-card-name,
     .mobile-benefit-owner {
         color: var(--text-muted);
-        font-size: .76rem;
-        line-height: 1.22;
-        margin-top: 3px;
+        font-size: .7rem;
+        line-height: 1.16;
+        margin-top: 2px;
         overflow-wrap: anywhere;
     }
 
     .mobile-benefit-owner {
         color: var(--text-soft);
-        font-size: .7rem;
+        font-size: .66rem;
     }
 
     .mobile-status {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-height: 25px;
+        min-height: 22px;
         border-radius: 999px;
-        padding: 5px 8px;
+        padding: 4px 7px;
         border: 1px solid rgba(255,255,255,.52);
-        font-size: .66rem;
+        font-size: .6rem;
         font-weight: 840;
         line-height: 1;
         white-space: nowrap;
@@ -1996,23 +2012,23 @@ hr {
     .mobile-benefit-facts {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 7px;
-        margin-top: 10px;
+        gap: 6px;
+        margin-top: 8px;
     }
 
     .mobile-benefit-facts > div {
         min-width: 0;
-        border-radius: 12px;
-        background: rgba(255,255,255,.30);
-        border: 1px solid rgba(255,255,255,.38);
-        padding: 8px;
+        border-radius: 10px;
+        background: rgba(255,255,255,.24);
+        border: 1px solid rgba(255,255,255,.34);
+        padding: 6px 7px;
     }
 
     .mobile-benefit-facts span,
     .mobile-benefit-facts small {
         display: block;
         color: var(--text-muted);
-        font-size: .66rem;
+        font-size: .6rem;
         font-weight: 720;
         line-height: 1.1;
     }
@@ -2020,30 +2036,39 @@ hr {
     .mobile-benefit-facts strong {
         display: block;
         color: var(--text-main);
-        font-size: .88rem;
+        font-size: .78rem;
         font-weight: 840;
         line-height: 1.15;
-        margin: 4px 0 3px;
+        margin: 3px 0 2px;
         overflow-wrap: anywhere;
     }
 
     .mobile-empty-state {
-        border-radius: 14px;
+        border-radius: 12px;
         border: 1px solid rgba(255,255,255,.46);
         background: var(--glass-control-bg), rgba(255,255,255,.22);
         color: var(--text-muted);
-        font-size: .86rem;
+        font-size: .78rem;
         font-weight: 760;
-        padding: 13px;
+        padding: 11px;
         text-align: center;
     }
 
     .mobile-section-heading {
+        display: block;
         color: var(--text-main);
-        font-size: .92rem;
+        font-size: .86rem;
         font-weight: 880;
-        line-height: 1.1;
-        margin: 17px 0 3px;
+        line-height: 1.15;
+        margin: 18px 0 0;
+        padding: 2px 0 10px;
+        min-height: 26px;
+    }
+
+    .st-key-mobile_dashboard [data-testid="stMarkdownContainer"]:has(.mobile-section-heading),
+    [class*="st-key-mobile_dashboard"] [data-testid="stMarkdownContainer"]:has(.mobile-section-heading) {
+        min-height: 28px;
+        margin-bottom: 8px !important;
     }
 
     /* Mobile-specific card dropdowns: keep long checklists collapsible by card. */
@@ -2168,14 +2193,15 @@ hr {
 
     /* Mobile-specific tap targets: large enough for phone use without bulky desktop spacing. */
     .st-key-mobile_dashboard div[data-testid="stButton"] {
-        margin-bottom: 4px;
+        margin-bottom: 2px;
     }
 
     .st-key-mobile_dashboard div[data-testid="stButton"] button {
-        min-height: 42px !important;
-        border-radius: 14px !important;
-        margin-top: 2px;
-        font-size: .86rem !important;
+        min-height: 36px !important;
+        border-radius: 11px !important;
+        margin-top: 1px;
+        font-size: .78rem !important;
+        font-weight: 820 !important;
     }
 
     .st-key-mobile_dashboard [data-testid="stHorizontalBlock"],
@@ -2183,7 +2209,7 @@ hr {
     .st-key-mobile_dashboard [class*="_actions"] [data-testid="stHorizontalBlock"] {
         display: grid !important;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
-        gap: 8px !important;
+        gap: 6px !important;
         width: 100% !important;
         max-width: 100% !important;
         overflow: hidden !important;
@@ -2229,22 +2255,22 @@ hr {
 
     .st-key-mobile_dashboard div[data-testid="stPopover"] button {
         width: 100%;
-        min-height: 38px !important;
-        border-radius: 14px !important;
+        min-height: 34px !important;
+        border-radius: 11px !important;
         color: var(--text-muted) !important;
         font-weight: 820 !important;
     }
 
     .mobile-adjust-summary {
-        border-radius: 12px;
+        border-radius: 10px;
         border: 1px solid rgba(255,255,255,.46);
         background: rgba(255,255,255,.28);
         color: var(--text-muted);
-        font-size: .78rem;
+        font-size: .72rem;
         font-weight: 780;
         line-height: 1.25;
-        padding: 9px 10px;
-        margin: 6px 0 10px;
+        padding: 7px 8px;
+        margin: 5px 0 8px;
     }
 
     /* Mobile-specific simplification for table-heavy admin sections. */

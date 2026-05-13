@@ -1640,12 +1640,12 @@ def show_mobile_checklist(
     )
 
     selected_view = st.radio(
-        "Mobile view",
+        "Today's reminders",
         [
-            "Action Home",
-            f"Expiring Soon ({len(due_soon)})",
-            f"This Month ({len(this_month)})",
-            f"Annual Fees ({len(fee_reminders)})",
+            "Home",
+            "Soon",
+            "This Month",
+            "Fees",
             "All Cards",
         ],
         horizontal=True,
@@ -1653,7 +1653,7 @@ def show_mobile_checklist(
         key="mobile_benefit_view",
     )
 
-    if selected_view == "Action Home":
+    if selected_view == "Home":
         render_mobile_section("Priority Reminders", due_soon, "mobile_home_due", limit=6)
         render_mobile_section("Not Used This Month", this_month, "mobile_home_month", limit=6)
         render_mobile_annual_fees(fee_reminders, limit=4)
@@ -1661,15 +1661,15 @@ def show_mobile_checklist(
             st.success("No urgent benefit actions right now.")
         return
 
-    if selected_view.startswith("Expiring Soon"):
+    if selected_view == "Soon":
         render_mobile_section("Expiring Soon", due_soon, "mobile_due")
         return
 
-    if selected_view.startswith("This Month"):
+    if selected_view == "This Month":
         render_mobile_section("Not Used This Month", this_month, "mobile_month")
         return
 
-    if selected_view.startswith("Annual Fees"):
+    if selected_view == "Fees":
         render_mobile_annual_fees(fee_reminders)
         return
 
