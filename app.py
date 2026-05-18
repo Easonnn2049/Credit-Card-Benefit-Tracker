@@ -34,16 +34,16 @@ STATUS_COLORS = {
 }
 
 CATEGORY_ICONS = {
-    "airline": "✈",
-    "travel": "✈",
-    "hotel": "▣",
-    "dining": "◐",
-    "rideshare": "◆",
-    "uber": "◆",
-    "grocery": "◈",
-    "entertainment": "▶",
-    "shopping": "◼",
-    "other": "●",
+    "airline": "\u2708",
+    "travel": "\u2708",
+    "hotel": "\u25a3",
+    "dining": "\u25d0",
+    "rideshare": "\u25c6",
+    "uber": "\u25c6",
+    "grocery": "\u25c8",
+    "entertainment": "\u25b6",
+    "shopping": "\u25fc",
+    "other": "\u25cf",
 }
 
 CARD_ART_COLORS = {
@@ -550,7 +550,7 @@ def format_amount(value: object) -> str:
     return f"${amount:,.0f}" if amount == round(amount) else f"${amount:,.2f}"
 
 
-def clean_display(value: object, fallback: str = "—") -> str:
+def clean_display(value: object, fallback: str = "\u2014") -> str:
     text = normalize_text(value)
     return text if text else fallback
 
@@ -980,7 +980,7 @@ def benefit_summary_label(row: pd.Series) -> str:
     else:
         label = "Available"
 
-    return f"**{name}**  \n:gray[{label} · {format_amount(remaining)} left · {due_text} · {progress}% used]"
+    return f"**{name}**  \n:gray[{label} \u00b7 {format_amount(remaining)} left \u00b7 {due_text} \u00b7 {progress}% used]"
 
 
 def benefit_summary_strip(row: pd.Series, expiring: bool) -> str:
@@ -1232,7 +1232,7 @@ def render_benefit_tile(
                 <div>
                   <div class="benefit-title">{escape(clean_display(row.get("benefit_name")))}</div>
                   <div class="benefit-secondary">
-                    {escape(benefit_type)} · {format_amount(face_value)} value{f" · {escape(current_cycle)}" if current_cycle else ""}
+                    {escape(benefit_type)} \u00b7 {format_amount(face_value)} value{f" \u00b7 {escape(current_cycle)}" if current_cycle else ""}
                   </div>
                   <div class="benefit-meta">
                     {status_html}
@@ -1292,7 +1292,7 @@ def render_benefit_tile(
             st.markdown(
                 f"""
                 <div class="slider-summary">
-                    {format_amount(amount)} used · {format_amount(preview_remaining)} left · {preview_progress}% used · saves as {escape(preview_status)}
+                    {format_amount(amount)} used \u00b7 {format_amount(preview_remaining)} left \u00b7 {preview_progress}% used \u00b7 saves as {escape(preview_status)}
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -1418,6 +1418,20 @@ def mobile_status_class(label: str) -> str:
     return label.lower().replace(" ", "-")
 
 
+def mobile_benefit_summary_label(row: pd.Series) -> str:
+    name = clean_display(row.get("benefit_name"), "Unnamed benefit")
+    label = mobile_status_label(row)
+    upcoming = bool(row.get("is_upcoming", False))
+    start_label = date_label(row.get("cycle_start_date"))
+    due_text = f"Starts {start_label}" if upcoming and start_label else due_text_from_days(row.get("days_until_expiration"))
+    face_value = normalize_money(row.get("face_value"))
+    used_amount = normalize_money(row.get("used_amount"))
+    remaining = max(face_value - used_amount, 0)
+    progress = int(min(max((used_amount / face_value) * 100 if face_value else 0, 0), 100))
+    progress_text = f"{progress}% used" if face_value else "No progress"
+    return f"**{name}**  \n:gray[{label} - {due_text} - {format_amount(remaining)} left - {progress_text}]"
+
+
 def render_mobile_benefit_card(row: pd.Series, key_prefix: str) -> None:
     benefit_id = clean_display(row.get("benefit_id"), "")
     benefit_name = clean_display(row.get("benefit_name"), "Unnamed benefit")
@@ -1428,15 +1442,22 @@ def render_mobile_benefit_card(row: pd.Series, key_prefix: str) -> None:
     start_label = date_label(row.get("cycle_start_date"))
     due_text = f"Starts {start_label}" if upcoming and start_label else due_text_from_days(row.get("days_until_expiration"))
     due_date = date_label(row.get("expiration_date")) or "No date"
-    remaining = normalize_money(row.get("remaining_amount"))
     face_value = normalize_money(row.get("face_value"))
-    estimated_value = normalize_money(row.get("realistic_value")) or face_value or remaining
-    progress = int(min(max(normalize_money(row.get("usage_percent")) * 100, 0), 100))
+    used_amount = normalize_money(row.get("used_amount"))
+    remaining = max(face_value - used_amount, 0)
+    realistic_value = normalize_money(row.get("realistic_value"))
+    progress = int(min(max((used_amount / face_value) * 100 if face_value else 0, 0), 100))
     label = mobile_status_label(row)
-    action_text = "Reopen" if status == "Used" else "Not active yet" if upcoming else "Mark Used"
-    container_key = f"mobile_card_{key_prefix}_{benefit_id}".replace(" ", "_").replace("-", "_")
+    category = clean_display(row.get("category"), "Other")
+    benefit_type = clean_display(row.get("benefit_type"), "Benefit")
+    frequency = clean_display(row.get("frequency"), "")
+    current_cycle = clean_display(row.get("current_cycle"), "")
+    notes = clean_display(row.get("notes"), "")
+    source = clean_display(row.get("source_url"), "")
+    safe_id = benefit_id or f"benefit_{key_prefix}"
+    container_key = f"mobile_card_{key_prefix}_{safe_id}".replace(" ", "_").replace("-", "_")
 
-    with st.container(key=container_key):
+    with st.expander(mobile_benefit_summary_label(row), expanded=False):
         st.markdown(
             f"""
             <div class="mobile-benefit-card">
@@ -1455,52 +1476,109 @@ def render_mobile_benefit_card(row: pd.Series, key_prefix: str) -> None:
                         <small>{escape(due_date)}</small>
                     </div>
                     <div>
-                        <span>Est. value</span>
-                        <strong>{format_amount(estimated_value)}</strong>
-                        <small>{format_amount(remaining)} left - {progress}% used</small>
+                        <span>Remaining</span>
+                        <strong>{format_amount(remaining)}</strong>
+                        <small>{progress}% used</small>
                     </div>
+                    <div>
+                        <span>Used</span>
+                        <strong>{format_amount(used_amount)}</strong>
+                        <small>{escape(status)}</small>
+                    </div>
+                    <div>
+                        <span>Total</span>
+                        <strong>{format_amount(face_value)}</strong>
+                        <small>{format_amount(realistic_value)} realistic</small>
+                    </div>
+                    <div>
+                        <span>Type</span>
+                        <strong>{escape(benefit_type)}</strong>
+                        <small>{escape(category)}</small>
+                    </div>
+                    <div>
+                        <span>Cycle</span>
+                        <strong>{escape(current_cycle or "Not set")}</strong>
+                        <small>{escape(frequency or "Frequency not set")}</small>
+                    </div>
+                </div>
+                <div class="mobile-progress-shell" aria-hidden="true">
+                    <div class="mobile-progress-fill" style="width:{progress}%;"></div>
                 </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
+
+        if notes:
+            st.markdown(
+                f"""
+                <div class="mobile-detail-note">
+                    <span>Details / how to use</span>
+                    <p>{escape(notes)}</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        if source:
+            st.link_button("Source", source, use_container_width=True)
+
         if status == "Used":
-            if st.button(action_text, key=f"{container_key}_reopen", use_container_width=True):
+            st.success("Completed benefit. Reopen it only if you need to track it again.")
+            if st.button("Reopen", key=f"{container_key}_reopen", use_container_width=True):
+                update_benefit_status(benefit_id, "Not Used")
+        elif status == "Ignored":
+            st.warning("Hidden benefit. Reopen it if it becomes relevant again.")
+            if st.button("Reopen", key=f"{container_key}_restore", use_container_width=True):
                 update_benefit_status(benefit_id, "Not Used")
         elif upcoming:
-            st.button(action_text, key=f"{container_key}_upcoming", use_container_width=True, disabled=True)
+            st.info("This benefit has not reached its start window yet. Usage actions will unlock when the cycle starts.")
+            st.button("Not active yet", key=f"{container_key}_upcoming", use_container_width=True, disabled=True)
         else:
+            slider_reset_key = f"{container_key}_slider_reset_token"
+            slider_token = st.session_state.get(slider_reset_key, 0)
+            slider_key = f"{container_key}_mobile_amount_{slider_token}"
+            if face_value > 0:
+                amount = st.slider(
+                    "Used amount",
+                    min_value=0.0,
+                    max_value=float(face_value),
+                    value=float(min(used_amount, face_value)),
+                    step=1.0 if face_value >= 10 else 0.5,
+                    key=slider_key,
+                )
+            else:
+                amount = st.number_input(
+                    "Used amount",
+                    min_value=0.0,
+                    value=float(used_amount),
+                    step=1.0,
+                    key=slider_key,
+                )
+
+            preview_remaining = max(face_value - amount, 0)
+            preview_status = "Used" if face_value and amount >= face_value else "Not Used" if amount <= 0 else "Partially Used"
+            preview_progress = int(min(max((amount / face_value) * 100 if face_value else 0, 0), 100))
+            st.markdown(
+                f"""
+                <div class="mobile-adjust-summary">
+                    {format_amount(amount)} used - {format_amount(preview_remaining)} left - {preview_progress}% used - saves as {escape(preview_status)}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
             with st.container(key=f"{container_key}_actions"):
-                used_col, ignore_col = st.columns(2)
-                if used_col.button(action_text, key=f"{container_key}_used", type="primary", use_container_width=True):
+                save_col, used_col = st.columns(2)
+                reset_col, ignore_col = st.columns(2)
+                if save_col.button("Save Amount", key=f"{container_key}_mobile_save_amount", type="primary", use_container_width=True):
+                    update_benefit_status(benefit_id, preview_status, amount)
+                if used_col.button("Mark Used", key=f"{container_key}_used", use_container_width=True):
                     update_benefit_status(benefit_id, "Used")
+                if reset_col.button("Reset", key=f"{container_key}_reset", use_container_width=True):
+                    st.session_state[slider_reset_key] = slider_token + 1
+                    update_benefit_status(benefit_id, "Not Used")
                 if ignore_col.button("Hide", key=f"{container_key}_ignore", use_container_width=True):
                     update_benefit_status(benefit_id, "Ignored")
-
-            if face_value >= 100:
-                with st.popover("Adjust amount", use_container_width=True):
-                    amount = st.slider(
-                        "Used amount",
-                        min_value=0.0,
-                        max_value=float(face_value),
-                        value=float(min(normalize_money(row.get("used_amount")), face_value)),
-                        step=1.0,
-                        key=f"{container_key}_mobile_amount",
-                    )
-
-                    preview_remaining = max(face_value - amount, 0)
-                    preview_status = "Used" if amount >= face_value else "Not Used" if amount <= 0 else "Partially Used"
-                    preview_progress = int(min(max((amount / face_value) * 100 if face_value else 0, 0), 100))
-                    st.markdown(
-                        f"""
-                        <div class="mobile-adjust-summary">
-                            {format_amount(amount)} used · {format_amount(preview_remaining)} left · {preview_progress}% used
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-                    if st.button("Save amount", key=f"{container_key}_mobile_save_amount", type="primary", use_container_width=True):
-                        update_benefit_status(benefit_id, preview_status, amount)
 
 
 def mobile_card_group_art(row: pd.Series) -> str:
@@ -1519,14 +1597,18 @@ def mobile_card_group_art(row: pd.Series) -> str:
 
 def render_mobile_card_group(card_label: str, group: pd.DataFrame, key_prefix: str) -> None:
     expiring_count = int(group["is_expiring_soon"].sum()) if "is_expiring_soon" in group else 0
-    available_count = int(((group["status"] != "Used") & (~group["is_upcoming"])).sum()) if "is_upcoming" in group else 0
+    active_now = group[(~group["status"].isin(["Used", "Ignored"])) & (~group["is_upcoming"])]
+    upcoming = group[group["is_upcoming"]]
+    archived = group[group["status"].isin(["Used", "Ignored"])]
+    available_count = len(active_now)
+    upcoming_count = len(upcoming)
     remaining_value = group["remaining_amount"].apply(normalize_money).sum()
     owner = clean_display(group["owner"].dropna().iloc[0], "") if "owner" in group and not group["owner"].dropna().empty else ""
     first_row = group.iloc[0]
     owner_label = f" - {owner}" if owner else ""
     expander_label = (
         f"**{card_label}**{owner_label}  \n"
-        f":gray[**{available_count} open** - **{expiring_count} soon** - **{format_amount(remaining_value)} left**]"
+        f":gray[**{available_count} active** - **{upcoming_count} upcoming** - **{format_amount(remaining_value)} left**]"
     )
 
     with st.expander(expander_label, expanded=False):
@@ -1539,7 +1621,8 @@ def render_mobile_card_group(card_label: str, group: pd.DataFrame, key_prefix: s
                     {f'<div class="mobile-card-group-owner">{escape(owner)}</div>' if owner else ''}
                 </div>
                 <div class="mobile-card-group-stats">
-                    <span>{available_count} open</span>
+                    <span>{available_count} active</span>
+                    <span>{upcoming_count} upcoming</span>
                     <span>{expiring_count} soon</span>
                     <strong>{format_amount(remaining_value)}</strong>
                 </div>
@@ -1547,8 +1630,12 @@ def render_mobile_card_group(card_label: str, group: pd.DataFrame, key_prefix: s
             """,
             unsafe_allow_html=True,
         )
-        for index, (_, benefit) in enumerate(group.iterrows()):
-            render_mobile_benefit_card(benefit, f"{key_prefix}_{index}")
+        if not active_now.empty:
+            render_mobile_section("Available now", active_now, f"{key_prefix}_active")
+        if not upcoming.empty:
+            render_mobile_section("Upcoming", upcoming, f"{key_prefix}_upcoming")
+        if not archived.empty:
+            render_mobile_section("Completed / Hidden", archived, f"{key_prefix}_archived")
 
 
 def render_mobile_section(title: str, benefits: pd.DataFrame, key_prefix: str, limit: int | None = None) -> None:
@@ -1624,16 +1711,20 @@ def show_mobile_checklist(
 ) -> None:
     due_soon = mobile_attention_benefits(active)
     this_month = mobile_monthly_not_used(active)
+    active_now = active[~active["is_upcoming"]].copy()
+    upcoming = active[active["is_upcoming"]].copy()
+    partial = active_now[active_now["status"] == "Partially Used"].copy()
+    completed = flagged[flagged["status"] == "Used"].copy()
+    ignored = flagged[flagged["status"] == "Ignored"].copy()
+    archived = flagged[flagged["status"].isin(["Used", "Ignored"])].copy()
     fee_reminders = annual_fee_reminders(cards)
-    checklist_data = flagged[flagged["status"] != "Ignored"].copy()
-    all_items = checklist_data[checklist_data["status"] != "Ignored"]
 
     st.markdown(
         f"""
         <div class="mobile-checklist-summary">
-            <div><span>Soon</span><strong>{len(due_soon)}</strong></div>
-            <div><span>This month</span><strong>{len(this_month)}</strong></div>
-            <div><span>Fees</span><strong>{len(fee_reminders)}</strong></div>
+            <div><span>Active</span><strong>{len(active_now)}</strong></div>
+            <div><span>Upcoming</span><strong>{len(upcoming)}</strong></div>
+            <div><span>Archived</span><strong>{len(archived)}</strong></div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1643,10 +1734,11 @@ def show_mobile_checklist(
         "Today's reminders",
         [
             "Home",
-            "Soon",
-            "This Month",
+            "Cards",
+            "Active",
+            "Upcoming",
+            "Archived",
             "Fees",
-            "All Cards",
         ],
         horizontal=True,
         label_visibility="collapsed",
@@ -1656,24 +1748,34 @@ def show_mobile_checklist(
     if selected_view == "Home":
         render_mobile_section("Priority Reminders", due_soon, "mobile_home_due", limit=6)
         render_mobile_section("Not Used This Month", this_month, "mobile_home_month", limit=6)
+        render_mobile_section("Partially Used", partial, "mobile_home_partial", limit=4)
+        render_mobile_section("Upcoming Next", upcoming, "mobile_home_upcoming", limit=4)
         render_mobile_annual_fees(fee_reminders, limit=4)
-        if due_soon.empty and this_month.empty and fee_reminders.empty:
+        if due_soon.empty and this_month.empty and partial.empty and upcoming.empty and fee_reminders.empty:
             st.success("No urgent benefit actions right now.")
         return
 
-    if selected_view == "Soon":
-        render_mobile_section("Expiring Soon", due_soon, "mobile_due")
+    if selected_view == "Active":
+        render_mobile_section("Available Now", active_now, "mobile_active")
         return
 
-    if selected_view == "This Month":
-        render_mobile_section("Not Used This Month", this_month, "mobile_month")
+    if selected_view == "Upcoming":
+        render_mobile_section("Upcoming Benefits", upcoming, "mobile_upcoming")
         return
 
     if selected_view == "Fees":
         render_mobile_annual_fees(fee_reminders)
         return
 
-    selected = all_items.sort_values(["status", "expiration_date", "benefit_name"])
+    if selected_view == "Archived":
+        completed_tab, hidden_tab = st.tabs([f"Completed ({len(completed)})", f"Hidden ({len(ignored)})"])
+        with completed_tab:
+            render_mobile_section("Completed", completed, "mobile_completed")
+        with hidden_tab:
+            render_mobile_section("Hidden", ignored, "mobile_hidden")
+        return
+
+    selected = active.sort_values(["is_upcoming", "expiration_date", "benefit_name"])
     if selected.empty:
         st.markdown('<div class="mobile-empty-state">No card benefits to show.</div>', unsafe_allow_html=True)
         return
@@ -1783,7 +1885,7 @@ def show_by_card_view(
                 value_progress = used_value / total_value if total_value else 0
                 issuer = clean_display(card.get("issuer"), "Issuer unknown")
                 version = clean_display(card.get("card_version"), "")
-                network_label = f"{issuer} · {version}" if version else issuer
+                network_label = f"{issuer} \u00b7 {version}" if version else issuer
                 owner = clean_display(card.get("owner"), "Unassigned")
                 st.markdown(
                     f"""
@@ -1791,7 +1893,7 @@ def show_by_card_view(
                         <div>
                             <div class="card-section-owner">{escape(owner)}</div>
                             <h3>{escape(clean_display(card.get("card_name")))}</h3>
-                            <p>{escape(network_label)} · {escape(next_membership_fee_label(card))}</p>
+                            <p>{escape(network_label)} \u00b7 {escape(next_membership_fee_label(card))}</p>
                         </div>
                         <div class="card-section-status">
                             <span>{expiring_count} expiring soon</span>
@@ -1840,7 +1942,7 @@ def show_by_category_view(flagged: pd.DataFrame) -> None:
             benefit_cols = st.columns(2)
             for index, (_, benefit) in enumerate(group.sort_values(["status", "expiration_date", "card_name"]).iterrows()):
                 with benefit_cols[index % 2]:
-                    st.caption(f"{clean_display(benefit.get('owner'))} · {clean_display(benefit.get('card_name'))}")
+                    st.caption(f"{clean_display(benefit.get('owner'))} \u00b7 {clean_display(benefit.get('card_name'))}")
                     render_benefit_tile(benefit, f"cat_{normalize_text(category)}_{index}")
 
 
