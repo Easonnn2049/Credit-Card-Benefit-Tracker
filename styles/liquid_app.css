@@ -1824,9 +1824,9 @@ hr {
     /* Mobile-specific nav: compact segmented control for action views. */
     .st-key-mobile_dashboard div[data-testid="stRadio"] [role="radiogroup"] {
         display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-        gap: 5px;
-        margin: 8px 0 15px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 7px 6px;
+        margin: 10px 0 22px;
     }
 
     .st-key-mobile_dashboard div[data-testid="stRadio"] label[data-testid="stWidgetLabel"],
@@ -1897,7 +1897,7 @@ hr {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 6px;
-        margin: 2px 0 8px;
+        margin: 2px 0 12px;
     }
 
     .mobile-checklist-summary > div {
