@@ -2152,8 +2152,13 @@ hr {
     }
 
     .st-key-mobile_dashboard div[data-testid="stExpander"] summary p img {
+        display: inline-block !important;
         width: 58px !important;
         height: 36px !important;
+        min-width: 58px !important;
+        min-height: 36px !important;
+        max-width: 58px !important;
+        max-height: 36px !important;
         object-fit: contain;
         border-radius: 7px;
         margin: 0 10px 2px 0;
