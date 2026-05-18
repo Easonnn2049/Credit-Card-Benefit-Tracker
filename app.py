@@ -1725,6 +1725,31 @@ def render_mobile_annual_fees(fee_reminders: pd.DataFrame, limit: int | None = N
         render_mobile_annual_fee_card(fee, f"annual_fee_{index}")
 
 
+def render_mobile_category_groups(benefits: pd.DataFrame) -> None:
+    if benefits.empty:
+        st.markdown('<div class="mobile-empty-state">No active benefits to show.</div>', unsafe_allow_html=True)
+        return
+
+    category_order = ["Dining", "Rideshare", "Travel", "Hotel", "Airline", "Shopping", "Entertainment", "Other"]
+    categories = sorted([category for category in benefits["category"].dropna().unique() if normalize_text(category)])
+    ordered = [category for category in category_order if category in categories]
+    ordered.extend([category for category in categories if category not in ordered])
+
+    for index, category in enumerate(ordered):
+        group = benefits[benefits["category"] == category]
+        if group.empty:
+            continue
+        active_count = int(((~group["status"].isin(["Used", "Ignored"])) & (~group["is_upcoming"])).sum())
+        upcoming_count = int(group["is_upcoming"].sum())
+        remaining = group["remaining_amount"].apply(normalize_money).sum()
+        label = (
+            f"**{category}**  \n"
+            f":gray[**{active_count} active** - **{upcoming_count} upcoming** - **{format_amount(remaining)} left**]"
+        )
+        with st.expander(label, expanded=False):
+            render_mobile_section(category, group, f"mobile_category_{index}")
+
+
 def show_mobile_checklist(
     flagged: pd.DataFrame,
     active: pd.DataFrame,
@@ -1759,10 +1784,8 @@ def show_mobile_checklist(
         [
             "Home",
             "Cards",
-            "Active",
-            "Upcoming",
+            "Categories",
             "Archived",
-            "Fees",
         ],
         horizontal=True,
         label_visibility="collapsed",
@@ -1779,16 +1802,8 @@ def show_mobile_checklist(
             st.success("No urgent benefit actions right now.")
         return
 
-    if selected_view == "Active":
-        render_mobile_section("Available Now", active_now, "mobile_active")
-        return
-
-    if selected_view == "Upcoming":
-        render_mobile_section("Upcoming Benefits", upcoming, "mobile_upcoming")
-        return
-
-    if selected_view == "Fees":
-        render_mobile_annual_fees(fee_reminders)
+    if selected_view == "Categories":
+        render_mobile_category_groups(active)
         return
 
     if selected_view == "Archived":

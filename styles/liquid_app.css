@@ -1824,7 +1824,7 @@ hr {
     /* Mobile-specific nav: compact segmented control for action views. */
     .st-key-mobile_dashboard div[data-testid="stRadio"] [role="radiogroup"] {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 7px 6px;
         margin: 10px 0 22px;
     }
