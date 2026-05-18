@@ -18,9 +18,9 @@ from storage import BENEFIT_COLUMNS, CARD_COLUMNS, USAGE_COLUMNS, get_storage
 
 APP_DIR = Path(__file__).parent
 ASSETS_DIR = APP_DIR / "assets"
-APP_ICON_PATH = ASSETS_DIR / "38587408779b4c2db6ad4990148c04e0.jpeg"
-APP_ICON_MIME_TYPE = "image/jpeg"
-APP_ICON_STATIC_URL = "app/static/app_icon.jpeg"
+APP_ICON_PATH = ASSETS_DIR / "app_icon.png"
+APP_ICON_MIME_TYPE = "image/png"
+APP_ICON_STATIC_URL = "app/static/apple-touch-icon.png"
 DATA_DIR = APP_DIR / "data"
 ORIGINAL_EXCEL = DATA_DIR / "original_tracker.xlsx"
 LIQUID_APP_CSS = APP_DIR / "styles" / "liquid_app.css"
