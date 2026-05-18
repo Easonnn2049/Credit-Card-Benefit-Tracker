@@ -2152,13 +2152,14 @@ hr {
     }
 
     .st-key-mobile_dashboard div[data-testid="stExpander"] summary p img {
-        width: 42px;
-        height: 26px;
-        object-fit: cover;
-        border-radius: 6px;
-        margin: 0 8px 2px 0;
+        width: 58px !important;
+        height: 36px !important;
+        object-fit: contain;
+        border-radius: 7px;
+        margin: 0 10px 2px 0;
         vertical-align: middle;
-        box-shadow: 0 5px 12px rgba(71,85,105,.18);
+        background: rgba(255,255,255,.28);
+        box-shadow: 0 6px 14px rgba(71,85,105,.20);
     }
 
     .st-key-mobile_dashboard div[data-testid="stExpander"] summary [class*="material"],
