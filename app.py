@@ -1595,6 +1595,30 @@ def mobile_card_group_art(row: pd.Series) -> str:
     """
 
 
+def mobile_card_group_label_art(row: pd.Series) -> str:
+    card_name = clean_display(row.get("card_name"), "Card")
+    image_path = find_card_image(row)
+    if image_path:
+        return f"![{card_name}]({card_image_data_uri(image_path)})"
+
+    start, end, text_color, brand, _ = card_art_style(row.get("card_name"), row.get("issuer"))
+    svg = f"""
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 45">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="{start}"/>
+          <stop offset="1" stop-color="{end}"/>
+        </linearGradient>
+      </defs>
+      <rect width="72" height="45" rx="7" fill="url(#g)"/>
+      <rect x="8" y="11" width="16" height="10" rx="2" fill="rgba(255,255,255,.38)"/>
+      <text x="8" y="35" fill="{text_color}" font-family="Arial, sans-serif" font-size="8" font-weight="700">{escape(brand[:10])}</text>
+    </svg>
+    """
+    encoded = base64.b64encode(svg.encode("utf-8")).decode("ascii")
+    return f"![{card_name}](data:image/svg+xml;base64,{encoded})"
+
+
 def render_mobile_card_group(card_label: str, group: pd.DataFrame, key_prefix: str) -> None:
     expiring_count = int(group["is_expiring_soon"].sum()) if "is_expiring_soon" in group else 0
     active_now = group[(~group["status"].isin(["Used", "Ignored"])) & (~group["is_upcoming"])]
@@ -1607,7 +1631,7 @@ def render_mobile_card_group(card_label: str, group: pd.DataFrame, key_prefix: s
     first_row = group.iloc[0]
     owner_label = f" - {owner}" if owner else ""
     expander_label = (
-        f"**{card_label}**{owner_label}  \n"
+        f"{mobile_card_group_label_art(first_row)} **{card_label}**{owner_label}  \n"
         f":gray[**{available_count} active** - **{upcoming_count} upcoming** - **{format_amount(remaining_value)} left**]"
     )
 

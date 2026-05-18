@@ -2151,6 +2151,16 @@ hr {
         font-weight: 880 !important;
     }
 
+    .st-key-mobile_dashboard div[data-testid="stExpander"] summary p img {
+        width: 42px;
+        height: 26px;
+        object-fit: cover;
+        border-radius: 6px;
+        margin: 0 8px 2px 0;
+        vertical-align: middle;
+        box-shadow: 0 5px 12px rgba(71,85,105,.18);
+    }
+
     .st-key-mobile_dashboard div[data-testid="stExpander"] summary [class*="material"],
     .st-key-mobile_dashboard div[data-testid="stExpander"] summary [data-testid*="Icon"] {
         font-family: "Material Symbols Rounded", "Material Symbols Outlined", "Material Icons" !important;
