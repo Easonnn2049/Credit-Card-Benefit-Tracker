@@ -172,6 +172,26 @@ Duplicate prevention uses the deterministic `alert_id` generated from alert type
 
 Use Google Sheets as the backend for deployed cloud use. Streamlit Community Cloud's local filesystem is not durable, so local files should not be treated as persistent cloud storage.
 
+## Custom App Icon
+
+The app looks for a local icon image at:
+
+```text
+assets/38587408779b4c2db6ad4990148c04e0.jpeg
+```
+
+Use a square image, ideally `512x512` or `1024x1024`. Commit that file to the repo before deploying to Streamlit Community Cloud. The app uses this file for `st.set_page_config(page_icon=...)` and also injects iPhone/Safari metadata for `apple-touch-icon`, favicon links, and mobile web app title settings.
+
+After adding or replacing the icon:
+
+1. Commit and push `assets/38587408779b4c2db6ad4990148c04e0.jpeg` to GitHub.
+2. In Streamlit Community Cloud, redeploy the app or choose **Reboot app** / **Rerun** from the app management menu.
+3. Open the deployed Streamlit URL in Safari on iPhone and wait for the app to load.
+4. If you already added the app to the Home Screen, delete the old Home Screen shortcut first.
+5. In Safari, tap **Share** -> **Add to Home Screen** and confirm the new icon appears.
+
+iOS can cache home screen icons aggressively, so deleting and re-adding the shortcut is often required after an icon change.
+
 Deployment steps:
 
 1. Push this repo to GitHub.

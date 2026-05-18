@@ -10,12 +10,16 @@ from uuid import uuid4
 import pandas as pd
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
 
 from alerts.rules import annual_fee_date, benefit_attention_window
 from storage import BENEFIT_COLUMNS, CARD_COLUMNS, USAGE_COLUMNS, get_storage
 
 
 APP_DIR = Path(__file__).parent
+ASSETS_DIR = APP_DIR / "assets"
+APP_ICON_PATH = ASSETS_DIR / "38587408779b4c2db6ad4990148c04e0.jpeg"
+APP_ICON_MIME_TYPE = "image/jpeg"
 DATA_DIR = APP_DIR / "data"
 ORIGINAL_EXCEL = DATA_DIR / "original_tracker.xlsx"
 LIQUID_APP_CSS = APP_DIR / "styles" / "liquid_app.css"
@@ -103,6 +107,73 @@ CARD_ART_STYLES = {
 
 def ensure_data_files() -> None:
     STORAGE.ensure_data_files()
+
+
+def app_icon_page_config_value() -> str | None:
+    return str(APP_ICON_PATH) if APP_ICON_PATH.is_file() else None
+
+
+def app_icon_data_uri() -> str | None:
+    if not APP_ICON_PATH.is_file():
+        return None
+    encoded = base64.b64encode(APP_ICON_PATH.read_bytes()).decode("ascii")
+    return f"data:{APP_ICON_MIME_TYPE};base64,{encoded}"
+
+
+def inject_app_icon_metadata() -> None:
+    icon_uri = app_icon_data_uri()
+    if not icon_uri:
+        return
+
+    components.html(
+        f"""
+        <script>
+        const iconHref = {json.dumps(icon_uri)};
+        const title = "Credit Card Benefit Tracker";
+        const parentDoc = window.parent.document;
+
+        function upsertLink(rel, href, sizes) {{
+            const sizeSelector = sizes ? `[sizes="${{sizes}}"]` : "";
+            let node = parentDoc.querySelector(`link[rel="${{rel}}"]${{sizeSelector}}`);
+            if (!node) {{
+                node = parentDoc.createElement("link");
+                node.setAttribute("rel", rel);
+                parentDoc.head.appendChild(node);
+            }}
+            node.setAttribute("href", href);
+            node.setAttribute("type", {json.dumps(APP_ICON_MIME_TYPE)});
+            if (sizes) {{
+                node.setAttribute("sizes", sizes);
+            }}
+        }}
+
+        function upsertMeta(name, content) {{
+            let node = parentDoc.querySelector(`meta[name="${{name}}"]`);
+            if (!node) {{
+                node = parentDoc.createElement("meta");
+                node.setAttribute("name", name);
+                parentDoc.head.appendChild(node);
+            }}
+            node.setAttribute("content", content);
+        }}
+
+        upsertLink("icon", iconHref, "512x512");
+        upsertLink("shortcut icon", iconHref, null);
+        upsertLink("apple-touch-icon", iconHref, null);
+        upsertLink("apple-touch-icon", iconHref, "512x512");
+        upsertLink("apple-touch-icon-precomposed", iconHref, "512x512");
+
+        upsertMeta("application-name", title);
+        upsertMeta("apple-mobile-web-app-title", title);
+        upsertMeta("apple-mobile-web-app-capable", "yes");
+        upsertMeta("mobile-web-app-capable", "yes");
+        upsertMeta("apple-mobile-web-app-status-bar-style", "default");
+        upsertMeta("theme-color", "#f8fbff");
+        </script>
+        """,
+        height=0,
+        width=0,
+    )
 
 
 def read_cards() -> pd.DataFrame:
@@ -2319,7 +2390,13 @@ def show_raw_data(cards: pd.DataFrame, benefits: pd.DataFrame, usage: pd.DataFra
 
 
 def main() -> None:
-    st.set_page_config(page_title="Credit Card Benefit Tracker", layout="wide", initial_sidebar_state="expanded")
+    st.set_page_config(
+        page_title="Credit Card Benefit Tracker",
+        page_icon=app_icon_page_config_value(),
+        layout="wide",
+        initial_sidebar_state="expanded",
+    )
+    inject_app_icon_metadata()
     ensure_data_files()
     inject_styles()
 
