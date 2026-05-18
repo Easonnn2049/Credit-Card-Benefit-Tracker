@@ -20,6 +20,7 @@ APP_DIR = Path(__file__).parent
 ASSETS_DIR = APP_DIR / "assets"
 APP_ICON_PATH = ASSETS_DIR / "38587408779b4c2db6ad4990148c04e0.jpeg"
 APP_ICON_MIME_TYPE = "image/jpeg"
+APP_ICON_STATIC_URL = "app/static/app_icon.jpeg"
 DATA_DIR = APP_DIR / "data"
 ORIGINAL_EXCEL = DATA_DIR / "original_tracker.xlsx"
 LIQUID_APP_CSS = APP_DIR / "styles" / "liquid_app.css"
@@ -113,22 +114,14 @@ def app_icon_page_config_value() -> str | None:
     return str(APP_ICON_PATH) if APP_ICON_PATH.is_file() else None
 
 
-def app_icon_data_uri() -> str | None:
-    if not APP_ICON_PATH.is_file():
-        return None
-    encoded = base64.b64encode(APP_ICON_PATH.read_bytes()).decode("ascii")
-    return f"data:{APP_ICON_MIME_TYPE};base64,{encoded}"
-
-
 def inject_app_icon_metadata() -> None:
-    icon_uri = app_icon_data_uri()
-    if not icon_uri:
+    if not APP_ICON_PATH.is_file():
         return
 
     components.html(
         f"""
         <script>
-        const iconHref = {json.dumps(icon_uri)};
+        const iconHref = {json.dumps(APP_ICON_STATIC_URL)};
         const title = "Credit Card Benefit Tracker";
         const parentDoc = window.parent.document;
 
