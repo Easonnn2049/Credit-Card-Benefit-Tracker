@@ -1,6 +1,6 @@
 :root {
-    --font-primary: "Inter", "Manrope", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
-    --font-display: "Manrope", "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+    --font-primary: "Aptos", "Segoe UI Variable Text", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-display: "Aptos Display", "Aptos", "Segoe UI Variable Display", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
     --app-bg-1: #f6f8fc;
     --app-bg-2: #eef3f9;
     --app-bg-3: #e7edf7;
@@ -1315,7 +1315,8 @@ div[data-testid="stButton"] button:focus-visible,
 div[data-testid="stFormSubmitButton"] button:focus-visible,
 div[data-testid="stLinkButton"] a:focus-visible,
 div[data-testid="stDownloadButton"] button:focus-visible {
-    outline: none !important;
+    outline: 2px solid rgba(124,156,245,.62) !important;
+    outline-offset: 2px !important;
     border-color: rgba(124,156,245,.56) !important;
     box-shadow:
         inset 0 1px 0 rgba(255,255,255,.78),
@@ -2359,4 +2360,3051 @@ hr {
         max-width: 100%;
         overflow-x: auto;
     }
+}
+
+/* Design-system spacing pass.
+   Based on common chip/tag systems: 24-32px visual tags, about 12px
+   horizontal chip padding, 44-48px mobile touch targets, and an 8px rhythm. */
+:root {
+    --ledger-space-1: 4px;
+    --ledger-space-2: 8px;
+    --ledger-space-3: 12px;
+    --ledger-space-4: 16px;
+    --ledger-space-5: 20px;
+    --ledger-space-6: 24px;
+    --ledger-space-7: 32px;
+    --ledger-chip-height: 30px;
+    --ledger-touch-target: 44px;
+}
+
+.block-container {
+    padding-bottom: 4rem;
+}
+
+.page-title-block {
+    margin-bottom: var(--ledger-space-5);
+}
+
+.section-title-block {
+    margin-bottom: var(--ledger-space-5);
+}
+
+.st-key-dashboard_controls {
+    margin-bottom: var(--ledger-space-7);
+    padding: var(--ledger-space-5);
+}
+
+.dashboard-kpi-card,
+div[data-testid="stMetric"],
+.metric-card {
+    padding: var(--ledger-space-5);
+}
+
+.dashboard-kpi-grid,
+[class*="dashboard-kpi"] {
+    gap: var(--ledger-space-5);
+}
+
+[class*="st-key-card_section_"] div[data-testid="stVerticalBlockBorderWrapper"],
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    margin-bottom: var(--ledger-space-7);
+}
+
+.card-stat-grid,
+.mini-grid {
+    gap: var(--ledger-space-4);
+    margin-top: var(--ledger-space-5);
+    margin-bottom: var(--ledger-space-4);
+}
+
+.card-stat-grid > div,
+.mini-stat {
+    padding: var(--ledger-space-4);
+}
+
+.benefit-row,
+.benefit-tile {
+    padding: var(--ledger-space-5);
+    margin-bottom: var(--ledger-space-5);
+}
+
+.benefit-topline {
+    gap: var(--ledger-space-4);
+}
+
+.benefit-secondary {
+    margin-top: var(--ledger-space-2);
+}
+
+.benefit-meta,
+.chip-row {
+    gap: var(--ledger-space-2) var(--ledger-space-3);
+    margin-top: var(--ledger-space-4);
+}
+
+.status-pill,
+.badge,
+.glass-chip,
+.chip,
+.chip-muted,
+.card-section-status {
+    min-height: var(--ledger-chip-height);
+    padding: 0 var(--ledger-space-3);
+    line-height: var(--ledger-chip-height);
+}
+
+.deadline {
+    min-height: 38px;
+    padding: 9px var(--ledger-space-3);
+}
+
+.progress-shell,
+.progress-bar,
+.liquid-progress {
+    margin-top: var(--ledger-space-4);
+    margin-bottom: var(--ledger-space-5);
+}
+
+div[data-testid="stExpander"] {
+    margin-bottom: var(--ledger-space-5);
+}
+
+div[data-testid="stExpander"] summary {
+    min-height: 52px;
+    padding: var(--ledger-space-3) var(--ledger-space-4);
+}
+
+div[data-testid="stTabs"] [role="tablist"] {
+    gap: var(--ledger-space-2);
+    margin-bottom: var(--ledger-space-5);
+}
+
+div[data-testid="stTabs"] button,
+div[data-testid="stRadio"] [data-baseweb="radio"],
+.st-key-dashboard_controls div[data-testid="stRadio"] [data-baseweb="radio"] {
+    min-height: 38px;
+    padding-left: var(--ledger-space-3) !important;
+    padding-right: var(--ledger-space-3) !important;
+}
+
+@media (max-width: 767px) {
+    .block-container {
+        padding: calc(env(safe-area-inset-top, 0px) + .95rem) .86rem calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
+    }
+
+    .page-title-block {
+        padding: var(--ledger-space-4);
+        margin-bottom: var(--ledger-space-5);
+    }
+
+    .mobile-checklist-summary {
+        gap: var(--ledger-space-3);
+        margin: var(--ledger-space-1) 0 var(--ledger-space-5);
+    }
+
+    .mobile-checklist-summary > div {
+        padding: var(--ledger-space-3);
+        min-height: 64px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stRadio"] [role="radiogroup"] {
+        gap: var(--ledger-space-2);
+        margin: var(--ledger-space-4) 0 var(--ledger-space-7);
+        padding: 6px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stRadio"] [data-baseweb="radio"] {
+        min-height: 40px;
+        padding-left: var(--ledger-space-2) !important;
+        padding-right: var(--ledger-space-2) !important;
+    }
+
+    .mobile-section-heading {
+        margin: var(--ledger-space-7) 0 0;
+        padding: 0 0 var(--ledger-space-3);
+    }
+
+    .st-key-mobile_dashboard [data-testid="stMarkdownContainer"]:has(.mobile-section-heading),
+    [class*="st-key-mobile_dashboard"] [data-testid="stMarkdownContainer"]:has(.mobile-section-heading) {
+        margin-bottom: var(--ledger-space-3) !important;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stExpander"] {
+        margin-top: var(--ledger-space-4);
+        margin-bottom: var(--ledger-space-5);
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stExpander"] summary {
+        min-height: 54px;
+        padding: var(--ledger-space-4);
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stExpander"] details > div {
+        padding: 0 var(--ledger-space-3) var(--ledger-space-4);
+    }
+
+    .mobile-benefit-card {
+        padding: var(--ledger-space-4);
+        margin-top: var(--ledger-space-4);
+    }
+
+    .mobile-benefit-main {
+        gap: var(--ledger-space-4);
+    }
+
+    .mobile-benefit-card-name,
+    .mobile-benefit-owner {
+        margin-top: 5px;
+    }
+
+    .mobile-status {
+        min-height: 26px;
+        padding: 0 10px;
+        line-height: 26px;
+    }
+
+    .mobile-benefit-facts {
+        gap: var(--ledger-space-3);
+        margin-top: var(--ledger-space-4);
+    }
+
+    .mobile-benefit-facts > div {
+        padding: var(--ledger-space-3);
+        min-height: 68px;
+    }
+
+    .mobile-progress-shell {
+        margin-top: var(--ledger-space-4);
+    }
+
+    .mobile-detail-note,
+    .mobile-adjust-summary,
+    .mobile-empty-state {
+        margin-top: var(--ledger-space-4);
+        margin-bottom: var(--ledger-space-4);
+        padding: var(--ledger-space-4);
+    }
+
+    .mobile-card-group-header {
+        gap: var(--ledger-space-4);
+        margin: var(--ledger-space-2) 0 var(--ledger-space-3);
+        padding: var(--ledger-space-2) 3px var(--ledger-space-4);
+    }
+
+    .mobile-card-group-stats {
+        gap: 5px;
+    }
+
+    .st-key-mobile_dashboard [data-testid="stHorizontalBlock"],
+    [class*="st-key-mobile_dashboard"] [data-testid="stHorizontalBlock"],
+    .st-key-mobile_dashboard [class*="_actions"] [data-testid="stHorizontalBlock"] {
+        gap: var(--ledger-space-3) !important;
+        margin-top: var(--ledger-space-3);
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stButton"] {
+        margin-bottom: var(--ledger-space-2);
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stButton"] button,
+    .st-key-mobile_dashboard div[data-testid="stPopover"] button {
+        min-height: var(--ledger-touch-target) !important;
+        padding-left: var(--ledger-space-3) !important;
+        padding-right: var(--ledger-space-3) !important;
+    }
+}
+
+/* Financial dashboard visual pass.
+   Keeps the Streamlit structure intact while giving the tracker a calmer,
+   denser, finance-tool surface with clearer hierarchy on mobile. */
+:root {
+    --finance-bg: #f5f7fb;
+    --finance-bg-soft: #eef2f7;
+    --finance-surface: rgba(255, 255, 255, .86);
+    --finance-surface-strong: rgba(255, 255, 255, .94);
+    --finance-surface-muted: rgba(248, 250, 252, .90);
+    --finance-border: rgba(148, 163, 184, .28);
+    --finance-border-strong: rgba(71, 85, 105, .26);
+    --finance-shadow-sm: 0 1px 2px rgba(15, 23, 42, .05), 0 10px 22px rgba(15, 23, 42, .07);
+    --finance-shadow-md: 0 1px 2px rgba(15, 23, 42, .06), 0 16px 34px rgba(15, 23, 42, .09);
+    --finance-ink: #162033;
+    --finance-muted: #526173;
+    --finance-soft: #748094;
+    --finance-blue: #2457c5;
+    --finance-blue-soft: #dbeafe;
+    --finance-teal: #0f766e;
+    --finance-teal-soft: #ccfbf1;
+    --finance-amber: #a16207;
+    --finance-amber-soft: #fef3c7;
+    --finance-rose: #be123c;
+    --finance-rose-soft: #ffe4e6;
+}
+
+.stApp {
+    color: var(--finance-ink);
+    background:
+        linear-gradient(180deg, rgba(255,255,255,.74), rgba(245,247,251,.90)),
+        var(--app-wallpaper),
+        linear-gradient(145deg, var(--finance-bg) 0%, var(--finance-bg-soft) 100%);
+}
+
+.stApp:before {
+    background:
+        linear-gradient(180deg, rgba(255,255,255,.56), rgba(245,247,251,.84)),
+        linear-gradient(90deg, rgba(148,163,184,.055) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(148,163,184,.04) 1px, transparent 1px);
+    background-size: auto, 96px 96px, 96px 96px;
+    backdrop-filter: blur(var(--wallpaper-blur, 2px)) saturate(1.02) brightness(1.04);
+    -webkit-backdrop-filter: blur(var(--wallpaper-blur, 2px)) saturate(1.02) brightness(1.04);
+}
+
+.page-title-block,
+.section-title-block,
+.glass-panel,
+.glass-card,
+.glass-content-panel,
+.glass-metric-card,
+.metric-card,
+.filter-bar,
+.form-section,
+div[data-testid="stAlert"],
+div[data-testid="stDataFrame"],
+div[data-testid="stDataEditor"] {
+    border-color: var(--finance-border);
+    background: var(--finance-surface);
+    box-shadow: var(--finance-shadow-sm);
+    backdrop-filter: blur(16px) saturate(1.05);
+    -webkit-backdrop-filter: blur(16px) saturate(1.05);
+}
+
+.page-title-block:before,
+.section-title-block:before,
+.glass-panel:before,
+.glass-card:before,
+.glass-content-panel:before,
+.glass-metric-card:before,
+.metric-card:before,
+.filter-bar:before,
+.form-section:before {
+    opacity: .18;
+    background: linear-gradient(135deg, rgba(255,255,255,.78), transparent 48%);
+}
+
+.page-title-block {
+    background:
+        linear-gradient(90deg, rgba(36,87,197,.10), transparent 54%),
+        var(--finance-surface-strong);
+    border-color: rgba(71, 85, 105, .18);
+}
+
+.page-title-block h1,
+.page-title-block h2,
+.section-title-block h2,
+.section-title-block h3 {
+    color: var(--finance-ink);
+    font-weight: 820;
+}
+
+.page-title-block p,
+.section-title-block p,
+.mobile-benefit-card-name,
+.mobile-benefit-owner {
+    color: var(--finance-muted);
+}
+
+@media (max-width: 767px) {
+    .block-container {
+        padding: calc(env(safe-area-inset-top, 0px) + .7rem) .65rem calc(env(safe-area-inset-bottom, 0px) + 4.8rem);
+    }
+
+    .page-title-block {
+        padding: 11px 12px 10px;
+        margin-bottom: 10px;
+        border-radius: 14px;
+        background:
+            linear-gradient(90deg, rgba(36,87,197,.12), rgba(15,118,110,.06)),
+            var(--finance-surface-strong);
+        border: 1px solid var(--finance-border);
+        box-shadow: var(--finance-shadow-sm);
+    }
+
+    .page-title-block h1 {
+        font-size: 1.03rem;
+        font-weight: 850;
+        line-height: 1.08;
+    }
+
+    .mobile-checklist-summary {
+        gap: 7px;
+        margin: 1px 0 11px;
+    }
+
+    .mobile-checklist-summary > div {
+        border: 1px solid var(--finance-border);
+        border-radius: 12px;
+        background: var(--finance-surface-strong);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+        padding: 8px 9px;
+    }
+
+    .mobile-checklist-summary span {
+        color: var(--finance-soft);
+        font-size: .59rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .mobile-checklist-summary strong {
+        color: var(--finance-ink);
+        font-size: .98rem;
+        font-weight: 900;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stRadio"] [role="radiogroup"] {
+        gap: 6px;
+        margin: 9px 0 18px;
+        padding: 4px;
+        border: 1px solid var(--finance-border);
+        border-radius: 14px;
+        background: rgba(226, 232, 240, .58);
+        box-shadow: inset 0 1px 2px rgba(15, 23, 42, .04);
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stRadio"] [data-baseweb="radio"] {
+        min-height: 34px;
+        border-radius: 10px;
+        border: 1px solid transparent;
+        background: transparent;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stRadio"] label,
+    .st-key-mobile_dashboard div[data-testid="stRadio"] p {
+        color: var(--finance-muted) !important;
+        font-size: .68rem;
+        font-weight: 820;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stRadio"] [data-baseweb="radio"]:has(input:checked) {
+        border-color: rgba(36, 87, 197, .18);
+        background: var(--finance-surface-strong);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 6px 14px rgba(36, 87, 197, .10);
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stRadio"] [data-baseweb="radio"]:has(input:checked) p {
+        color: var(--finance-blue) !important;
+        font-weight: 900;
+    }
+
+    .mobile-section-heading {
+        color: var(--finance-ink);
+        font-size: .78rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        margin: 17px 0 0;
+        padding: 1px 0 7px;
+    }
+
+    .mobile-section-heading:before {
+        content: "";
+        display: inline-block;
+        width: 5px;
+        height: 5px;
+        margin-right: 7px;
+        border-radius: 999px;
+        background: var(--finance-blue);
+        vertical-align: 2px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stExpander"] {
+        border: 1px solid var(--finance-border);
+        border-radius: 14px;
+        background: var(--finance-surface);
+        box-shadow: var(--finance-shadow-sm);
+        overflow: hidden;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stExpander"] summary {
+        min-height: 46px;
+        padding: 9px 10px;
+        color: var(--finance-ink);
+        background: linear-gradient(180deg, rgba(255,255,255,.78), rgba(248,250,252,.62));
+        border-bottom: 1px solid rgba(148,163,184,.18);
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stExpander"] summary p,
+    .st-key-mobile_dashboard div[data-testid="stExpander"] summary p span {
+        color: var(--finance-muted) !important;
+        font-size: .72rem;
+        font-weight: 780 !important;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stExpander"] summary p strong:first-child {
+        color: var(--finance-ink) !important;
+        font-weight: 900 !important;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stExpander"] details > div {
+        padding: 0 8px 9px;
+        background: rgba(248, 250, 252, .36);
+    }
+
+    .mobile-benefit-card {
+        border: 1px solid var(--finance-border);
+        border-left: 3px solid var(--finance-blue);
+        border-radius: 12px;
+        background: var(--finance-surface-strong);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+        padding: 10px 10px 9px;
+        margin-top: 8px;
+    }
+
+    .mobile-benefit-main {
+        gap: 9px;
+    }
+
+    .mobile-benefit-name {
+        color: var(--finance-ink);
+        font-size: .9rem;
+        font-weight: 900;
+        line-height: 1.16;
+    }
+
+    .mobile-benefit-card-name,
+    .mobile-benefit-owner {
+        font-size: .68rem;
+        font-weight: 730;
+    }
+
+    .mobile-status {
+        min-height: 22px;
+        border-radius: 999px;
+        padding: 4px 8px;
+        border: 1px solid transparent;
+        font-size: .58rem;
+        font-weight: 900;
+        text-transform: uppercase;
+    }
+
+    .mobile-status-available {
+        color: var(--finance-blue);
+        background: var(--finance-blue-soft);
+        border-color: rgba(36, 87, 197, .14);
+    }
+
+    .mobile-status-expiring-soon {
+        color: var(--finance-rose);
+        background: var(--finance-rose-soft);
+        border-color: rgba(190, 18, 60, .14);
+    }
+
+    .mobile-status-used {
+        color: var(--finance-teal);
+        background: var(--finance-teal-soft);
+        border-color: rgba(15, 118, 110, .16);
+    }
+
+    .mobile-status-partially-used {
+        color: var(--finance-amber);
+        background: var(--finance-amber-soft);
+        border-color: rgba(161, 98, 7, .16);
+    }
+
+    .mobile-status-upcoming,
+    .mobile-status-hidden {
+        color: var(--finance-muted);
+        background: #e2e8f0;
+        border-color: rgba(100, 116, 139, .16);
+    }
+
+    .mobile-benefit-facts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 7px;
+        margin-top: 9px;
+    }
+
+    .mobile-benefit-facts > div {
+        border: 1px solid rgba(148, 163, 184, .22);
+        border-radius: 10px;
+        background: var(--finance-surface-muted);
+        padding: 7px 8px;
+    }
+
+    .mobile-benefit-facts span,
+    .mobile-benefit-facts small {
+        color: var(--finance-soft);
+        font-size: .58rem;
+        font-weight: 760;
+    }
+
+    .mobile-benefit-facts strong {
+        color: var(--finance-ink);
+        font-size: .8rem;
+        font-weight: 900;
+    }
+
+    .mobile-progress-shell {
+        height: 7px;
+        border: 0;
+        background: #e2e8f0;
+        margin-top: 10px;
+    }
+
+    .mobile-progress-fill {
+        background: linear-gradient(90deg, var(--finance-blue), var(--finance-teal));
+    }
+
+    .mobile-detail-note,
+    .mobile-adjust-summary,
+    .mobile-empty-state {
+        border: 1px solid var(--finance-border);
+        background: var(--finance-surface-muted);
+        box-shadow: none;
+    }
+
+    .mobile-detail-note span {
+        color: var(--finance-ink);
+        font-weight: 900;
+    }
+
+    .mobile-detail-note p,
+    .mobile-adjust-summary,
+    .mobile-empty-state {
+        color: var(--finance-muted);
+    }
+
+    .mobile-card-group-header {
+        border-bottom: 1px solid rgba(148, 163, 184, .24);
+        padding: 5px 2px 7px;
+    }
+
+    .mobile-card-group-image,
+    .mobile-card-group-fallback {
+        border: 1px solid rgba(15, 23, 42, .10);
+        box-shadow: 0 8px 18px rgba(15, 23, 42, .14);
+    }
+
+    .mobile-card-group-title {
+        color: var(--finance-ink);
+        font-weight: 900;
+    }
+
+    .mobile-card-group-owner,
+    .mobile-card-group-stats {
+        color: var(--finance-soft);
+    }
+
+    .mobile-card-group-stats strong {
+        color: var(--finance-blue);
+        font-weight: 900;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stButton"] button,
+    .st-key-mobile_dashboard div[data-testid="stPopover"] button {
+        min-height: 37px !important;
+        border-radius: 10px !important;
+        border-color: rgba(148, 163, 184, .30) !important;
+        background: var(--finance-surface-strong) !important;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, .04) !important;
+        color: var(--finance-ink) !important;
+        font-size: .76rem !important;
+        font-weight: 850 !important;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stButton"] button[kind="primary"],
+    .st-key-mobile_dashboard div[data-testid="stButton"] button[data-testid="baseButton-primary"] {
+        border-color: rgba(36, 87, 197, .30) !important;
+        background: linear-gradient(180deg, #2f63dc, #2457c5) !important;
+        color: #ffffff !important;
+        box-shadow: 0 8px 18px rgba(36, 87, 197, .20) !important;
+    }
+
+    .st-key-mobile_dashboard [class*="_actions"] [data-testid="stHorizontalBlock"] {
+        gap: 7px !important;
+    }
+}
+
+/* Option A spacing refinement.
+   Increase rhythm without changing the selected palette or app behavior. */
+.block-container {
+    padding-bottom: 3.6rem;
+}
+
+.st-key-desktop_dashboard {
+    --desktop-stack-gap: 24px;
+}
+
+.page-title-block {
+    margin-bottom: 14px;
+}
+
+.section-title-block {
+    margin-bottom: 16px;
+}
+
+.dashboard-kpi-grid,
+[class*="dashboard-kpi"] {
+    gap: 14px;
+}
+
+.dashboard-kpi-card,
+div[data-testid="stMetric"],
+.metric-card {
+    padding: 16px 17px 15px;
+}
+
+.st-key-dashboard_controls {
+    margin-bottom: 24px;
+    padding: 16px;
+}
+
+[class*="st-key-card_section_"] div[data-testid="stVerticalBlockBorderWrapper"],
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    margin-bottom: 26px;
+}
+
+.card-stat-grid,
+.mini-grid {
+    gap: 11px;
+    margin-top: 14px;
+    margin-bottom: 12px;
+}
+
+.card-stat-grid > div,
+.mini-stat {
+    padding: 12px;
+}
+
+.benefit-row,
+.benefit-tile {
+    padding: 16px;
+    margin-bottom: 13px;
+}
+
+.benefit-secondary {
+    margin-top: 6px;
+}
+
+.benefit-meta,
+.chip-row {
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.progress-shell,
+.progress-bar,
+.liquid-progress {
+    margin-top: 11px;
+    margin-bottom: 16px;
+}
+
+div[data-testid="stExpander"] {
+    margin-bottom: 13px;
+}
+
+div[data-testid="stExpander"] summary {
+    min-height: 48px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+div[data-testid="stTabs"] [role="tablist"] {
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+@media (max-width: 767px) {
+    .block-container {
+        padding: calc(env(safe-area-inset-top, 0px) + .82rem) .76rem calc(env(safe-area-inset-bottom, 0px) + 5.1rem);
+    }
+
+    .page-title-block {
+        padding: 13px 14px;
+        margin-bottom: 13px;
+    }
+
+    .mobile-checklist-summary {
+        gap: 10px;
+        margin: 3px 0 15px;
+    }
+
+    .mobile-checklist-summary > div {
+        padding: 10px 11px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stRadio"] [role="radiogroup"] {
+        gap: 7px;
+        margin: 11px 0 22px;
+        padding: 5px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stRadio"] [data-baseweb="radio"] {
+        min-height: 36px;
+    }
+
+    .mobile-section-heading {
+        margin: 22px 0 0;
+        padding: 2px 0 10px;
+    }
+
+    .st-key-mobile_dashboard [data-testid="stMarkdownContainer"]:has(.mobile-section-heading),
+    [class*="st-key-mobile_dashboard"] [data-testid="stMarkdownContainer"]:has(.mobile-section-heading) {
+        margin-bottom: 10px !important;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stExpander"] {
+        margin-top: 12px;
+        margin-bottom: 13px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stExpander"] summary {
+        min-height: 50px;
+        padding: 11px 12px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stExpander"] details > div {
+        padding: 0 10px 11px;
+    }
+
+    .mobile-benefit-card {
+        padding: 12px;
+        margin-top: 11px;
+    }
+
+    .mobile-benefit-main {
+        gap: 11px;
+    }
+
+    .mobile-benefit-card-name,
+    .mobile-benefit-owner {
+        margin-top: 4px;
+    }
+
+    .mobile-benefit-facts {
+        gap: 9px;
+        margin-top: 11px;
+    }
+
+    .mobile-benefit-facts > div {
+        padding: 9px;
+    }
+
+    .mobile-progress-shell {
+        margin-top: 12px;
+    }
+
+    .mobile-detail-note,
+    .mobile-adjust-summary,
+    .mobile-empty-state {
+        margin-top: 10px;
+        margin-bottom: 10px;
+        padding: 10px 11px;
+    }
+
+    .mobile-card-group-header {
+        gap: 12px;
+        margin: 5px 0 5px;
+        padding: 6px 3px 10px;
+    }
+
+    .mobile-card-group-stats {
+        gap: 4px;
+    }
+
+    .st-key-mobile_dashboard [data-testid="stHorizontalBlock"],
+    [class*="st-key-mobile_dashboard"] [data-testid="stHorizontalBlock"],
+    .st-key-mobile_dashboard [class*="_actions"] [data-testid="stHorizontalBlock"] {
+        gap: 8px !important;
+        margin-top: 7px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stButton"] {
+        margin-bottom: 5px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stButton"] button,
+    .st-key-mobile_dashboard div[data-testid="stPopover"] button {
+        min-height: 39px !important;
+    }
+}
+
+/* Option A: Executive Ledger.
+   Final chosen direction: quiet private-finance dashboard with crisp white
+   surfaces, blue/teal signal colors, restrained shadows, and dense scan rows. */
+:root {
+    --ledger-bg: #f5f7fb;
+    --ledger-bg-2: #edf2f7;
+    --ledger-surface: #ffffff;
+    --ledger-surface-soft: #f8fafc;
+    --ledger-surface-blue: #f3f7ff;
+    --ledger-border: rgba(148, 163, 184, .30);
+    --ledger-border-strong: rgba(71, 85, 105, .24);
+    --ledger-ink: #162033;
+    --ledger-muted: #526173;
+    --ledger-soft: #748094;
+    --ledger-blue: #2457c5;
+    --ledger-blue-dark: #1d4fb8;
+    --ledger-blue-soft: #dbeafe;
+    --ledger-teal: #0f766e;
+    --ledger-teal-soft: #ccfbf1;
+    --ledger-amber: #a16207;
+    --ledger-amber-soft: #fef3c7;
+    --ledger-rose: #be123c;
+    --ledger-rose-soft: #ffe4e6;
+    --ledger-gray-soft: #e2e8f0;
+    --ledger-shadow-xs: 0 1px 2px rgba(15, 23, 42, .04);
+    --ledger-shadow-sm: 0 1px 2px rgba(15, 23, 42, .04), 0 8px 20px rgba(15, 23, 42, .06);
+    --ledger-shadow-md: 0 1px 2px rgba(15, 23, 42, .05), 0 16px 34px rgba(15, 23, 42, .08);
+}
+
+.stApp {
+    color: var(--ledger-ink);
+    background:
+        linear-gradient(180deg, rgba(255,255,255,.82), rgba(245,247,251,.94)),
+        var(--app-wallpaper),
+        linear-gradient(145deg, var(--ledger-bg) 0%, var(--ledger-bg-2) 100%);
+}
+
+.stApp:before {
+    background:
+        linear-gradient(180deg, rgba(255,255,255,.62), rgba(245,247,251,.90)),
+        linear-gradient(90deg, rgba(148,163,184,.055) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(148,163,184,.040) 1px, transparent 1px);
+    background-size: auto, 92px 92px, 92px 92px;
+    backdrop-filter: blur(1.5px) saturate(1.02) brightness(1.03);
+    -webkit-backdrop-filter: blur(1.5px) saturate(1.02) brightness(1.03);
+}
+
+.page-title-block,
+.section-title-block,
+.glass-panel,
+.glass-card,
+.glass-content-panel,
+.glass-metric-card,
+.metric-card,
+.filter-bar,
+.form-section,
+.st-key-dashboard_controls,
+[class*="st-key-card_section_"] div[data-testid="stVerticalBlockBorderWrapper"],
+div[data-testid="stVerticalBlockBorderWrapper"],
+div[data-testid="stExpander"],
+div[data-testid="stAlert"],
+div[data-testid="stDataFrame"],
+div[data-testid="stDataEditor"] {
+    border: 1px solid var(--ledger-border);
+    background: rgba(255, 255, 255, .92);
+    box-shadow: var(--ledger-shadow-sm);
+    backdrop-filter: blur(14px) saturate(1.02);
+    -webkit-backdrop-filter: blur(14px) saturate(1.02);
+}
+
+.page-title-block:before,
+.section-title-block:before,
+.glass-panel:before,
+.glass-card:before,
+.glass-content-panel:before,
+.glass-metric-card:before,
+.metric-card:before,
+.filter-bar:before,
+.form-section:before {
+    opacity: .10;
+    background: linear-gradient(135deg, rgba(255,255,255,.84), transparent 52%);
+}
+
+.page-title-block {
+    border-radius: 22px;
+    padding: 18px 22px;
+    background:
+        linear-gradient(90deg, rgba(36,87,197,.11), rgba(15,118,110,.045) 44%, transparent 72%),
+        rgba(255,255,255,.95);
+}
+
+.page-title-block h1,
+.page-title-block h2,
+.section-title-block h2,
+.section-title-block h3,
+.card-section-header h3,
+.benefit-title,
+.mini-value,
+.mobile-benefit-name,
+.mobile-card-group-title {
+    color: var(--ledger-ink) !important;
+    font-weight: 850;
+}
+
+.page-title-block p,
+.section-title-block p,
+.card-section-header p,
+.benefit-secondary,
+.mini-label,
+.card-section-owner,
+.mobile-benefit-card-name,
+.mobile-benefit-owner,
+.mobile-card-group-owner,
+.mobile-card-group-stats {
+    color: var(--ledger-muted) !important;
+}
+
+.dashboard-kpi-card,
+div[data-testid="stMetric"],
+.metric-card,
+.card-stat-grid > div,
+.mini-stat {
+    border: 1px solid var(--ledger-border);
+    background: var(--ledger-surface);
+    box-shadow: var(--ledger-shadow-xs);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.dashboard-kpi-card span,
+div[data-testid="stMetric"] label,
+div[data-testid="stMetric"] [data-testid="stMetricLabel"],
+.card-stat-grid span,
+.mini-label {
+    color: var(--ledger-soft) !important;
+    font-size: .68rem;
+    font-weight: 820;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+.dashboard-kpi-card strong,
+div[data-testid="stMetric"] [data-testid="stMetricValue"],
+.card-stat-grid strong,
+.mini-value {
+    color: var(--ledger-ink) !important;
+    font-weight: 900;
+}
+
+.dashboard-kpi-card.emphasis,
+.card-stat-grid .emphasis {
+    border-color: rgba(36,87,197,.20);
+    background: var(--ledger-surface-blue);
+}
+
+.dashboard-kpi-card.emphasis strong,
+.card-stat-grid .emphasis strong {
+    color: var(--ledger-blue) !important;
+}
+
+.dashboard-kpi-card.warning {
+    border-color: rgba(161,98,7,.18);
+    background: rgba(255,208,120,.14);
+}
+
+.dashboard-kpi-card.warning strong {
+    color: var(--ledger-amber) !important;
+}
+
+.benefit-row,
+.benefit-tile {
+    border: 1px solid var(--ledger-border);
+    border-left: 3px solid var(--ledger-blue);
+    border-radius: 14px;
+    background: var(--ledger-surface);
+    box-shadow: var(--ledger-shadow-xs);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.benefit-tile:hover {
+    transform: translateY(-1px);
+    border-color: rgba(36,87,197,.28);
+    box-shadow: var(--ledger-shadow-sm);
+}
+
+.benefit-tile.upcoming {
+    border-left-color: var(--ledger-soft);
+    background: var(--ledger-surface-soft);
+}
+
+.status-pill,
+.badge,
+.glass-chip,
+.chip,
+.card-section-status {
+    border: 1px solid var(--ledger-border);
+    background: var(--ledger-surface-soft);
+    box-shadow: none;
+    color: var(--ledger-muted);
+    font-weight: 820;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.deadline {
+    border: 1px solid var(--ledger-border);
+    background: var(--ledger-surface-soft);
+    box-shadow: none;
+    color: var(--ledger-muted);
+    font-weight: 840;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.deadline.soon {
+    color: var(--ledger-rose);
+    background: var(--ledger-rose-soft);
+    border-color: rgba(190,18,60,.16);
+}
+
+.deadline.done {
+    color: var(--ledger-teal);
+    background: var(--ledger-teal-soft);
+    border-color: rgba(15,118,110,.16);
+}
+
+.deadline.hidden,
+.deadline.upcoming {
+    color: var(--ledger-muted);
+    background: var(--ledger-gray-soft);
+    border-color: rgba(100,116,139,.16);
+}
+
+.empty-chip,
+.mobile-empty-state,
+.mobile-detail-note,
+.mobile-adjust-summary {
+    border: 1px solid var(--ledger-border);
+    background: var(--ledger-surface-soft);
+    box-shadow: none;
+    color: var(--ledger-muted);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.progress-shell,
+.progress-bar,
+.liquid-progress,
+.mobile-progress-shell {
+    border: 0;
+    background: #e2e8f0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.progress-fill,
+.liquid-progress-fill,
+.mobile-progress-fill {
+    background: linear-gradient(90deg, var(--ledger-blue), var(--ledger-teal)) !important;
+    box-shadow: none;
+}
+
+div[data-testid="stButton"] button,
+div[data-testid="stFormSubmitButton"] button,
+div[data-testid="stLinkButton"] a,
+div[data-testid="stDownloadButton"] button {
+    border: 1px solid var(--ledger-border) !important;
+    border-radius: 10px !important;
+    background: var(--ledger-surface) !important;
+    box-shadow: var(--ledger-shadow-xs) !important;
+    color: var(--ledger-ink) !important;
+    font-weight: 820 !important;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+div[data-testid="stButton"] button[kind="primary"],
+div[data-testid="stFormSubmitButton"] button[kind="primary"] {
+    border-color: rgba(36,87,197,.32) !important;
+    background: linear-gradient(180deg, #2f63dc, var(--ledger-blue-dark)) !important;
+    color: #ffffff !important;
+    box-shadow: 0 8px 18px rgba(36,87,197,.20) !important;
+}
+
+div[data-testid="stButton"] button:hover,
+div[data-testid="stFormSubmitButton"] button:hover,
+div[data-testid="stLinkButton"] a:hover,
+div[data-testid="stDownloadButton"] button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(36,87,197,.28) !important;
+    background: var(--ledger-surface-blue) !important;
+    box-shadow: var(--ledger-shadow-sm) !important;
+}
+
+.filter-bar,
+div[data-testid="stForm"],
+div[data-testid="stFileUploader"] section,
+.st-key-dashboard_controls {
+    border: 1px solid var(--ledger-border);
+    background: rgba(255,255,255,.92);
+    box-shadow: var(--ledger-shadow-xs);
+}
+
+div[data-baseweb="select"] > div,
+div[data-baseweb="input"] > div,
+div[data-baseweb="textarea"] > div,
+div[data-testid="stDateInput"] div[data-baseweb="input"] > div,
+div[data-testid="stNumberInput"] div[data-baseweb="input"] > div {
+    border-radius: 12px;
+    border-color: var(--ledger-border) !important;
+    background: var(--ledger-surface) !important;
+    box-shadow: none;
+}
+
+div[data-testid="stRadio"] [data-baseweb="radio"],
+.st-key-dashboard_controls div[data-testid="stRadio"] [data-baseweb="radio"],
+div[data-testid="stTabs"] button {
+    border: 1px solid transparent;
+    background: transparent;
+    box-shadow: none;
+    color: var(--ledger-muted) !important;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+div[data-testid="stRadio"] [data-baseweb="radio"]:has(input:checked),
+.st-key-dashboard_controls div[data-testid="stRadio"] [data-baseweb="radio"]:has(input:checked),
+div[data-testid="stTabs"] button[aria-selected="true"] {
+    border-color: rgba(36,87,197,.18) !important;
+    background: var(--ledger-surface) !important;
+    box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 6px 14px rgba(36,87,197,.10) !important;
+}
+
+div[data-testid="stRadio"] [data-baseweb="radio"]:has(input:checked) p,
+div[data-testid="stRadio"] [data-baseweb="radio"]:has(input:checked) span,
+div[data-testid="stTabs"] button[aria-selected="true"] p,
+div[data-testid="stTabs"] button[aria-selected="true"] span {
+    color: var(--ledger-blue) !important;
+    font-weight: 880 !important;
+}
+
+.st-key-dashboard_controls,
+div[data-testid="stTabs"] [role="tablist"] {
+    border: 1px solid var(--ledger-border);
+    border-radius: 16px;
+    background: rgba(226,232,240,.58);
+    padding: 4px;
+}
+
+div[data-testid="stExpander"] summary {
+    border-bottom: 1px solid rgba(148,163,184,.18);
+    background: linear-gradient(180deg, rgba(255,255,255,.84), rgba(248,250,252,.70));
+}
+
+div[data-testid="stDataFrame"],
+div[data-testid="stDataEditor"] {
+    border-color: var(--ledger-border);
+    box-shadow: var(--ledger-shadow-sm);
+}
+
+@media (max-width: 767px) {
+    .page-title-block {
+        border-radius: 14px;
+        background:
+            linear-gradient(90deg, rgba(36,87,197,.12), rgba(15,118,110,.055)),
+            var(--ledger-surface);
+    }
+
+    .mobile-checklist-summary > div,
+    .mobile-benefit-card,
+    .mobile-benefit-facts > div,
+    .mobile-card-group-header,
+    .st-key-mobile_dashboard div[data-testid="stExpander"] {
+        border-color: var(--ledger-border);
+        background: var(--ledger-surface);
+        box-shadow: var(--ledger-shadow-xs);
+    }
+
+    .mobile-benefit-card {
+        border-left: 3px solid var(--ledger-blue);
+    }
+
+    .mobile-checklist-summary span,
+    .mobile-benefit-facts span,
+    .mobile-benefit-facts small {
+        color: var(--ledger-soft);
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .mobile-checklist-summary strong,
+    .mobile-benefit-facts strong,
+    .mobile-card-group-stats strong {
+        color: var(--ledger-ink);
+        font-weight: 900;
+    }
+
+    .mobile-section-heading {
+        color: var(--ledger-ink);
+        font-size: .76rem;
+        letter-spacing: .08em;
+    }
+
+    .mobile-section-heading:before {
+        background: var(--ledger-blue);
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stRadio"] [role="radiogroup"] {
+        border: 1px solid var(--ledger-border);
+        background: rgba(226,232,240,.58);
+        box-shadow: inset 0 1px 2px rgba(15,23,42,.04);
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stRadio"] [data-baseweb="radio"]:has(input:checked) {
+        background: var(--ledger-surface) !important;
+    }
+
+    .mobile-status-available {
+        color: var(--ledger-blue);
+        background: var(--ledger-blue-soft);
+        border-color: rgba(36,87,197,.14);
+    }
+
+    .mobile-status-expiring-soon {
+        color: var(--ledger-rose);
+        background: var(--ledger-rose-soft);
+        border-color: rgba(190,18,60,.14);
+    }
+
+    .mobile-status-used {
+        color: var(--ledger-teal);
+        background: var(--ledger-teal-soft);
+        border-color: rgba(15,118,110,.16);
+    }
+
+    .mobile-status-partially-used {
+        color: var(--ledger-amber);
+        background: var(--ledger-amber-soft);
+        border-color: rgba(161,98,7,.16);
+    }
+
+    .mobile-status-upcoming,
+    .mobile-status-hidden {
+        color: var(--ledger-muted);
+        background: var(--ledger-gray-soft);
+        border-color: rgba(100,116,139,.16);
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stButton"] button,
+    .st-key-mobile_dashboard div[data-testid="stPopover"] button {
+        border-color: var(--ledger-border) !important;
+        background: var(--ledger-surface) !important;
+        color: var(--ledger-ink) !important;
+        box-shadow: var(--ledger-shadow-xs) !important;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stButton"] button[kind="primary"],
+    .st-key-mobile_dashboard div[data-testid="stButton"] button[data-testid="baseButton-primary"] {
+        background: linear-gradient(180deg, #2f63dc, var(--ledger-blue-dark)) !important;
+        color: #ffffff !important;
+    }
+}
+
+/* Final spacing override: keep the Option A palette, but enforce a looser
+   chip/card rhythm at the end of the cascade. */
+.benefit-row,
+.benefit-tile {
+    padding: 16px;
+    margin-bottom: 14px;
+}
+
+.benefit-meta,
+.chip-row {
+    gap: 7px 9px;
+    margin-top: 12px;
+}
+
+.status-pill,
+.badge,
+.glass-chip,
+.chip,
+.chip-muted,
+.card-section-status {
+    min-height: 30px;
+    padding: 0 12px;
+    line-height: 30px;
+}
+
+.deadline {
+    min-height: 38px;
+    padding: 9px 12px;
+}
+
+.card-stat-grid,
+.mini-grid {
+    gap: 11px;
+    margin-top: 14px;
+    margin-bottom: 12px;
+}
+
+.card-stat-grid > div,
+.mini-stat,
+.dashboard-kpi-card,
+div[data-testid="stMetric"],
+.metric-card {
+    padding: 15px;
+}
+
+div[data-testid="stExpander"] {
+    margin-bottom: 14px;
+}
+
+div[data-testid="stExpander"] summary {
+    min-height: 48px;
+    padding: 10px 14px;
+}
+
+@media (max-width: 767px) {
+    .block-container {
+        padding: calc(env(safe-area-inset-top, 0px) + .82rem) .72rem calc(env(safe-area-inset-bottom, 0px) + 5rem);
+    }
+
+    .page-title-block {
+        padding: 13px 14px;
+        margin-bottom: 14px;
+    }
+
+    .mobile-checklist-summary {
+        gap: 8px;
+        margin: 3px 0 14px;
+    }
+
+    .mobile-checklist-summary > div {
+        min-height: 56px;
+        padding: 9px 10px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stRadio"] [role="radiogroup"] {
+        gap: 6px;
+        margin: 10px 0 20px;
+        padding: 5px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stRadio"] [data-baseweb="radio"] {
+        min-height: 36px;
+    }
+
+    .mobile-section-heading {
+        margin: 20px 0 0;
+        padding: 0 0 8px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stExpander"] {
+        margin-top: 10px;
+        margin-bottom: 14px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stExpander"] summary {
+        min-height: 48px;
+        padding: 11px 12px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stExpander"] details > div {
+        padding: 0 10px 12px;
+    }
+
+    .mobile-benefit-card {
+        padding: 12px;
+        margin-top: 10px;
+    }
+
+    .mobile-benefit-main {
+        gap: 10px;
+    }
+
+    .mobile-status {
+        min-height: 26px;
+        padding: 0 10px;
+        line-height: 26px;
+    }
+
+    .mobile-benefit-facts {
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .mobile-benefit-facts > div {
+        min-height: 58px;
+        padding: 8px 9px;
+    }
+
+    .mobile-progress-shell {
+        margin-top: 10px;
+    }
+
+    .mobile-detail-note,
+    .mobile-adjust-summary,
+    .mobile-empty-state {
+        margin-top: 10px;
+        margin-bottom: 10px;
+        padding: 10px 11px;
+    }
+
+    .mobile-card-group-header {
+        gap: 10px;
+        margin: 5px 0 6px;
+        padding: 6px 3px 10px;
+    }
+
+    .st-key-mobile_dashboard [data-testid="stHorizontalBlock"],
+    [class*="st-key-mobile_dashboard"] [data-testid="stHorizontalBlock"],
+    .st-key-mobile_dashboard [class*="_actions"] [data-testid="stHorizontalBlock"] {
+        gap: 8px !important;
+        margin-top: 8px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stButton"] {
+        margin-bottom: 5px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stButton"] button,
+    .st-key-mobile_dashboard div[data-testid="stPopover"] button {
+        min-height: 44px !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+}
+
+/* Web Interface Guidelines pass.
+   Applied from Vercel Labs web-design-guidelines: visible focus, touch behavior,
+   reduced motion, numeric alignment, and robust text wrapping. */
+.stApp {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(36, 87, 197, .14);
+}
+
+.page-title-block h1,
+.page-title-block h2,
+.section-title-block h2,
+.section-title-block h3,
+.benefit-title,
+.mobile-benefit-name,
+.mobile-card-group-title,
+.card-section-header h3 {
+    text-wrap: balance;
+}
+
+.page-title-block p,
+.section-title-block p,
+.benefit-secondary,
+.mobile-detail-note p {
+    text-wrap: pretty;
+}
+
+.dashboard-kpi-card strong,
+div[data-testid="stMetric"] [data-testid="stMetricValue"],
+.card-stat-grid strong,
+.mini-value,
+.mobile-checklist-summary strong,
+.mobile-benefit-facts strong,
+.mobile-card-group-stats strong,
+.deadline,
+.mobile-adjust-summary {
+    font-variant-numeric: tabular-nums;
+}
+
+.benefit-title,
+.benefit-secondary,
+.mobile-benefit-name,
+.mobile-benefit-card-name,
+.mobile-benefit-owner,
+.mobile-detail-note p,
+.mobile-card-group-title,
+.card-section-header h3,
+.card-section-header p {
+    overflow-wrap: anywhere;
+}
+
+div[data-testid="stButton"] button:focus-visible,
+div[data-testid="stFormSubmitButton"] button:focus-visible,
+div[data-testid="stLinkButton"] a:focus-visible,
+div[data-testid="stDownloadButton"] button:focus-visible,
+div[data-testid="stTabs"] button:focus-visible,
+div[data-testid="stRadio"] [data-baseweb="radio"]:focus-within,
+div[data-baseweb="select"]:focus-within,
+div[data-baseweb="input"]:focus-within,
+div[data-baseweb="textarea"]:focus-within {
+    outline: 2px solid rgba(36, 87, 197, .58) !important;
+    outline-offset: 2px !important;
+    border-color: rgba(36, 87, 197, .58) !important;
+    box-shadow:
+        0 0 0 3px rgba(36, 87, 197, .18),
+        0 8px 20px rgba(36, 87, 197, .12) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .stApp *,
+    .stApp *::before,
+    .stApp *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+    }
+
+    .benefit-tile:hover,
+    div[data-testid="stButton"] button:hover,
+    div[data-testid="stFormSubmitButton"] button:hover,
+    div[data-testid="stLinkButton"] a:hover,
+    div[data-testid="stDownloadButton"] button:hover {
+        transform: none !important;
+    }
+}
+
+/* Obsidian Wallet visual direction.
+   Inspired by premium dark mobile banking UIs: smoky black surfaces,
+   aubergine glow, soft card depth, compact rounded action controls. */
+:root {
+    --wallet-bg-0: #07070b;
+    --wallet-bg-1: #111018;
+    --wallet-bg-2: #1a121f;
+    --wallet-surface: rgba(31, 30, 38, .78);
+    --wallet-surface-strong: rgba(45, 43, 54, .88);
+    --wallet-surface-soft: rgba(255, 255, 255, .055);
+    --wallet-border: rgba(255, 255, 255, .095);
+    --wallet-border-strong: rgba(255, 255, 255, .16);
+    --wallet-text: #f4f1f7;
+    --wallet-muted: #aaa4b7;
+    --wallet-soft: #777180;
+    --wallet-accent: #f37a4a;
+    --wallet-accent-2: #ffcc70;
+    --wallet-magenta: #a83c72;
+    --wallet-green: #7ddc82;
+    --wallet-red: #ff746f;
+    --wallet-shadow: 0 18px 44px rgba(0, 0, 0, .42);
+    --wallet-shadow-soft: 0 10px 26px rgba(0, 0, 0, .32);
+}
+
+.stApp {
+    color: var(--wallet-text);
+    background:
+        radial-gradient(circle at 78% 2%, rgba(243, 122, 74, .30), transparent 26rem),
+        radial-gradient(circle at 10% 20%, rgba(168, 60, 114, .30), transparent 24rem),
+        radial-gradient(circle at 72% 84%, rgba(78, 62, 120, .24), transparent 28rem),
+        linear-gradient(160deg, var(--wallet-bg-0) 0%, var(--wallet-bg-1) 46%, var(--wallet-bg-2) 100%) !important;
+}
+
+.stApp:before {
+    background:
+        linear-gradient(135deg, rgba(255,255,255,.035) 0 1px, transparent 1px 120px),
+        radial-gradient(circle at 50% 0%, rgba(255,255,255,.055), transparent 32rem),
+        linear-gradient(180deg, rgba(255,255,255,.025), rgba(0,0,0,.20));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.page-title-block,
+.section-title-block,
+.glass-panel,
+.glass-card,
+.glass-content-panel,
+.glass-metric-card,
+.metric-card,
+.filter-bar,
+.form-section,
+.st-key-dashboard_controls,
+[class*="st-key-card_section_"] div[data-testid="stVerticalBlockBorderWrapper"],
+div[data-testid="stVerticalBlockBorderWrapper"],
+div[data-testid="stExpander"],
+div[data-testid="stAlert"],
+div[data-testid="stDataFrame"],
+div[data-testid="stDataEditor"] {
+    color: var(--wallet-text);
+    border: 1px solid var(--wallet-border) !important;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.085), rgba(255,255,255,.038)),
+        var(--wallet-surface) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.11),
+        inset 0 -1px 0 rgba(0,0,0,.22),
+        var(--wallet-shadow-soft) !important;
+    backdrop-filter: blur(22px) saturate(1.18) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(1.18) !important;
+}
+
+.page-title-block:before,
+.section-title-block:before,
+.glass-panel:before,
+.glass-card:before,
+.glass-content-panel:before,
+.glass-metric-card:before,
+.metric-card:before,
+.filter-bar:before,
+.form-section:before {
+    opacity: .26;
+    background:
+        radial-gradient(circle at 18% 0%, rgba(255,255,255,.20), transparent 34%),
+        linear-gradient(124deg, rgba(255,255,255,.11), transparent 44%);
+}
+
+.page-title-block {
+    background:
+        radial-gradient(circle at 82% 0%, rgba(243,122,74,.28), transparent 44%),
+        linear-gradient(145deg, rgba(255,255,255,.10), rgba(255,255,255,.035)),
+        rgba(30, 26, 37, .86) !important;
+    border-radius: 26px;
+}
+
+.page-title-block h1,
+.page-title-block h2,
+.section-title-block h2,
+.section-title-block h3,
+.card-section-header h3,
+.benefit-title,
+.mini-value,
+.mobile-benefit-name,
+.mobile-card-group-title,
+.card-product,
+.card-brand {
+    color: var(--wallet-text) !important;
+}
+
+.page-title-block p,
+.section-title-block p,
+.card-section-header p,
+.benefit-secondary,
+.mini-label,
+.card-section-owner,
+.mobile-benefit-card-name,
+.mobile-benefit-owner,
+.mobile-card-group-owner,
+.mobile-card-group-stats,
+label,
+div[data-testid="stWidgetLabel"] p,
+[data-testid="stMarkdownContainer"],
+.stMarkdownColoredText,
+[class*="stMarkdownColoredText"],
+[class*="stMarkdownColoredText"] strong {
+    color: var(--wallet-muted) !important;
+}
+
+.dashboard-kpi-card,
+div[data-testid="stMetric"],
+.metric-card,
+.card-stat-grid > div,
+.mini-stat,
+.mobile-checklist-summary > div,
+.mobile-benefit-facts > div {
+    border: 1px solid var(--wallet-border) !important;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.075), rgba(255,255,255,.034)),
+        rgba(28, 27, 34, .76) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.08),
+        0 8px 22px rgba(0,0,0,.28) !important;
+}
+
+.dashboard-kpi-card span,
+div[data-testid="stMetric"] label,
+div[data-testid="stMetric"] [data-testid="stMetricLabel"],
+.card-stat-grid span,
+.mini-label,
+.mobile-checklist-summary span,
+.mobile-benefit-facts span,
+.mobile-benefit-facts small {
+    color: var(--wallet-soft) !important;
+}
+
+.dashboard-kpi-card strong,
+div[data-testid="stMetric"] [data-testid="stMetricValue"],
+.card-stat-grid strong,
+.mini-value,
+.mobile-checklist-summary strong,
+.mobile-benefit-facts strong,
+.mobile-card-group-stats strong {
+    color: var(--wallet-text) !important;
+}
+
+.dashboard-kpi-card.emphasis,
+.card-stat-grid .emphasis {
+    border-color: rgba(243,122,74,.22) !important;
+    background:
+        radial-gradient(circle at 82% 12%, rgba(243,122,74,.18), transparent 44%),
+        linear-gradient(145deg, rgba(255,255,255,.09), rgba(255,255,255,.035)),
+        rgba(34, 29, 38, .82) !important;
+}
+
+.dashboard-kpi-card.emphasis strong,
+.card-stat-grid .emphasis strong {
+    color: var(--wallet-accent-2) !important;
+}
+
+.benefit-row,
+.benefit-tile,
+.mobile-benefit-card {
+    border: 1px solid var(--wallet-border) !important;
+    border-left: 0 !important;
+    border-radius: 22px;
+    background:
+        radial-gradient(circle at 100% 0%, rgba(243,122,74,.12), transparent 38%),
+        linear-gradient(145deg, rgba(255,255,255,.090), rgba(255,255,255,.034)),
+        rgba(28, 27, 34, .82) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.10),
+        0 14px 34px rgba(0,0,0,.34) !important;
+}
+
+.benefit-tile:hover {
+    border-color: var(--wallet-border-strong) !important;
+    background:
+        radial-gradient(circle at 100% 0%, rgba(243,122,74,.17), transparent 38%),
+        linear-gradient(145deg, rgba(255,255,255,.11), rgba(255,255,255,.044)),
+        rgba(35, 33, 42, .88) !important;
+}
+
+.status-pill,
+.badge,
+.glass-chip,
+.chip,
+.chip-muted,
+.card-section-status,
+.deadline,
+.mobile-status {
+    color: var(--wallet-muted) !important;
+    border: 1px solid var(--wallet-border) !important;
+    background: rgba(255,255,255,.075) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+.deadline.soon,
+.mobile-status-expiring-soon {
+    color: #ffd0c1 !important;
+    background: rgba(243,122,74,.16) !important;
+    border-color: rgba(243,122,74,.24) !important;
+}
+
+.deadline.done,
+.mobile-status-used {
+    color: #baf3be !important;
+    background: rgba(125,220,130,.13) !important;
+    border-color: rgba(125,220,130,.22) !important;
+}
+
+.mobile-status-available {
+    color: #ffd8a2 !important;
+    background: rgba(255,204,112,.13) !important;
+    border-color: rgba(255,204,112,.22) !important;
+}
+
+.mobile-status-partially-used {
+    color: #ffe1a6 !important;
+    background: rgba(255,204,112,.15) !important;
+    border-color: rgba(255,204,112,.22) !important;
+}
+
+.deadline.hidden,
+.deadline.upcoming,
+.mobile-status-upcoming,
+.mobile-status-hidden {
+    color: var(--wallet-muted) !important;
+    background: rgba(255,255,255,.06) !important;
+    border-color: var(--wallet-border) !important;
+}
+
+.progress-shell,
+.progress-bar,
+.liquid-progress,
+.mobile-progress-shell {
+    background: rgba(255,255,255,.09) !important;
+}
+
+.progress-fill,
+.liquid-progress-fill,
+.mobile-progress-fill {
+    background: linear-gradient(90deg, var(--wallet-accent), var(--wallet-accent-2)) !important;
+    box-shadow: 0 0 18px rgba(243,122,74,.30) !important;
+}
+
+div[data-testid="stButton"] button,
+div[data-testid="stFormSubmitButton"] button,
+div[data-testid="stLinkButton"] a,
+div[data-testid="stDownloadButton"] button,
+.st-key-mobile_dashboard div[data-testid="stButton"] button,
+.st-key-mobile_dashboard div[data-testid="stPopover"] button {
+    color: var(--wallet-text) !important;
+    border: 1px solid var(--wallet-border) !important;
+    border-radius: 14px !important;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.105), rgba(255,255,255,.045)),
+        rgba(35, 34, 42, .84) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.10),
+        0 10px 22px rgba(0,0,0,.24) !important;
+}
+
+div[data-testid="stButton"] button[kind="primary"],
+div[data-testid="stFormSubmitButton"] button[kind="primary"],
+.st-key-mobile_dashboard div[data-testid="stButton"] button[kind="primary"],
+.st-key-mobile_dashboard div[data-testid="stButton"] button[data-testid="baseButton-primary"] {
+    color: #1a100b !important;
+    border-color: rgba(255,204,112,.34) !important;
+    background: linear-gradient(180deg, #ffd07c, #f37a4a) !important;
+    box-shadow: 0 12px 28px rgba(243,122,74,.28) !important;
+}
+
+div[data-testid="stButton"] button:hover,
+div[data-testid="stFormSubmitButton"] button:hover,
+div[data-testid="stLinkButton"] a:hover,
+div[data-testid="stDownloadButton"] button:hover {
+    border-color: var(--wallet-border-strong) !important;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.13), rgba(255,255,255,.055)),
+        rgba(48, 45, 56, .88) !important;
+}
+
+div[data-baseweb="select"] > div,
+div[data-baseweb="input"] > div,
+div[data-baseweb="textarea"] > div,
+div[data-testid="stDateInput"] div[data-baseweb="input"] > div,
+div[data-testid="stNumberInput"] div[data-baseweb="input"] > div {
+    color: var(--wallet-text) !important;
+    border-color: var(--wallet-border) !important;
+    background: rgba(255,255,255,.075) !important;
+}
+
+input,
+textarea,
+div[data-baseweb="select"] span {
+    color: var(--wallet-text) !important;
+}
+
+div[data-testid="stRadio"] [data-baseweb="radio"],
+.st-key-dashboard_controls div[data-testid="stRadio"] [data-baseweb="radio"],
+div[data-testid="stTabs"] button {
+    color: var(--wallet-muted) !important;
+    border-color: transparent !important;
+    background: transparent !important;
+}
+
+div[data-testid="stRadio"] [data-baseweb="radio"]:has(input:checked),
+.st-key-dashboard_controls div[data-testid="stRadio"] [data-baseweb="radio"]:has(input:checked),
+div[data-testid="stTabs"] button[aria-selected="true"],
+.st-key-mobile_dashboard div[data-testid="stRadio"] [data-baseweb="radio"]:has(input:checked) {
+    color: var(--wallet-text) !important;
+    border-color: var(--wallet-border) !important;
+    background: rgba(255,255,255,.105) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 8px 18px rgba(0,0,0,.22) !important;
+}
+
+div[data-testid="stRadio"] [data-baseweb="radio"]:has(input:checked) p,
+div[data-testid="stRadio"] [data-baseweb="radio"]:has(input:checked) span,
+div[data-testid="stTabs"] button[aria-selected="true"] p,
+div[data-testid="stTabs"] button[aria-selected="true"] span {
+    color: var(--wallet-text) !important;
+}
+
+.st-key-dashboard_controls,
+div[data-testid="stTabs"] [role="tablist"],
+.st-key-mobile_dashboard div[data-testid="stRadio"] [role="radiogroup"] {
+    border: 1px solid var(--wallet-border) !important;
+    background: rgba(255,255,255,.055) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 10px 24px rgba(0,0,0,.22) !important;
+}
+
+div[data-testid="stExpander"] summary {
+    background: rgba(255,255,255,.035) !important;
+    border-bottom: 1px solid rgba(255,255,255,.065) !important;
+}
+
+.mobile-card-group-header {
+    border-bottom-color: rgba(255,255,255,.095);
+}
+
+.mobile-card-group-image,
+.mobile-card-group-fallback,
+.card-cue,
+.card-cue-fallback {
+    border: 1px solid var(--wallet-border);
+    box-shadow: 0 12px 24px rgba(0,0,0,.38);
+}
+
+@media (max-width: 767px) {
+    .stApp {
+        background:
+            radial-gradient(circle at 78% 0%, rgba(243,122,74,.34), transparent 18rem),
+            radial-gradient(circle at 4% 14%, rgba(168,60,114,.32), transparent 18rem),
+            linear-gradient(170deg, #08080c 0%, #121018 48%, #1d121f 100%) !important;
+    }
+
+    .block-container {
+        padding-left: .82rem;
+        padding-right: .82rem;
+    }
+
+    .page-title-block {
+        border-radius: 22px;
+    }
+
+    .mobile-checklist-summary > div {
+        border-radius: 18px;
+    }
+
+    .mobile-benefit-card {
+        border-radius: 22px;
+    }
+
+    .mobile-benefit-facts > div {
+        border-radius: 16px;
+    }
+
+    .mobile-status {
+        border-radius: 999px;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stButton"] button,
+    .st-key-mobile_dashboard div[data-testid="stPopover"] button {
+        border-radius: 15px !important;
+    }
+}
+
+/* Dark contrast repair.
+   Streamlit/BaseWeb inject nested surfaces and text colors; this final layer
+   prevents white blocks and dark text from leaking through the dark wallet UI. */
+.stApp,
+.stApp p,
+.stApp span,
+.stApp label,
+.stApp div,
+.stApp li,
+.stApp td,
+.stApp th,
+.stApp strong,
+.stApp small,
+.stApp [data-testid="stMarkdownContainer"],
+.stApp [data-testid="stMarkdownContainer"] * {
+    color: var(--wallet-text) !important;
+}
+
+.stApp [data-testid="stCaptionContainer"],
+.stApp [data-testid="stCaptionContainer"] *,
+.stApp .stMarkdownColoredText,
+.stApp [class*="stMarkdownColoredText"],
+.stApp .mobile-benefit-card-name,
+.stApp .mobile-benefit-owner,
+.stApp .mobile-card-group-owner,
+.stApp .mobile-card-group-stats,
+.stApp .benefit-secondary,
+.stApp .mini-label,
+.stApp .card-section-owner,
+.stApp [data-testid="stWidgetLabel"] p {
+    color: var(--wallet-muted) !important;
+}
+
+.stApp [data-testid="stVerticalBlockBorderWrapper"],
+.stApp [data-testid="stVerticalBlockBorderWrapper"] > div,
+.stApp [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
+.stApp [data-testid="stExpander"],
+.stApp [data-testid="stExpander"] details,
+.stApp [data-testid="stExpander"] details > div,
+.stApp [data-testid="stExpander"] div[role="region"],
+.stApp [data-testid="stForm"],
+.stApp [data-testid="stFileUploader"] section,
+.stApp [data-testid="stAlert"],
+.stApp [data-testid="stDataFrame"],
+.stApp [data-testid="stDataEditor"] {
+    color: var(--wallet-text) !important;
+    border-color: var(--wallet-border) !important;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.070), rgba(255,255,255,.028)),
+        rgba(25, 24, 31, .86) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.08),
+        0 12px 28px rgba(0,0,0,.30) !important;
+}
+
+.stApp [data-testid="stExpander"] summary,
+.stApp [data-testid="stExpander"] summary *,
+.stApp [data-testid="stExpander"] [data-testid="stMarkdownContainer"],
+.stApp [data-testid="stExpander"] [data-testid="stMarkdownContainer"] * {
+    color: var(--wallet-text) !important;
+}
+
+.stApp [data-baseweb],
+.stApp [data-baseweb] *,
+.stApp [role="listbox"],
+.stApp [role="listbox"] *,
+.stApp [role="option"],
+.stApp [role="option"] * {
+    color: var(--wallet-text) !important;
+}
+
+.stApp div[data-baseweb="select"] > div,
+.stApp div[data-baseweb="input"] > div,
+.stApp div[data-baseweb="textarea"] > div,
+.stApp div[data-baseweb="popover"],
+.stApp div[data-baseweb="popover"] > div,
+.stApp ul[role="listbox"],
+.stApp [data-testid="stDateInput"] div[data-baseweb="input"] > div,
+.stApp [data-testid="stNumberInput"] div[data-baseweb="input"] > div {
+    color: var(--wallet-text) !important;
+    border-color: var(--wallet-border) !important;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.090), rgba(255,255,255,.035)),
+        rgba(30, 29, 37, .96) !important;
+}
+
+.stApp input,
+.stApp textarea,
+.stApp select {
+    color: var(--wallet-text) !important;
+    background: transparent !important;
+    caret-color: var(--wallet-accent-2) !important;
+}
+
+.stApp input::placeholder,
+.stApp textarea::placeholder {
+    color: rgba(244, 241, 247, .45) !important;
+}
+
+.stApp code,
+.stApp pre {
+    color: var(--wallet-text) !important;
+    border: 1px solid var(--wallet-border);
+    background: rgba(255,255,255,.075) !important;
+}
+
+.stApp hr,
+.stApp div[data-testid="stDivider"] {
+    border-color: rgba(255,255,255,.10) !important;
+}
+
+.stApp div[data-testid="stAlert"] [data-testid="stMarkdownContainer"],
+.stApp div[data-testid="stAlert"] [data-testid="stMarkdownContainer"] * {
+    color: var(--wallet-text) !important;
+}
+
+.stApp div[data-testid="stDataFrame"] *,
+.stApp div[data-testid="stDataEditor"] * {
+    color: var(--wallet-text) !important;
+}
+
+.stApp a,
+.stApp [data-testid="stMarkdownContainer"] a {
+    color: #ffd07c !important;
+}
+
+.stApp svg,
+.stApp svg * {
+    color: currentColor !important;
+}
+
+/* Card tab dark integration: Streamlit border containers inside each card
+   section can render as white blocks unless their immediate wrappers are themed. */
+.stApp [class*="st-key-card_section_"],
+.stApp [class*="st-key-card_section_"] > div,
+.stApp [class*="st-key-card_section_"] [data-testid="stVerticalBlock"],
+.stApp [class*="st-key-card_section_"] [data-testid="stHorizontalBlock"],
+.stApp [class*="st-key-card_section_"] [data-testid="column"],
+.stApp [class*="st-key-card_section_"] [data-testid="column"] > div,
+.stApp [class*="st-key-card_section_"] [data-testid="stMarkdownContainer"],
+.stApp [class*="st-key-card_section_"] [data-testid="stMarkdownContainer"] * {
+    color: var(--wallet-text) !important;
+    background-color: transparent !important;
+}
+
+.stApp [class*="st-key-card_section_"] [data-testid="stVerticalBlockBorderWrapper"] {
+    border: 1px solid var(--wallet-border) !important;
+    background:
+        radial-gradient(circle at 96% 0%, rgba(243,122,74,.12), transparent 34%),
+        linear-gradient(145deg, rgba(255,255,255,.075), rgba(255,255,255,.028)),
+        rgba(24, 23, 30, .90) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.08),
+        0 16px 34px rgba(0,0,0,.34) !important;
+}
+
+.stApp [class*="st-key-card_section_"] .card-stat-grid > div,
+.stApp [class*="st-key-card_section_"] .mini-stat,
+.stApp [class*="st-key-card_section_"] .benefit-tile {
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.080), rgba(255,255,255,.030)),
+        rgba(31, 30, 38, .86) !important;
+}
+
+.stApp [class*="st-key-card_section_"] img {
+    background: rgba(255,255,255,.04) !important;
+}
+
+/* Apple HIG + frontend-design + web-guidelines final pass.
+   Direction: Obsidian Wallet, tuned for phone-first scanning with clear
+   hierarchy, safe-area-aware layout, compact chips, and dark-native details. */
+:root {
+    --wallet-bg-0: #050509;
+    --wallet-bg-1: #0d0c12;
+    --wallet-bg-2: #18111c;
+    --wallet-surface: rgba(25, 24, 31, .88);
+    --wallet-surface-strong: rgba(34, 32, 41, .94);
+    --wallet-surface-soft: rgba(255, 255, 255, .055);
+    --wallet-border: rgba(255, 255, 255, .105);
+    --wallet-border-strong: rgba(255, 255, 255, .18);
+    --wallet-text: #f7f3fb;
+    --wallet-muted: #c4bdcd;
+    --wallet-soft: #958da1;
+    --wallet-dim: #716b7a;
+    --wallet-accent: #f27a4d;
+    --wallet-accent-2: #ffd078;
+    --wallet-green: #93e59a;
+    --wallet-red: #ff8a83;
+    --wallet-radius-panel: 22px;
+    --wallet-radius-card: 18px;
+    --wallet-radius-chip: 999px;
+    --wallet-gap-1: 6px;
+    --wallet-gap-2: 9px;
+    --wallet-gap-3: 12px;
+    --wallet-gap-4: 16px;
+    --wallet-gap-5: 20px;
+    --wallet-touch: 44px;
+    --wallet-shadow-panel: 0 18px 40px rgba(0, 0, 0, .38);
+    --wallet-shadow-card: 0 11px 26px rgba(0, 0, 0, .30);
+}
+
+html,
+body,
+.stApp {
+    color-scheme: dark;
+    background-color: var(--wallet-bg-0) !important;
+    overflow-x: hidden;
+}
+
+.stApp {
+    color: var(--wallet-text) !important;
+    overscroll-behavior-x: none;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    background:
+        radial-gradient(circle at 78% -4%, rgba(242, 122, 77, .28), transparent 24rem),
+        radial-gradient(circle at 2% 16%, rgba(137, 54, 100, .30), transparent 21rem),
+        radial-gradient(circle at 78% 86%, rgba(70, 60, 116, .22), transparent 26rem),
+        linear-gradient(160deg, var(--wallet-bg-0) 0%, var(--wallet-bg-1) 48%, var(--wallet-bg-2) 100%) !important;
+}
+
+.stApp:before {
+    background:
+        linear-gradient(135deg, rgba(255,255,255,.026) 0 1px, transparent 1px 116px),
+        radial-gradient(circle at 50% 0%, rgba(255,255,255,.055), transparent 30rem),
+        linear-gradient(180deg, rgba(255,255,255,.018), rgba(0,0,0,.22)) !important;
+}
+
+.stApp * {
+    letter-spacing: 0;
+}
+
+.block-container {
+    max-width: 1120px;
+}
+
+.stApp p,
+.stApp li,
+.stApp td,
+.stApp th,
+.stApp label,
+.stApp span,
+.stApp div,
+.stApp small,
+.stApp strong,
+.stApp [data-testid="stMarkdownContainer"],
+.stApp [data-testid="stMarkdownContainer"] * {
+    color: inherit;
+}
+
+.page-title-block h1,
+.page-title-block h2,
+.section-title-block h2,
+.section-title-block h3,
+.card-section-header h3,
+.benefit-title,
+.mobile-benefit-name,
+.mobile-card-group-title,
+.dashboard-kpi-card strong,
+div[data-testid="stMetric"] [data-testid="stMetricValue"],
+.card-stat-grid strong,
+.mini-value,
+.mobile-checklist-summary strong,
+.mobile-benefit-facts strong {
+    color: var(--wallet-text) !important;
+    text-shadow: 0 1px 10px rgba(0, 0, 0, .24);
+}
+
+.page-title-block p,
+.section-title-block p,
+.card-section-header p,
+.benefit-secondary,
+.mobile-benefit-card-name,
+.mobile-benefit-owner,
+.mobile-card-group-owner,
+.mobile-card-group-stats,
+.dashboard-kpi-card span,
+div[data-testid="stMetric"] label,
+div[data-testid="stMetric"] [data-testid="stMetricLabel"],
+.card-stat-grid span,
+.mini-label,
+.mobile-checklist-summary span,
+.mobile-benefit-facts span,
+.mobile-benefit-facts small,
+.card-section-owner,
+.stApp [data-testid="stWidgetLabel"] p,
+.stApp [data-testid="stCaptionContainer"],
+.stApp [data-testid="stCaptionContainer"] * {
+    color: var(--wallet-muted) !important;
+}
+
+.page-title-block,
+.section-title-block,
+.glass-panel,
+.glass-card,
+.glass-content-panel,
+.glass-metric-card,
+.metric-card,
+.filter-bar,
+.form-section,
+.st-key-dashboard_controls,
+.stApp [data-testid="stVerticalBlockBorderWrapper"],
+.stApp [data-testid="stExpander"],
+.stApp [data-testid="stForm"],
+.stApp [data-testid="stAlert"],
+.stApp [data-testid="stDataFrame"],
+.stApp [data-testid="stDataEditor"] {
+    color: var(--wallet-text) !important;
+    border: 1px solid var(--wallet-border) !important;
+    border-radius: var(--wallet-radius-panel) !important;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.078), rgba(255,255,255,.032)),
+        var(--wallet-surface) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.095),
+        inset 0 -1px 0 rgba(0,0,0,.22),
+        var(--wallet-shadow-panel) !important;
+    backdrop-filter: blur(22px) saturate(1.16) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(1.16) !important;
+}
+
+.page-title-block {
+    border-radius: 24px !important;
+    padding: 18px 20px !important;
+    margin-bottom: var(--wallet-gap-4) !important;
+    background:
+        radial-gradient(circle at 86% 0%, rgba(242,122,77,.24), transparent 42%),
+        linear-gradient(145deg, rgba(255,255,255,.10), rgba(255,255,255,.034)),
+        rgba(30, 26, 37, .90) !important;
+}
+
+.mobile-wallet-hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    color: var(--wallet-text);
+    border: 1px solid var(--wallet-border) !important;
+    border-radius: 24px;
+    padding: 17px 16px 14px;
+    margin: 4px 0 14px;
+    background:
+        radial-gradient(circle at 84% 0%, rgba(242,122,77,.30), transparent 40%),
+        radial-gradient(circle at 10% 24%, rgba(137,54,100,.28), transparent 46%),
+        linear-gradient(145deg, rgba(255,255,255,.095), rgba(255,255,255,.035)),
+        rgba(24, 22, 30, .94);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.12),
+        0 18px 42px rgba(0,0,0,.42);
+    backdrop-filter: blur(24px) saturate(1.18);
+    -webkit-backdrop-filter: blur(24px) saturate(1.18);
+}
+
+.mobile-wallet-hero:before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+        linear-gradient(115deg, rgba(255,255,255,.13), transparent 34%),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.032) 0 1px, transparent 1px 72px);
+    opacity: .72;
+}
+
+.mobile-wallet-topline,
+.mobile-wallet-chip-row,
+.mobile-wallet-stats {
+    display: flex;
+    align-items: center;
+}
+
+.mobile-wallet-topline {
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 17px;
+}
+
+.mobile-wallet-topline span {
+    color: var(--wallet-muted) !important;
+    font-size: .68rem;
+    font-weight: 850;
+    text-transform: uppercase;
+}
+
+.mobile-wallet-balance-label {
+    color: var(--wallet-soft) !important;
+    font-size: .62rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.mobile-wallet-balance {
+    color: var(--wallet-text) !important;
+    margin-top: 3px;
+    font-size: clamp(2rem, 13vw, 3.05rem);
+    font-weight: 900;
+    line-height: .98;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 8px 24px rgba(0,0,0,.36);
+}
+
+.mobile-wallet-chip-row {
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 12px;
+}
+
+.mobile-wallet-chip-row span {
+    color: #ffe0b3 !important;
+    border: 1px solid rgba(255,208,120,.22);
+    border-radius: 999px;
+    background: rgba(255,208,120,.12);
+    padding: 6px 9px;
+    font-size: .66rem;
+    font-weight: 850;
+    line-height: 1;
+}
+
+.mobile-wallet-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 13px;
+}
+
+.mobile-wallet-stats > div {
+    min-height: 54px;
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 15px;
+    background: rgba(255,255,255,.060);
+    padding: 8px 9px;
+}
+
+.mobile-wallet-stats span {
+    display: block;
+    color: var(--wallet-soft) !important;
+    font-size: .60rem;
+    font-weight: 850;
+    text-transform: uppercase;
+}
+
+.mobile-wallet-stats strong {
+    display: block;
+    color: var(--wallet-text) !important;
+    margin-top: 3px;
+    font-size: 1.02rem;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+}
+
+.dashboard-kpi-card,
+div[data-testid="stMetric"],
+.card-stat-grid > div,
+.mini-stat,
+.mobile-checklist-summary > div,
+.mobile-benefit-facts > div {
+    border: 1px solid var(--wallet-border) !important;
+    border-radius: var(--wallet-radius-card) !important;
+    padding: 13px 14px !important;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.068), rgba(255,255,255,.028)),
+        rgba(29, 28, 36, .86) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.075),
+        var(--wallet-shadow-card) !important;
+}
+
+.dashboard-kpi-card.warning,
+.dashboard-kpi-card.emphasis,
+.card-stat-grid .emphasis {
+    border-color: rgba(255, 208, 120, .24) !important;
+    background:
+        radial-gradient(circle at 84% 8%, rgba(255,208,120,.14), transparent 40%),
+        linear-gradient(145deg, rgba(255,255,255,.076), rgba(255,255,255,.030)),
+        rgba(33, 30, 37, .90) !important;
+}
+
+.dashboard-kpi-card.warning strong,
+.dashboard-kpi-card.emphasis strong,
+.card-stat-grid .emphasis strong {
+    color: var(--wallet-accent-2) !important;
+}
+
+.benefit-row,
+.benefit-tile,
+.mobile-benefit-card {
+    color: var(--wallet-text) !important;
+    border: 1px solid var(--wallet-border) !important;
+    border-left: 1px solid var(--wallet-border) !important;
+    border-radius: var(--wallet-radius-panel) !important;
+    padding: 14px !important;
+    margin: 10px 0 13px !important;
+    background:
+        radial-gradient(circle at 96% 0%, rgba(242,122,77,.105), transparent 35%),
+        linear-gradient(145deg, rgba(255,255,255,.078), rgba(255,255,255,.030)),
+        rgba(28, 27, 35, .90) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.09),
+        0 14px 32px rgba(0,0,0,.32) !important;
+}
+
+.benefit-tile:hover,
+.mobile-benefit-card:hover {
+    border-color: var(--wallet-border-strong) !important;
+    background:
+        radial-gradient(circle at 96% 0%, rgba(242,122,77,.145), transparent 35%),
+        linear-gradient(145deg, rgba(255,255,255,.090), rgba(255,255,255,.038)),
+        rgba(34, 32, 41, .92) !important;
+}
+
+.benefit-meta,
+.chip-row,
+.card-stat-grid,
+.mini-grid,
+.mobile-benefit-facts,
+.mobile-checklist-summary {
+    gap: var(--wallet-gap-2) !important;
+}
+
+.benefit-meta,
+.chip-row {
+    margin-top: var(--wallet-gap-2) !important;
+}
+
+.card-stat-grid,
+.mini-grid {
+    margin-top: var(--wallet-gap-3) !important;
+    margin-bottom: var(--wallet-gap-3) !important;
+}
+
+.status-pill,
+.badge,
+.glass-chip,
+.chip,
+.chip-muted,
+.card-section-status,
+.deadline,
+.mobile-status {
+    min-height: 28px !important;
+    height: auto !important;
+    line-height: 1.05 !important;
+    padding: 7px 10px !important;
+    border-radius: var(--wallet-radius-chip) !important;
+    color: var(--wallet-muted) !important;
+    border: 1px solid var(--wallet-border) !important;
+    background: rgba(255,255,255,.070) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.072) !important;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.deadline.soon,
+.mobile-status-expiring-soon {
+    color: #ffd3c6 !important;
+    background: rgba(242,122,77,.16) !important;
+    border-color: rgba(242,122,77,.28) !important;
+}
+
+.deadline.done,
+.mobile-status-used {
+    color: #c8f5cb !important;
+    background: rgba(147,229,154,.13) !important;
+    border-color: rgba(147,229,154,.24) !important;
+}
+
+.mobile-status-available,
+.mobile-status-partially-used {
+    color: #ffe0aa !important;
+    background: rgba(255,208,120,.14) !important;
+    border-color: rgba(255,208,120,.25) !important;
+}
+
+.mobile-status-upcoming,
+.mobile-status-hidden,
+.deadline.hidden,
+.deadline.upcoming {
+    color: var(--wallet-muted) !important;
+    background: rgba(255,255,255,.055) !important;
+    border-color: var(--wallet-border) !important;
+}
+
+.stApp [data-testid="stExpander"] {
+    margin: 10px 0 13px !important;
+    overflow: hidden;
+}
+
+.stApp [data-testid="stExpander"] details,
+.stApp [data-testid="stExpander"] div[role="region"],
+.stApp [data-testid="stExpander"] details > div,
+.stApp [data-testid="stExpander"] [data-testid="stVerticalBlock"],
+.stApp [data-testid="stExpander"] [data-testid="stHorizontalBlock"],
+.stApp [data-testid="stExpander"] [data-testid="column"],
+.stApp [data-testid="stExpander"] [data-testid="column"] > div {
+    color: var(--wallet-text) !important;
+    background: transparent !important;
+}
+
+.stApp [data-testid="stExpander"] summary {
+    min-height: var(--wallet-touch) !important;
+    padding: 11px 14px !important;
+    color: var(--wallet-text) !important;
+    border-bottom: 1px solid rgba(255,255,255,.070) !important;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.055), rgba(255,255,255,.020)),
+        rgba(255,255,255,.018) !important;
+}
+
+.stApp [data-testid="stExpander"] summary *,
+.stApp [data-testid="stExpander"] [data-testid="stMarkdownContainer"],
+.stApp [data-testid="stExpander"] [data-testid="stMarkdownContainer"] * {
+    color: var(--wallet-text) !important;
+}
+
+.stApp [class*="st-key-card_section_"],
+.stApp [class*="st-key-card_section_"] *,
+.stApp [class*="st-key-mobile_card_"],
+.stApp [class*="st-key-mobile_card_"] * {
+    color: inherit;
+}
+
+.stApp [class*="st-key-card_section_"] [data-testid="stVerticalBlockBorderWrapper"],
+.stApp [class*="st-key-mobile_card_"] [data-testid="stVerticalBlockBorderWrapper"] {
+    color: var(--wallet-text) !important;
+    border: 1px solid var(--wallet-border) !important;
+    border-radius: 22px !important;
+    background:
+        radial-gradient(circle at 96% 0%, rgba(242,122,77,.12), transparent 34%),
+        linear-gradient(145deg, rgba(255,255,255,.070), rgba(255,255,255,.028)),
+        rgba(24, 23, 30, .94) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.085),
+        0 16px 34px rgba(0,0,0,.34) !important;
+}
+
+.stApp [class*="st-key-card_section_"] [data-testid="stVerticalBlockBorderWrapper"] > div,
+.stApp [class*="st-key-card_section_"] [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
+.stApp [class*="st-key-card_section_"] [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"],
+.stApp [class*="st-key-card_section_"] [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"],
+.stApp [class*="st-key-card_section_"] [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div {
+    background: transparent !important;
+}
+
+.stApp [class*="st-key-card_section_"] .card-stat-grid > div,
+.stApp [class*="st-key-card_section_"] .mini-stat,
+.stApp [class*="st-key-card_section_"] .benefit-tile,
+.stApp [class*="st-key-card_section_"] [data-testid="stExpander"],
+.stApp [class*="st-key-card_section_"] [data-testid="stExpander"] details {
+    color: var(--wallet-text) !important;
+    border-color: var(--wallet-border) !important;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.066), rgba(255,255,255,.026)),
+        rgba(29, 28, 36, .90) !important;
+}
+
+.stApp [class*="st-key-card_section_"] .card-section-owner,
+.stApp [class*="st-key-card_section_"] .benefit-secondary,
+.stApp [class*="st-key-card_section_"] .mini-label,
+.stApp [class*="st-key-card_section_"] .card-stat-grid span {
+    color: var(--wallet-muted) !important;
+}
+
+div[data-testid="stButton"] button,
+div[data-testid="stFormSubmitButton"] button,
+div[data-testid="stLinkButton"] a,
+div[data-testid="stDownloadButton"] button,
+.st-key-mobile_dashboard div[data-testid="stButton"] button,
+.st-key-mobile_dashboard div[data-testid="stPopover"] button {
+    min-height: var(--wallet-touch) !important;
+    color: var(--wallet-text) !important;
+    border: 1px solid var(--wallet-border) !important;
+    border-radius: 14px !important;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.092), rgba(255,255,255,.036)),
+        rgba(35, 34, 42, .92) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.09),
+        0 9px 20px rgba(0,0,0,.25) !important;
+    transition-property: background-color, border-color, box-shadow, transform, color;
+    transition-duration: 160ms;
+    transition-timing-function: ease;
+}
+
+div[data-testid="stButton"] button[kind="primary"],
+div[data-testid="stFormSubmitButton"] button[kind="primary"],
+.st-key-mobile_dashboard div[data-testid="stButton"] button[kind="primary"],
+.st-key-mobile_dashboard div[data-testid="stButton"] button[data-testid="baseButton-primary"] {
+    color: #1b100a !important;
+    border-color: rgba(255,208,120,.42) !important;
+    background: linear-gradient(180deg, #ffd47f, #f27a4d) !important;
+    box-shadow: 0 12px 26px rgba(242,122,77,.30) !important;
+}
+
+div[data-testid="stButton"] button:hover,
+div[data-testid="stFormSubmitButton"] button:hover,
+div[data-testid="stLinkButton"] a:hover,
+div[data-testid="stDownloadButton"] button:hover {
+    border-color: var(--wallet-border-strong) !important;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.050)),
+        rgba(44, 42, 52, .95) !important;
+}
+
+.stApp div[data-baseweb="select"] > div,
+.stApp div[data-baseweb="input"] > div,
+.stApp div[data-baseweb="textarea"] > div,
+.stApp [data-testid="stDateInput"] div[data-baseweb="input"] > div,
+.stApp [data-testid="stNumberInput"] div[data-baseweb="input"] > div,
+.stApp div[data-baseweb="popover"],
+.stApp div[data-baseweb="popover"] > div,
+.stApp ul[role="listbox"] {
+    color: var(--wallet-text) !important;
+    border-color: var(--wallet-border) !important;
+    border-radius: 14px !important;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.082), rgba(255,255,255,.034)),
+        rgba(31, 30, 38, .98) !important;
+}
+
+.stApp input,
+.stApp textarea,
+.stApp select,
+.stApp [role="option"],
+.stApp [role="option"] *,
+.stApp [role="listbox"],
+.stApp [role="listbox"] * {
+    color: var(--wallet-text) !important;
+}
+
+.stApp input::placeholder,
+.stApp textarea::placeholder {
+    color: rgba(247, 243, 251, .48) !important;
+}
+
+.st-key-dashboard_controls,
+div[data-testid="stTabs"] [role="tablist"],
+.st-key-mobile_dashboard div[data-testid="stRadio"] [role="radiogroup"] {
+    gap: 5px !important;
+    padding: 5px !important;
+    border-radius: 16px !important;
+    border: 1px solid var(--wallet-border) !important;
+    background: rgba(255,255,255,.052) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.065),
+        0 10px 22px rgba(0,0,0,.22) !important;
+}
+
+div[data-testid="stRadio"] [data-baseweb="radio"],
+div[data-testid="stTabs"] button {
+    min-height: 38px !important;
+    color: var(--wallet-muted) !important;
+    border-radius: 12px !important;
+}
+
+div[data-testid="stRadio"] [data-baseweb="radio"]:has(input:checked),
+div[data-testid="stTabs"] button[aria-selected="true"],
+.st-key-mobile_dashboard div[data-testid="stRadio"] [data-baseweb="radio"]:has(input:checked) {
+    color: var(--wallet-text) !important;
+    border-color: var(--wallet-border) !important;
+    background: rgba(255,255,255,.105) !important;
+}
+
+div[data-testid="stButton"] button:focus-visible,
+div[data-testid="stFormSubmitButton"] button:focus-visible,
+div[data-testid="stLinkButton"] a:focus-visible,
+div[data-testid="stDownloadButton"] button:focus-visible,
+div[data-testid="stTabs"] button:focus-visible,
+div[data-testid="stRadio"] [data-baseweb="radio"]:focus-within,
+div[data-baseweb="select"]:focus-within,
+div[data-baseweb="input"]:focus-within,
+div[data-baseweb="textarea"]:focus-within {
+    outline: 2px solid rgba(255, 208, 120, .78) !important;
+    outline-offset: 2px !important;
+    border-color: rgba(255, 208, 120, .58) !important;
+    box-shadow:
+        0 0 0 4px rgba(242, 122, 77, .18),
+        0 12px 26px rgba(0,0,0,.34) !important;
+}
+
+.stApp a,
+.stApp [data-testid="stMarkdownContainer"] a {
+    color: #ffd078 !important;
+    text-decoration-thickness: .08em;
+    text-underline-offset: .18em;
+}
+
+.stApp img {
+    background-color: rgba(255,255,255,.035) !important;
+}
+
+@media (max-width: 767px) {
+    .block-container {
+        padding:
+            calc(env(safe-area-inset-top, 0px) + .72rem)
+            .74rem
+            calc(env(safe-area-inset-bottom, 0px) + 5rem) !important;
+    }
+
+    .page-title-block {
+        padding: 15px 15px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .page-title-block h1,
+    .page-title-block h2 {
+        line-height: 1.08;
+    }
+
+    .mobile-wallet-hero {
+        border-radius: 22px;
+        padding: 16px 14px 13px;
+        margin: 2px 0 12px;
+    }
+
+    .mobile-wallet-topline {
+        margin-bottom: 15px;
+    }
+
+    .mobile-wallet-balance {
+        font-size: clamp(2.1rem, 12.5vw, 2.9rem);
+    }
+
+    .mobile-wallet-chip-row {
+        gap: 6px;
+        margin-top: 10px;
+    }
+
+    .mobile-wallet-chip-row span {
+        padding: 6px 8px;
+        font-size: .62rem;
+    }
+
+    .mobile-wallet-stats {
+        gap: 7px;
+        margin-top: 11px;
+    }
+
+    .mobile-wallet-stats > div {
+        min-height: 50px;
+        padding: 7px 8px;
+        border-radius: 14px;
+    }
+
+    .mobile-checklist-summary {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px !important;
+        margin: 4px 0 13px !important;
+    }
+
+    .mobile-checklist-summary > div {
+        min-height: 54px !important;
+        padding: 9px 8px !important;
+    }
+
+    .mobile-card-group-header {
+        gap: 10px !important;
+        margin: 5px 0 4px !important;
+        padding: 6px 2px 10px !important;
+        border-bottom-color: rgba(255,255,255,.10) !important;
+    }
+
+    .mobile-benefit-card {
+        padding: 12px !important;
+        margin: 9px 0 12px !important;
+    }
+
+    .mobile-benefit-main {
+        gap: 10px !important;
+        align-items: flex-start;
+    }
+
+    .mobile-benefit-facts {
+        gap: 8px !important;
+        margin-top: 10px !important;
+    }
+
+    .mobile-benefit-facts > div {
+        min-height: 56px !important;
+        padding: 8px 9px !important;
+    }
+
+    .mobile-status {
+        max-width: 42%;
+        text-align: center;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stRadio"] [role="radiogroup"] {
+        margin: 9px 0 16px !important;
+    }
+
+    .st-key-mobile_dashboard div[data-testid="stRadio"] [data-baseweb="radio"] {
+        min-height: 36px !important;
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+
+    .st-key-mobile_dashboard [data-testid="stHorizontalBlock"],
+    [class*="st-key-mobile_dashboard"] [data-testid="stHorizontalBlock"],
+    .st-key-mobile_dashboard [class*="_actions"] [data-testid="stHorizontalBlock"] {
+        gap: 8px !important;
+        margin-top: 8px !important;
+    }
+
+    .stApp [data-testid="stExpander"] summary {
+        min-height: 46px !important;
+        padding: 10px 12px !important;
+    }
+
+    .stApp [data-testid="stExpander"] details > div {
+        padding: 0 10px 12px !important;
+    }
+
+    div[data-testid="stButton"] button,
+    div[data-testid="stFormSubmitButton"] button,
+    div[data-testid="stLinkButton"] a,
+    div[data-testid="stDownloadButton"] button,
+    .st-key-mobile_dashboard div[data-testid="stButton"] button,
+    .st-key-mobile_dashboard div[data-testid="stPopover"] button {
+        min-height: 44px !important;
+        padding-left: 11px !important;
+        padding-right: 11px !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    div[data-testid="stButton"] button,
+    div[data-testid="stFormSubmitButton"] button,
+    div[data-testid="stLinkButton"] a,
+    div[data-testid="stDownloadButton"] button {
+        transition-property: none !important;
+    }
+}
+
+/* Visual QA repair layer.
+   Based on rendered mobile screenshots: Streamlit markdown summaries were
+   leaking dark blue text, and card group headers were leaking a light surface. */
+body .stApp [data-testid="stExpander"] summary,
+body .stApp [data-testid="stExpander"] summary p,
+body .stApp [data-testid="stExpander"] summary span,
+body .stApp [data-testid="stExpander"] summary div,
+body .stApp [data-testid="stExpander"] summary [data-testid="stMarkdownContainer"],
+body .stApp [data-testid="stExpander"] summary [data-testid="stMarkdownContainer"] * {
+    color: var(--wallet-text) !important;
+}
+
+body .stApp [data-testid="stExpander"] summary [class*="stMarkdownColoredText"],
+body .stApp [data-testid="stExpander"] summary [class*="stMarkdownColoredText"] *,
+body .stApp [data-testid="stExpander"] summary p span:not(:first-child) {
+    color: var(--wallet-muted) !important;
+}
+
+body .stApp [data-testid="stExpander"] summary strong,
+body .stApp [data-testid="stExpander"] summary b {
+    color: var(--wallet-text) !important;
+    font-weight: 900 !important;
+}
+
+body .stApp [data-testid="stExpander"] summary svg,
+body .stApp [data-testid="stExpander"] summary [data-testid*="Icon"],
+body .stApp [data-testid="stExpander"] summary [class*="material"] {
+    color: rgba(176, 207, 255, .72) !important;
+}
+
+body .stApp .mobile-card-group-header {
+    color: var(--wallet-text) !important;
+    border: 1px solid rgba(255, 255, 255, .095) !important;
+    border-radius: 18px !important;
+    padding: 11px 12px !important;
+    margin: 10px 0 14px !important;
+    background:
+        radial-gradient(circle at 94% 0%, rgba(242, 122, 77, .14), transparent 36%),
+        linear-gradient(145deg, rgba(255, 255, 255, .070), rgba(255, 255, 255, .026)),
+        rgba(25, 24, 31, .92) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .080),
+        0 10px 24px rgba(0, 0, 0, .26) !important;
+}
+
+body .stApp .mobile-card-group-header,
+body .stApp .mobile-card-group-header * {
+    background-color: transparent !important;
+}
+
+body .stApp .mobile-card-group-title {
+    color: var(--wallet-text) !important;
+    font-weight: 900 !important;
+}
+
+body .stApp .mobile-card-group-owner,
+body .stApp .mobile-card-group-stats,
+body .stApp .mobile-card-group-stats span {
+    color: var(--wallet-muted) !important;
+}
+
+body .stApp .mobile-card-group-stats strong {
+    color: var(--wallet-accent-2) !important;
+}
+
+body .stApp .mobile-card-group-image,
+body .stApp .mobile-card-group-fallback {
+    border-color: rgba(255, 255, 255, .18) !important;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.08), rgba(255,255,255,.03)),
+        rgba(255,255,255,.04) !important;
+    box-shadow: 0 8px 18px rgba(0,0,0,.34) !important;
+}
+
+body .stApp .benefit-title,
+body .stApp .mobile-benefit-name {
+    color: var(--wallet-text) !important;
+}
+
+body .stApp .st-key-mobile_theme_switch,
+body .stApp .st-key-desktop_theme_switch {
+    margin: 2px 0 12px !important;
+}
+
+body .stApp .st-key-mobile_theme_switch [data-testid="stWidgetLabel"] p,
+body .stApp .st-key-desktop_theme_switch [data-testid="stWidgetLabel"] p {
+    color: var(--wallet-muted) !important;
+    font-size: .68rem !important;
+    font-weight: 900 !important;
+    letter-spacing: .08em !important;
+    text-transform: uppercase !important;
+}
+
+body .stApp .st-key-mobile_theme_switch [role="radiogroup"],
+body .stApp .st-key-desktop_theme_switch [role="radiogroup"] {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px !important;
+    padding: 5px !important;
+    border: 1px solid var(--wallet-border) !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, .052) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .065),
+        0 10px 22px rgba(0, 0, 0, .22) !important;
+}
+
+body .stApp .st-key-mobile_theme_switch [data-baseweb="radio"],
+body .stApp .st-key-desktop_theme_switch [data-baseweb="radio"] {
+    min-height: 38px !important;
+    justify-content: center !important;
+    border-radius: 12px !important;
+    color: var(--wallet-muted) !important;
+    background: transparent !important;
+}
+
+body .stApp .st-key-mobile_theme_switch [data-baseweb="radio"]:has(input:checked),
+body .stApp .st-key-desktop_theme_switch [data-baseweb="radio"]:has(input:checked) {
+    color: var(--wallet-text) !important;
+    border: 1px solid var(--wallet-border) !important;
+    background: rgba(255, 255, 255, .105) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .10),
+        0 8px 18px rgba(0, 0, 0, .22) !important;
 }

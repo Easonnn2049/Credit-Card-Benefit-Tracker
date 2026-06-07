@@ -15,6 +15,35 @@ from .base import (
 )
 
 
+try:
+    import streamlit as st
+    from streamlit.runtime import exists as streamlit_runtime_exists
+except Exception:  # pragma: no cover - streamlit may be unavailable in non-app tooling.
+    st = None
+
+    def streamlit_runtime_exists() -> bool:
+        return False
+
+
+def _read_csv(path: Path) -> pd.DataFrame:
+    try:
+        return pd.read_csv(path)
+    except pd.errors.EmptyDataError:
+        return pd.DataFrame()
+
+
+if st is not None and streamlit_runtime_exists():
+
+    @st.cache_data(show_spinner=False)
+    def _cached_read_csv(path_text: str, modified_ns: int, file_size: int) -> pd.DataFrame:
+        return _read_csv(Path(path_text))
+
+else:
+
+    def _cached_read_csv(path_text: str, modified_ns: int, file_size: int) -> pd.DataFrame:
+        return _read_csv(Path(path_text))
+
+
 class LocalStorage(StorageBackend):
     def __init__(self, data_dir: Path) -> None:
         self.data_dir = data_dir
@@ -38,12 +67,16 @@ class LocalStorage(StorageBackend):
 
     def read_table(self, table_name: str, columns: list[str]) -> pd.DataFrame:
         self.ensure_data_files()
-        try:
-            df = pd.read_csv(self.paths[table_name])
-        except pd.errors.EmptyDataError:
+        path = self.paths[table_name]
+        stat = path.stat()
+        df = _cached_read_csv(str(path), stat.st_mtime_ns, stat.st_size)
+        if df.empty and not list(df.columns):
             df = pd.DataFrame(columns=columns)
         return prepare_table(df, columns)
 
     def save_table(self, table_name: str, df: pd.DataFrame, columns: list[str]) -> None:
         self.ensure_data_files()
         prepare_for_write(df, columns).to_csv(self.paths[table_name], index=False)
+        clear_cache = getattr(_cached_read_csv, "clear", None)
+        if clear_cache is not None:
+            clear_cache()

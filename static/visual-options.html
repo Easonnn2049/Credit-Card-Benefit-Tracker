@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Credit Card Benefit Tracker - Visual Options</title>
+  <style>
+    :root {
+      --ink: #141a24;
+      --muted: #667085;
+      --paper: #f6f7f9;
+      --line: rgba(20, 26, 36, .12);
+      --shadow: 0 18px 48px rgba(20, 26, 36, .16);
+      --radius: 22px;
+      font-family: "Aptos", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #e9edf3;
+      line-height: 1.4;
+    }
+
+    .sheet {
+      width: 11in;
+      min-height: 8.5in;
+      margin: 0 auto;
+      padding: .42in;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.92), rgba(246,247,249,.96)),
+        #fff;
+    }
+
+    .cover {
+      min-height: 8.5in;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 28px;
+    }
+
+    .cover-title {
+      max-width: 760px;
+      padding-top: .24in;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: #475467;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 54px;
+      line-height: .95;
+      letter-spacing: -.03em;
+    }
+
+    h2 {
+      margin: 0 0 9px;
+      font-size: 26px;
+      line-height: 1;
+      letter-spacing: -.02em;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: -.01em;
+    }
+
+    p {
+      margin: 0;
+    }
+
+    .subtitle {
+      margin-top: 18px;
+      color: #475467;
+      max-width: 660px;
+      font-size: 18px;
+    }
+
+    .principles {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      align-self: end;
+    }
+
+    .principle {
+      min-height: 132px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,.76);
+      box-shadow: 0 1px 2px rgba(20,26,36,.05);
+    }
+
+    .principle strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .principle span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .page {
+      page-break-before: always;
+    }
+
+    .option-grid {
+      display: grid;
+      grid-template-columns: 1.02fr 1.2fr;
+      gap: 26px;
+      align-items: start;
+    }
+
+    .brief {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: rgba(255,255,255,.78);
+    }
+
+    .brief p {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    .tokens {
+      display: grid;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .token-row {
+      display: grid;
+      grid-template-columns: 82px 1fr;
+      gap: 10px;
+      align-items: center;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .swatches {
+      display: flex;
+      gap: 6px;
+    }
+
+    .swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,.10);
+    }
+
+    .fit {
+      margin-top: 20px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .fit div {
+      padding: 9px 11px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.64);
+      color: #344054;
+      font-size: 12px;
+      border: 1px solid rgba(20,26,36,.08);
+    }
+
+    .phone-wrap {
+      display: flex;
+      justify-content: center;
+    }
+
+    .phone {
+      width: 328px;
+      min-height: 690px;
+      padding: 16px;
+      border-radius: 38px;
+      border: 9px solid #101828;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .phone-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .title-row {
+      margin-bottom: 14px;
+    }
+
+    .title-row h3 {
+      font-size: 22px;
+      line-height: 1.05;
+    }
+
+    .title-row p {
+      margin-top: 5px;
+      font-size: 12px;
+      color: inherit;
+      opacity: .68;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .metric {
+      padding: 10px;
+      border-radius: 15px;
+    }
+
+    .metric span {
+      display: block;
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      opacity: .66;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+      padding: 4px;
+      margin-bottom: 14px;
+      border-radius: 16px;
+    }
+
+    .tab {
+      padding: 9px 2px;
+      border-radius: 12px;
+      text-align: center;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .section-label {
+      margin: 16px 0 8px;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+
+    .benefit {
+      padding: 12px;
+      border-radius: 17px;
+      margin-bottom: 9px;
+    }
+
+    .benefit-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: start;
+    }
+
+    .benefit-name {
+      font-size: 14px;
+      font-weight: 900;
+      line-height: 1.12;
+    }
+
+    .card-name {
+      margin-top: 3px;
+      font-size: 11px;
+      opacity: .68;
+    }
+
+    .pill {
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .facts {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 7px;
+      margin-top: 10px;
+    }
+
+    .fact {
+      padding: 8px;
+      border-radius: 12px;
+      font-size: 10px;
+    }
+
+    .fact span {
+      display: block;
+      opacity: .62;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .fact strong {
+      display: block;
+      margin-top: 3px;
+      font-size: 13px;
+    }
+
+    .bar {
+      height: 6px;
+      margin-top: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar i {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+    }
+
+    .a .phone {
+      background: #f5f7fb;
+      color: #162033;
+    }
+
+    .a .metric,
+    .a .benefit {
+      background: rgba(255,255,255,.92);
+      border: 1px solid rgba(148,163,184,.26);
+      box-shadow: 0 1px 2px rgba(15,23,42,.05);
+    }
+
+    .a .tabs {
+      background: #e2e8f0;
+    }
+
+    .a .tab.active {
+      color: #2457c5;
+      background: white;
+      box-shadow: 0 6px 14px rgba(36,87,197,.10);
+    }
+
+    .a .pill {
+      color: #2457c5;
+      background: #dbeafe;
+    }
+
+    .a .fact {
+      background: #f8fafc;
+      border: 1px solid rgba(148,163,184,.22);
+    }
+
+    .a .bar {
+      background: #e2e8f0;
+    }
+
+    .a .bar i {
+      width: 56%;
+      background: linear-gradient(90deg, #2457c5, #0f766e);
+    }
+
+    .b .phone {
+      background:
+        radial-gradient(circle at 80% 0%, rgba(255,255,255,.22), transparent 32%),
+        linear-gradient(160deg, #101828, #263241 58%, #d6b26d 150%);
+      color: #f8fafc;
+    }
+
+    .b .metric,
+    .b .benefit {
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.16);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.16);
+    }
+
+    .b .tabs {
+      background: rgba(255,255,255,.10);
+    }
+
+    .b .tab.active {
+      color: #101828;
+      background: #f3d78a;
+    }
+
+    .b .pill {
+      color: #101828;
+      background: #f3d78a;
+    }
+
+    .b .fact {
+      background: rgba(255,255,255,.09);
+      border: 1px solid rgba(255,255,255,.12);
+    }
+
+    .b .bar {
+      background: rgba(255,255,255,.18);
+    }
+
+    .b .bar i {
+      width: 72%;
+      background: linear-gradient(90deg, #f3d78a, #7dd3fc);
+    }
+
+    .c .phone {
+      background:
+        linear-gradient(180deg, rgba(8,47,73,.92), rgba(12,74,110,.84)),
+        #082f49;
+      color: #ecfeff;
+    }
+
+    .c .metric,
+    .c .benefit {
+      background: rgba(236,254,255,.10);
+      border: 1px solid rgba(125,211,252,.22);
+    }
+
+    .c .tabs {
+      background: rgba(14,116,144,.38);
+    }
+
+    .c .tab.active {
+      color: #083344;
+      background: #a7f3d0;
+    }
+
+    .c .pill {
+      color: #083344;
+      background: #a7f3d0;
+    }
+
+    .c .fact {
+      background: rgba(8,47,73,.30);
+      border: 1px solid rgba(125,211,252,.20);
+    }
+
+    .c .bar {
+      background: rgba(236,254,255,.18);
+    }
+
+    .c .bar i {
+      width: 42%;
+      background: linear-gradient(90deg, #67e8f9, #a7f3d0);
+    }
+
+    .d .phone {
+      background: #fbfaf7;
+      color: #24211c;
+    }
+
+    .d .metric,
+    .d .benefit {
+      background: #fff;
+      border: 1px solid #ded8cc;
+      box-shadow: 0 1px 0 rgba(36,33,28,.06);
+    }
+
+    .d .tabs {
+      background: #eee8db;
+    }
+
+    .d .tab.active {
+      background: #24211c;
+      color: #fff;
+    }
+
+    .d .pill {
+      color: #5f3b05;
+      background: #f8e2a5;
+    }
+
+    .d .fact {
+      background: #f7f2e8;
+      border: 1px solid #e6dccb;
+    }
+
+    .d .bar {
+      background: #e8dfd1;
+    }
+
+    .d .bar i {
+      width: 28%;
+      background: #24211c;
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .sheet {
+        width: 11in;
+        min-height: 8.5in;
+        margin: 0;
+        page-break-after: always;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="sheet cover">
+    <div class="cover-title">
+      <p class="eyebrow">Credit Card Benefit Tracker</p>
+      <h1>Visual Direction Options</h1>
+      <p class="subtitle">Four Streamlit-friendly mobile dashboard aesthetics. Each option preserves the current product logic and focuses on CSS-level visual polish.</p>
+    </div>
+    <div class="principles">
+      <div class="principle"><strong>No workflow change</strong><span>Home, Cards, Categories, Archived, expanders, and actions stay in the same places.</span></div>
+      <div class="principle"><strong>Mobile first</strong><span>Designed around quick phone checks, not a desktop marketing page.</span></div>
+      <div class="principle"><strong>Finance clarity</strong><span>Amount, due date, status, and card name are visually prioritized.</span></div>
+      <div class="principle"><strong>Streamlit realistic</strong><span>Uses surfaces, tokens, borders, badges, and spacing that can map into the current CSS.</span></div>
+    </div>
+    <p class="eyebrow">Prepared for choosing a final UI direction</p>
+  </section>
+
+  <section class="sheet page option-grid a">
+    <div class="brief">
+      <p class="eyebrow">Option A</p>
+      <h2>Executive Ledger</h2>
+      <p>Clean private-banking dashboard. Best if you want the tracker to feel serious, quiet, and durable. This is the safest direct evolution of the current implementation.</p>
+      <div class="tokens">
+        <div class="token-row"><span>Palette</span><div class="swatches"><i class="swatch" style="background:#f5f7fb"></i><i class="swatch" style="background:#ffffff"></i><i class="swatch" style="background:#2457c5"></i><i class="swatch" style="background:#0f766e"></i></div></div>
+        <div class="token-row"><span>Typography</span><strong>Aptos / Segoe, high-weight labels</strong></div>
+        <div class="token-row"><span>Texture</span><strong>Subtle grid, low shadow, white cards</strong></div>
+      </div>
+      <div class="fit">
+        <div>Best for: daily use, scan speed, low maintenance.</div>
+        <div>Tradeoff: less dramatic; looks like a premium utility, not a flashy app.</div>
+        <div>Implementation effort: low to medium.</div>
+      </div>
+    </div>
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-top"><span>9:41</span><span>Benefit Desk</span></div>
+        <div class="title-row"><h3>Credit Card Benefit Tracker</h3><p>Use the right credit before it expires.</p></div>
+        <div class="summary"><div class="metric"><span>Active</span><strong>18</strong></div><div class="metric"><span>Upcoming</span><strong>7</strong></div><div class="metric"><span>Hidden</span><strong>5</strong></div></div>
+        <div class="tabs"><div class="tab active">Home</div><div class="tab">Cards</div><div class="tab">Categories</div><div class="tab">Archive</div></div>
+        <div class="section-label">Priority reminders</div>
+        <div class="benefit"><div class="benefit-head"><div><div class="benefit-name">$20 Dining Credit</div><div class="card-name">Amex Gold</div></div><span class="pill">Soon</span></div><div class="facts"><div class="fact"><span>Due</span><strong>In 4 days</strong></div><div class="fact"><span>Left</span><strong>$20</strong></div><div class="fact"><span>Used</span><strong>$0</strong></div><div class="fact"><span>Cycle</span><strong>Jun</strong></div></div><div class="bar"><i></i></div></div>
+        <div class="benefit"><div class="benefit-head"><div><div class="benefit-name">Saks Credit</div><div class="card-name">Amex Platinum</div></div><span class="pill">Open</span></div><div class="facts"><div class="fact"><span>Due</span><strong>Jun 30</strong></div><div class="fact"><span>Left</span><strong>$50</strong></div></div><div class="bar"><i style="width:10%"></i></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sheet page option-grid b">
+    <div class="brief">
+      <p class="eyebrow">Option B</p>
+      <h2>Premium Card Desk</h2>
+      <p>Card-wallet inspired, darker and richer. Best if you want the app to feel closer to credit card products and premium travel cards.</p>
+      <div class="tokens">
+        <div class="token-row"><span>Palette</span><div class="swatches"><i class="swatch" style="background:#101828"></i><i class="swatch" style="background:#263241"></i><i class="swatch" style="background:#f3d78a"></i><i class="swatch" style="background:#7dd3fc"></i></div></div>
+        <div class="token-row"><span>Typography</span><strong>Strong compact sans, metallic accents</strong></div>
+        <div class="token-row"><span>Texture</span><strong>Dark glass, card-like shine, gold labels</strong></div>
+      </div>
+      <div class="fit">
+        <div>Best for: strong personality and card-centric visual identity.</div>
+        <div>Tradeoff: darker UI can feel heavier for frequent quick checks.</div>
+        <div>Implementation effort: medium.</div>
+      </div>
+    </div>
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-top"><span>9:41</span><span>Card Desk</span></div>
+        <div class="title-row"><h3>Benefit Desk</h3><p>Your cards, credits, and deadlines.</p></div>
+        <div class="summary"><div class="metric"><span>Active</span><strong>18</strong></div><div class="metric"><span>Value</span><strong>$420</strong></div><div class="metric"><span>Soon</span><strong>4</strong></div></div>
+        <div class="tabs"><div class="tab active">Home</div><div class="tab">Cards</div><div class="tab">Types</div><div class="tab">Vault</div></div>
+        <div class="section-label">This week</div>
+        <div class="benefit"><div class="benefit-head"><div><div class="benefit-name">Travel Bank Credit</div><div class="card-name">United Quest</div></div><span class="pill">Use</span></div><div class="facts"><div class="fact"><span>Due</span><strong>In 6 days</strong></div><div class="fact"><span>Left</span><strong>$125</strong></div><div class="fact"><span>Used</span><strong>$75</strong></div><div class="fact"><span>Cycle</span><strong>Annual</strong></div></div><div class="bar"><i></i></div></div>
+        <div class="benefit"><div class="benefit-head"><div><div class="benefit-name">Hotel Credit</div><div class="card-name">Sapphire Reserve</div></div><span class="pill">Soon</span></div><div class="facts"><div class="fact"><span>Due</span><strong>Jun 18</strong></div><div class="fact"><span>Left</span><strong>$300</strong></div></div><div class="bar"><i style="width:34%"></i></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sheet page option-grid c">
+    <div class="brief">
+      <p class="eyebrow">Option C</p>
+      <h2>Travel Command</h2>
+      <p>Airline-board and itinerary inspired. Best if most benefits are travel, hotel, airline, rideshare, and annual-fee reminders.</p>
+      <div class="tokens">
+        <div class="token-row"><span>Palette</span><div class="swatches"><i class="swatch" style="background:#082f49"></i><i class="swatch" style="background:#0e7490"></i><i class="swatch" style="background:#67e8f9"></i><i class="swatch" style="background:#a7f3d0"></i></div></div>
+        <div class="token-row"><span>Typography</span><strong>Dense operational dashboard labels</strong></div>
+        <div class="token-row"><span>Texture</span><strong>Route-map energy, blue panels, active states</strong></div>
+      </div>
+      <div class="fit">
+        <div>Best for: benefit tracking that feels like a travel operations board.</div>
+        <div>Tradeoff: less neutral for non-travel categories like grocery or dining.</div>
+        <div>Implementation effort: medium.</div>
+      </div>
+    </div>
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-top"><span>9:41</span><span>Travel Command</span></div>
+        <div class="title-row"><h3>Next Credits</h3><p>Route value before the window closes.</p></div>
+        <div class="summary"><div class="metric"><span>Due</span><strong>4</strong></div><div class="metric"><span>Open</span><strong>18</strong></div><div class="metric"><span>Left</span><strong>$420</strong></div></div>
+        <div class="tabs"><div class="tab active">Now</div><div class="tab">Cards</div><div class="tab">Trips</div><div class="tab">Done</div></div>
+        <div class="section-label">Departure board</div>
+        <div class="benefit"><div class="benefit-head"><div><div class="benefit-name">Airline Incidental</div><div class="card-name">Amex Platinum</div></div><span class="pill">Board</span></div><div class="facts"><div class="fact"><span>Due</span><strong>In 9 days</strong></div><div class="fact"><span>Left</span><strong>$200</strong></div><div class="fact"><span>Used</span><strong>$0</strong></div><div class="fact"><span>Route</span><strong>Travel</strong></div></div><div class="bar"><i></i></div></div>
+        <div class="benefit"><div class="benefit-head"><div><div class="benefit-name">Rideshare Credit</div><div class="card-name">Sapphire Reserve</div></div><span class="pill">Now</span></div><div class="facts"><div class="fact"><span>Due</span><strong>Jun 30</strong></div><div class="fact"><span>Left</span><strong>$10</strong></div></div><div class="bar"><i style="width:62%"></i></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sheet page option-grid d">
+    <div class="brief">
+      <p class="eyebrow">Option D</p>
+      <h2>Quiet Checklist</h2>
+      <p>Minimal, paper-like, and task oriented. Best if you want the fastest daily scan and the least visual weight.</p>
+      <div class="tokens">
+        <div class="token-row"><span>Palette</span><div class="swatches"><i class="swatch" style="background:#fbfaf7"></i><i class="swatch" style="background:#eee8db"></i><i class="swatch" style="background:#24211c"></i><i class="swatch" style="background:#f8e2a5"></i></div></div>
+        <div class="token-row"><span>Typography</span><strong>System sans, sharp hierarchy, no flash</strong></div>
+        <div class="token-row"><span>Texture</span><strong>Paper surfaces, thin rules, low contrast</strong></div>
+      </div>
+      <div class="fit">
+        <div>Best for: a private tool that behaves like a refined to-do list.</div>
+        <div>Tradeoff: intentionally understated; less premium-card personality.</div>
+        <div>Implementation effort: low.</div>
+      </div>
+    </div>
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-top"><span>9:41</span><span>Checklist</span></div>
+        <div class="title-row"><h3>Benefits to use</h3><p>Short list. Clear next action.</p></div>
+        <div class="summary"><div class="metric"><span>Today</span><strong>2</strong></div><div class="metric"><span>Month</span><strong>8</strong></div><div class="metric"><span>Done</span><strong>11</strong></div></div>
+        <div class="tabs"><div class="tab active">Home</div><div class="tab">Cards</div><div class="tab">Tags</div><div class="tab">Done</div></div>
+        <div class="section-label">Open items</div>
+        <div class="benefit"><div class="benefit-head"><div><div class="benefit-name">$15 Uber Credit</div><div class="card-name">Amex Platinum</div></div><span class="pill">Open</span></div><div class="facts"><div class="fact"><span>Due</span><strong>Today</strong></div><div class="fact"><span>Left</span><strong>$15</strong></div><div class="fact"><span>Used</span><strong>$0</strong></div><div class="fact"><span>Cycle</span><strong>Jun</strong></div></div><div class="bar"><i></i></div></div>
+        <div class="benefit"><div class="benefit-head"><div><div class="benefit-name">Streaming Credit</div><div class="card-name">Sapphire Preferred</div></div><span class="pill">Later</span></div><div class="facts"><div class="fact"><span>Due</span><strong>Jun 30</strong></div><div class="fact"><span>Left</span><strong>$7</strong></div></div><div class="bar"><i style="width:80%"></i></div></div>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

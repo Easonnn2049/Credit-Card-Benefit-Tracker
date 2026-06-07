@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import base64
 import json
@@ -13,23 +13,29 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from alerts.rules import annual_fee_date, benefit_attention_window
-from storage import BENEFIT_COLUMNS, CARD_COLUMNS, USAGE_COLUMNS, get_storage
+from storage import BENEFIT_COLUMNS, CARD_COLUMNS, USAGE_COLUMNS, StorageBackend, get_storage
 
 
 APP_DIR = Path(__file__).parent
 ASSETS_DIR = APP_DIR / "assets"
 APP_ICON_PATH = ASSETS_DIR / "app_icon.png"
 APP_ICON_MIME_TYPE = "image/png"
-APP_ICON_STATIC_URL = "app/static/apple-touch-icon.png"
+APP_ICON_STATIC_URL = "/app/static/apple-touch-icon.png"
 DATA_DIR = APP_DIR / "data"
 ORIGINAL_EXCEL = DATA_DIR / "original_tracker.xlsx"
 LIQUID_APP_CSS = APP_DIR / "styles" / "liquid_app.css"
 WALLPAPER_DIR = APP_DIR / "wallpaper"
 WALLPAPER_SETTINGS_JSON = WALLPAPER_DIR / "settings.json"
-STORAGE = get_storage(DATA_DIR)
+UI_SETTINGS_JSON = DATA_DIR / "ui_settings.json"
+STORAGE: StorageBackend | None = None
 
 STATUSES = ["Not Used", "Partially Used", "Used"]
 EXPIRING_SOON_DAYS = 14
+THEME_OPTIONS = {
+    "Dark Wallet": "dark",
+    "Light Ledger": "light",
+}
+THEME_LABELS = {value: label for label, value in THEME_OPTIONS.items()}
 
 STATUS_COLORS = {
     "Used": ("rgba(209, 250, 229, .58)", "#047857"),
@@ -39,16 +45,18 @@ STATUS_COLORS = {
 }
 
 CATEGORY_ICONS = {
-    "airline": "\u2708",
-    "travel": "\u2708",
-    "hotel": "\u25a3",
-    "dining": "\u25d0",
-    "rideshare": "\u25c6",
-    "uber": "\u25c6",
-    "grocery": "\u25c8",
-    "entertainment": "\u25b6",
-    "shopping": "\u25fc",
-    "other": "\u25cf",
+    "airline": "✈️",
+    "travel": "🧳",
+    "hotel": "🏨",
+    "dining": "🍽️",
+    "rideshare": "🚗",
+    "uber": "🚗",
+    "grocery": "🛒",
+    "entertainment": "🎟️",
+    "shopping": "🛍️",
+    "fitness": "💪",
+    "wellness": "🧘",
+    "other": "✨",
 }
 
 CARD_ART_COLORS = {
@@ -68,16 +76,18 @@ CARD_IMAGE_DIR = DATA_DIR / "card_images"
 STATUSES = ["Not Used", "Partially Used", "Used", "Ignored"]
 STATUS_COLORS["Ignored"] = ("rgba(226, 232, 240, .70)", "#64748b")
 CATEGORY_ICONS = {
-    "airline": "AIR",
-    "travel": "TRV",
-    "hotel": "HTL",
-    "dining": "DIN",
-    "rideshare": "RIDE",
-    "uber": "RIDE",
-    "grocery": "GRC",
-    "entertainment": "ENT",
-    "shopping": "SHP",
-    "other": "OTH",
+    "airline": "✈️",
+    "travel": "🧳",
+    "hotel": "🏨",
+    "dining": "🍽️",
+    "rideshare": "🚗",
+    "uber": "🚗",
+    "grocery": "🛒",
+    "entertainment": "🎟️",
+    "shopping": "🛍️",
+    "fitness": "💪",
+    "wellness": "🧘",
+    "other": "✨",
 }
 CATEGORY_COLORS = {
     "airline": ("rgba(219, 234, 254, .72)", "#3157ad"),
@@ -106,8 +116,15 @@ CARD_ART_STYLES = {
     "default": ("#26312a", "#8f9a87", "#ffffff", "CARD", "BENEFITS"),
 }
 
+def storage_backend() -> StorageBackend:
+    global STORAGE
+    if STORAGE is None:
+        STORAGE = get_storage(DATA_DIR)
+    return STORAGE
+
+
 def ensure_data_files() -> None:
-    STORAGE.ensure_data_files()
+    storage_backend().ensure_data_files()
 
 
 def app_icon_page_config_value() -> str | None:
@@ -170,27 +187,27 @@ def inject_app_icon_metadata() -> None:
 
 
 def read_cards() -> pd.DataFrame:
-    return STORAGE.read_cards()
+    return storage_backend().read_cards()
 
 
 def read_benefits() -> pd.DataFrame:
-    return STORAGE.read_benefits()
+    return storage_backend().read_benefits()
 
 
 def read_usage() -> pd.DataFrame:
-    return STORAGE.read_usage()
+    return storage_backend().read_usage()
 
 
 def save_cards(df: pd.DataFrame) -> None:
-    STORAGE.save_cards(df)
+    storage_backend().save_cards(df)
 
 
 def save_benefits(df: pd.DataFrame) -> None:
-    STORAGE.save_benefits(df)
+    storage_backend().save_benefits(df)
 
 
 def save_usage(df: pd.DataFrame) -> None:
-    STORAGE.save_usage(df)
+    storage_backend().save_usage(df)
 
 
 def normalize_text(value: object) -> str:
@@ -248,6 +265,21 @@ def pick_column(columns: list[str], candidates: list[str]) -> str | None:
     return None
 
 
+def column_series(df: pd.DataFrame, column: str, default: object = "") -> pd.Series:
+    if column in df.columns:
+        return df[column]
+    return pd.Series([default] * len(df), index=df.index)
+
+
+def normalized_series(
+    df: pd.DataFrame,
+    column: str,
+    normalizer=normalize_text,
+    default: object = "",
+) -> pd.Series:
+    return column_series(df, column, default).map(normalizer)
+
+
 def inspect_excel(file_path: Path) -> tuple[dict[str, pd.DataFrame], list[str]]:
     sheets = pd.read_excel(file_path, sheet_name=None)
     summary = []
@@ -265,77 +297,77 @@ def import_template_workbook(file_path: Path, sheets: dict[str, pd.DataFrame], s
 
     cards = pd.DataFrame(
         {
-            "card_id": cards_raw.get("Card ID", "").map(normalize_text),
-            "owner": cards_raw.get("Owner", "").map(normalize_text),
-            "card_name": cards_raw.get("Card Name", "").map(normalize_text),
-            "issuer": cards_raw.get("Issuer", "").map(normalize_text),
-            "card_version": cards_raw.get("Assumed Card Version", "").map(normalize_text),
-            "open_date": cards_raw.get("Open Date", "").map(normalize_date),
-            "annual_fee": cards_raw.get("Annual Fee", "").map(normalize_money),
-            "renewal_month": cards_raw.get("Renewal Month", "").map(normalize_text),
-            "status": cards_raw.get("Status", "").map(normalize_text),
-            "autopay": cards_raw.get("Autopay?", "").map(yes_no),
-            "notes": cards_raw.get("Notes", "").map(normalize_text),
-            "source_url": cards_raw.get("Source URL", "").map(normalize_text),
+            "card_id": normalized_series(cards_raw, "Card ID"),
+            "owner": normalized_series(cards_raw, "Owner"),
+            "card_name": normalized_series(cards_raw, "Card Name"),
+            "issuer": normalized_series(cards_raw, "Issuer"),
+            "card_version": normalized_series(cards_raw, "Assumed Card Version"),
+            "open_date": normalized_series(cards_raw, "Open Date", normalize_date),
+            "annual_fee": normalized_series(cards_raw, "Annual Fee", normalize_money),
+            "renewal_month": normalized_series(cards_raw, "Renewal Month"),
+            "status": normalized_series(cards_raw, "Status"),
+            "autopay": normalized_series(cards_raw, "Autopay?", yes_no),
+            "notes": normalized_series(cards_raw, "Notes"),
+            "source_url": normalized_series(cards_raw, "Source URL"),
         }
     )
     cards = cards[cards["card_name"] != ""]
 
     master = pd.DataFrame(
         {
-            "benefit_id": master_raw.get("Benefit ID", "").map(normalize_text),
-            "card_id": master_raw.get("Card ID", "").map(normalize_text),
-            "benefit_type": master_raw.get("Benefit Type", "").map(normalize_text),
-            "category": master_raw.get("Category", "").map(normalize_text),
-            "realistic_value": master_raw.get("Realistic Value", "").map(normalize_money),
-            "source_url": master_raw.get("Source URL", "").map(normalize_text),
-            "review_needed": master_raw.get("Review Needed?", "").map(normalize_text),
+            "benefit_id": normalized_series(master_raw, "Benefit ID"),
+            "card_id": normalized_series(master_raw, "Card ID"),
+            "benefit_type": normalized_series(master_raw, "Benefit Type"),
+            "category": normalized_series(master_raw, "Category"),
+            "realistic_value": normalized_series(master_raw, "Realistic Value", normalize_money),
+            "source_url": normalized_series(master_raw, "Source URL"),
+            "review_needed": normalized_series(master_raw, "Review Needed?"),
         }
     )
 
     current = current_raw.merge(master, how="left", left_on="Benefit ID", right_on="benefit_id")
     benefits = pd.DataFrame(
         {
-            "benefit_id": current.get("Benefit ID", "").map(normalize_text),
-            "card_id": current.get("card_id", "").map(normalize_text),
-            "owner": current.get("Owner", "").map(normalize_text),
-            "card_name": current.get("Card Name", "").map(normalize_text),
-            "benefit_name": current.get("Benefit Name", "").map(normalize_text),
-            "benefit_type": current.get("benefit_type", "").map(normalize_text),
-            "category": current.get("category", "").map(normalize_text),
-            "frequency": current.get("Frequency", "").map(normalize_text),
-            "cycle_rule": current.get("Cycle Rule", "").map(normalize_text),
-            "current_cycle": current.get("Current Cycle", "").map(normalize_text),
-            "expiration_date": current.get("Expiry Date", "").map(normalize_date),
-            "face_value": current.get("Face Value", "").map(normalize_money),
-            "realistic_value": current.get("realistic_value", "").map(normalize_money),
-            "used_amount": current.get("Amount / Count Used", "").map(normalize_money),
-            "remaining_amount": current.get("Remaining", "").map(normalize_money),
-            "usage_percent": current.get("Usage %", "").map(normalize_money),
-            "status": current.get("Status", "").map(normalize_text),
-            "days_until_expiry": current.get("Days Until Expiry", "").map(normalize_money),
-            "priority": current.get("Priority", "").map(normalize_text),
-            "include_in_alert": current.get("Include in Alert?", "").map(yes_no),
-            "notes": current.get("Notes", "").map(normalize_text),
-            "source_url": current.get("source_url", "").map(normalize_text),
-            "review_needed": current.get("review_needed", "").map(normalize_text),
+            "benefit_id": normalized_series(current, "Benefit ID"),
+            "card_id": normalized_series(current, "card_id"),
+            "owner": normalized_series(current, "Owner"),
+            "card_name": normalized_series(current, "Card Name"),
+            "benefit_name": normalized_series(current, "Benefit Name"),
+            "benefit_type": normalized_series(current, "benefit_type"),
+            "category": normalized_series(current, "category"),
+            "frequency": normalized_series(current, "Frequency"),
+            "cycle_rule": normalized_series(current, "Cycle Rule"),
+            "current_cycle": normalized_series(current, "Current Cycle"),
+            "expiration_date": normalized_series(current, "Expiry Date", normalize_date),
+            "face_value": normalized_series(current, "Face Value", normalize_money),
+            "realistic_value": normalized_series(current, "realistic_value", normalize_money),
+            "used_amount": normalized_series(current, "Amount / Count Used", normalize_money),
+            "remaining_amount": normalized_series(current, "Remaining", normalize_money),
+            "usage_percent": normalized_series(current, "Usage %", normalize_money),
+            "status": normalized_series(current, "Status"),
+            "days_until_expiry": normalized_series(current, "Days Until Expiry", normalize_money),
+            "priority": normalized_series(current, "Priority"),
+            "include_in_alert": normalized_series(current, "Include in Alert?", yes_no),
+            "notes": normalized_series(current, "Notes"),
+            "source_url": normalized_series(current, "source_url"),
+            "review_needed": normalized_series(current, "review_needed"),
         }
     )
     benefits = benefits[benefits["benefit_name"] != ""]
 
     usage = pd.DataFrame(
         {
-            "usage_id": usage_raw.get("Usage ID", "").map(normalize_text),
-            "used_date": usage_raw.get("Date Used", "").map(normalize_date),
-            "owner": usage_raw.get("Owner", "").map(normalize_text),
-            "card_id": usage_raw.get("Card ID", "").map(normalize_text),
-            "benefit_id": usage_raw.get("Benefit ID", "").map(normalize_text),
-            "benefit_name": usage_raw.get("Benefit Name", "").map(normalize_text),
-            "cycle_period": usage_raw.get("Cycle Period", "").map(normalize_text),
-            "used_amount": usage_raw.get("Amount / Count Used", "").map(normalize_money),
-            "fully_used": usage_raw.get("Fully Used?", "").map(yes_no),
-            "merchant": usage_raw.get("Merchant", "").map(normalize_text),
-            "notes": usage_raw.get("Notes", "").map(normalize_text),
+            "usage_id": normalized_series(usage_raw, "Usage ID"),
+            "used_date": normalized_series(usage_raw, "Date Used", normalize_date),
+            "owner": normalized_series(usage_raw, "Owner"),
+            "card_id": normalized_series(usage_raw, "Card ID"),
+            "benefit_id": normalized_series(usage_raw, "Benefit ID"),
+            "benefit_name": normalized_series(usage_raw, "Benefit Name"),
+            "cycle_period": normalized_series(usage_raw, "Cycle Period"),
+            "used_amount": normalized_series(usage_raw, "Amount / Count Used", normalize_money),
+            "fully_used": normalized_series(usage_raw, "Fully Used?", yes_no),
+            "merchant": normalized_series(usage_raw, "Merchant"),
+            "notes": normalized_series(usage_raw, "Notes"),
         }
     )
     usage = usage[usage["benefit_name"] != ""]
@@ -575,6 +607,84 @@ def active_wallpaper_settings() -> dict[str, object]:
     return load_wallpaper_settings()
 
 
+def load_ui_settings() -> dict[str, object]:
+    if UI_SETTINGS_JSON.exists():
+        try:
+            data = json.loads(UI_SETTINGS_JSON.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            data = {}
+    else:
+        data = {}
+    theme = str(data.get("theme", "dark")).lower()
+    if theme not in THEME_LABELS:
+        theme = "dark"
+    hidden_ids = data.get("history_hidden_benefit_ids", [])
+    if not isinstance(hidden_ids, list):
+        hidden_ids = []
+    hidden_ids = sorted({str(value) for value in hidden_ids if str(value).strip()})
+    return {"theme": theme, "history_hidden_benefit_ids": hidden_ids}
+
+
+def write_ui_settings(settings: dict[str, object]) -> None:
+    theme = str(settings.get("theme", "dark")).lower()
+    UI_SETTINGS_JSON.parent.mkdir(exist_ok=True)
+    UI_SETTINGS_JSON.write_text(
+        json.dumps(
+            {
+                "theme": theme if theme in THEME_LABELS else "dark",
+                "history_hidden_benefit_ids": sorted(
+                    {
+                        str(value)
+                        for value in settings.get("history_hidden_benefit_ids", [])
+                        if str(value).strip()
+                    }
+                ),
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+
+def save_ui_settings(theme: str) -> None:
+    settings = load_ui_settings()
+    settings["theme"] = theme if theme in THEME_LABELS else "dark"
+    write_ui_settings(settings)
+
+
+def history_hidden_benefit_ids() -> set[str]:
+    return set(load_ui_settings().get("history_hidden_benefit_ids", []))
+
+
+def save_history_hidden_benefit_ids(hidden_ids: set[str]) -> None:
+    settings = load_ui_settings()
+    settings["history_hidden_benefit_ids"] = sorted(hidden_ids)
+    write_ui_settings(settings)
+
+
+def hide_from_history(benefit_id: str) -> None:
+    hidden_ids = history_hidden_benefit_ids()
+    hidden_ids.add(benefit_id)
+    save_history_hidden_benefit_ids(hidden_ids)
+    st.toast("Hidden from History")
+    st.rerun()
+
+
+def restore_to_history(benefit_id: str) -> None:
+    hidden_ids = history_hidden_benefit_ids()
+    hidden_ids.discard(benefit_id)
+    save_history_hidden_benefit_ids(hidden_ids)
+    st.toast("Restored to History")
+    st.rerun()
+
+
+def active_app_theme() -> str:
+    if "app_theme" not in st.session_state:
+        st.session_state["app_theme"] = load_ui_settings()["theme"]
+    theme = str(st.session_state["app_theme"])
+    return theme if theme in THEME_LABELS else "dark"
+
+
 def wallpaper_settings_css(settings: dict[str, object]) -> str:
     overlay = float(settings["overlay"])
     blur = int(settings["blur"])
@@ -609,6 +719,1561 @@ def inject_styles() -> None:
         st.markdown(wallpaper_settings_css(active_wallpaper_settings()), unsafe_allow_html=True)
 
 
+def theme_override_css(theme: str) -> str:
+    if theme == "light":
+        return """
+        <style>
+        :root {
+            --theme-bg-0: #f6f8fc;
+            --theme-bg-1: #eef3f8;
+            --theme-surface: rgba(255, 255, 255, .88);
+            --theme-surface-strong: rgba(255, 255, 255, .96);
+            --theme-surface-soft: rgba(248, 250, 252, .92);
+            --theme-border: rgba(148, 163, 184, .32);
+            --theme-border-strong: rgba(71, 85, 105, .26);
+            --theme-text: #172033;
+            --theme-muted: #526173;
+            --theme-soft: #728095;
+            --theme-accent: #2457c5;
+            --theme-accent-2: #0f766e;
+            --theme-warning: #a16207;
+            --theme-danger: #be123c;
+            --theme-shadow: 0 1px 2px rgba(15, 23, 42, .05), 0 14px 30px rgba(15, 23, 42, .08);
+            --wallet-text: var(--theme-text);
+            --wallet-muted: var(--theme-muted);
+            --wallet-soft: var(--theme-soft);
+            --wallet-accent: var(--theme-accent);
+            --wallet-accent-2: var(--theme-accent);
+        }
+
+        html,
+        body,
+        body .stApp {
+            color-scheme: light;
+            background-color: var(--theme-bg-0) !important;
+        }
+
+        body .stApp {
+            color: var(--theme-text) !important;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.82), rgba(246,248,252,.92)),
+                var(--app-wallpaper),
+                linear-gradient(145deg, var(--theme-bg-0), var(--theme-bg-1)) !important;
+            background-size: var(--wallpaper-size, cover);
+            background-position: var(--wallpaper-position, center);
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        body .stApp:before {
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.62), rgba(246,248,252,.82)),
+                linear-gradient(90deg, rgba(148,163,184,.055) 1px, transparent 1px),
+                linear-gradient(180deg, rgba(148,163,184,.04) 1px, transparent 1px) !important;
+            background-size: auto, 96px 96px, 96px 96px !important;
+            backdrop-filter: blur(var(--wallpaper-blur, 2px)) saturate(1.02) brightness(1.04) !important;
+            -webkit-backdrop-filter: blur(var(--wallpaper-blur, 2px)) saturate(1.02) brightness(1.04) !important;
+        }
+
+        body .stApp,
+        body .stApp p,
+        body .stApp span,
+        body .stApp label,
+        body .stApp div,
+        body .stApp li,
+        body .stApp td,
+        body .stApp th,
+        body .stApp small,
+        body .stApp [data-testid="stMarkdownContainer"],
+        body .stApp [data-testid="stMarkdownContainer"] * {
+            color: var(--theme-text) !important;
+        }
+
+        body .stApp .page-title-block,
+        body .stApp .section-title-block,
+        body .stApp .glass-panel,
+        body .stApp .glass-card,
+        body .stApp .glass-content-panel,
+        body .stApp .glass-metric-card,
+        body .stApp .metric-card,
+        body .stApp .filter-bar,
+        body .stApp .form-section,
+        body .stApp .st-key-dashboard_controls,
+        body .stApp [data-testid="stVerticalBlockBorderWrapper"],
+        body .stApp [data-testid="stExpander"],
+        body .stApp [data-testid="stForm"],
+        body .stApp [data-testid="stAlert"],
+        body .stApp [data-testid="stDataFrame"],
+        body .stApp [data-testid="stDataEditor"] {
+            color: var(--theme-text) !important;
+            border: 1px solid var(--theme-border) !important;
+            background: var(--theme-surface) !important;
+            box-shadow: var(--theme-shadow) !important;
+            backdrop-filter: blur(16px) saturate(1.04) !important;
+            -webkit-backdrop-filter: blur(16px) saturate(1.04) !important;
+        }
+
+        body .stApp .page-title-block {
+            background:
+                linear-gradient(90deg, rgba(36,87,197,.10), rgba(15,118,110,.055)),
+                var(--theme-surface-strong) !important;
+            border-radius: 22px !important;
+        }
+
+        body .stApp .mobile-wallet-hero {
+            color: var(--theme-text) !important;
+            border: 1px solid var(--theme-border) !important;
+            background:
+                radial-gradient(circle at 86% 0%, rgba(36,87,197,.16), transparent 42%),
+                radial-gradient(circle at 8% 16%, rgba(15,118,110,.12), transparent 44%),
+                linear-gradient(145deg, rgba(255,255,255,.96), rgba(248,250,252,.84)) !important;
+            box-shadow: var(--theme-shadow) !important;
+        }
+
+        body .stApp .mobile-wallet-hero:before {
+            background:
+                linear-gradient(115deg, rgba(255,255,255,.42), transparent 42%),
+                radial-gradient(circle at 88% 0%, rgba(36,87,197,.10), transparent 44%) !important;
+            opacity: .88 !important;
+        }
+
+        body .stApp .mobile-wallet-topline span,
+        body .stApp .mobile-wallet-balance-label,
+        body .stApp .mobile-wallet-stats span,
+        body .stApp .mobile-wallet-chip-row span {
+            color: var(--theme-muted) !important;
+        }
+
+        body .stApp .mobile-wallet-balance,
+        body .stApp .mobile-wallet-stats strong {
+            color: var(--theme-text) !important;
+            text-shadow: none !important;
+        }
+
+        body .stApp .mobile-wallet-chip-row span {
+            border-color: rgba(36,87,197,.18) !important;
+            background: rgba(219,234,254,.88) !important;
+        }
+
+        body .stApp .mobile-wallet-stats > div,
+        body .stApp .dashboard-kpi-card,
+        body .stApp div[data-testid="stMetric"],
+        body .stApp .card-stat-grid > div,
+        body .stApp .mini-stat,
+        body .stApp .mobile-checklist-summary > div,
+        body .stApp .mobile-benefit-facts > div {
+            color: var(--theme-text) !important;
+            border: 1px solid var(--theme-border) !important;
+            background: var(--theme-surface-strong) !important;
+            box-shadow: 0 1px 2px rgba(15,23,42,.04) !important;
+        }
+
+        body .stApp .benefit-row,
+        body .stApp .benefit-tile,
+        body .stApp .mobile-benefit-card,
+        body .stApp .history-card {
+            color: var(--theme-text) !important;
+            border: 1px solid var(--theme-border) !important;
+            background: var(--theme-surface-strong) !important;
+            box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 10px 24px rgba(15,23,42,.07) !important;
+        }
+
+        body .stApp .history-summary-strip {
+            display: grid !important;
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            gap: 10px !important;
+            margin: 10px 0 12px !important;
+        }
+
+        body .stApp .history-summary-strip > div {
+            color: var(--theme-text) !important;
+            border: 1px solid var(--theme-border) !important;
+            background: var(--theme-surface-strong) !important;
+            border-radius: 16px !important;
+            padding: 11px 12px !important;
+            box-shadow: 0 1px 2px rgba(15,23,42,.04) !important;
+        }
+
+        body .stApp .history-summary-strip span,
+        body .stApp .history-benefit-meta,
+        body .stApp .history-row-footer,
+        body .stApp .history-legend {
+            color: var(--theme-muted) !important;
+        }
+
+        body .stApp .history-summary-strip span,
+        body .stApp .history-summary-strip strong {
+            display: block !important;
+        }
+
+        body .stApp .history-summary-strip strong {
+            margin-top: 3px !important;
+            font-size: 1.18rem !important;
+            line-height: 1 !important;
+        }
+
+        body .stApp .history-summary-strip strong,
+        body .stApp .history-benefit-name {
+            color: var(--theme-text) !important;
+        }
+
+        body .stApp .history-owner-heading {
+            display: flex !important;
+            align-items: baseline !important;
+            justify-content: space-between !important;
+            gap: 10px !important;
+            margin: 18px 0 8px !important;
+            padding: 0 2px !important;
+        }
+
+        body .stApp .history-owner-heading span {
+            color: var(--theme-text) !important;
+            font-size: 1.05rem !important;
+            font-weight: 900 !important;
+            letter-spacing: 0 !important;
+        }
+
+        body .stApp .history-owner-heading small {
+            color: var(--theme-muted) !important;
+            font-size: .76rem !important;
+            font-weight: 750 !important;
+        }
+
+        body .stApp .history-card {
+            margin: 10px 0 13px !important;
+            padding: 14px !important;
+            border-radius: 20px !important;
+            position: relative !important;
+        }
+
+        body .stApp .history-card-hidden {
+            opacity: .48 !important;
+            filter: grayscale(.82) saturate(.38) !important;
+            border-style: dashed !important;
+            background:
+                linear-gradient(145deg, rgba(241,245,249,.82), rgba(226,232,240,.58)) !important;
+            box-shadow: none !important;
+        }
+
+        body .stApp .history-card-hidden:after {
+            content: "Hidden" !important;
+            position: absolute !important;
+            top: 12px !important;
+            right: 14px !important;
+            color: var(--theme-muted) !important;
+            border: 1px solid var(--theme-border) !important;
+            background: rgba(248,250,252,.86) !important;
+            border-radius: 999px !important;
+            padding: 4px 8px !important;
+            font-size: .68rem !important;
+            font-weight: 850 !important;
+        }
+
+        body .stApp .history-card-hidden .history-rate-pill {
+            visibility: hidden !important;
+        }
+
+        body .stApp .history-card-hidden .history-cell-used,
+        body .stApp .history-card-hidden .history-cell-partial,
+        body .stApp .history-card-hidden .history-cell-missed,
+        body .stApp .history-card-hidden .history-cell-open,
+        body .stApp .history-card-hidden .history-cell-future,
+        body .stApp .history-card-hidden .history-cell-untracked {
+            color: rgba(71,85,105,.86) !important;
+            background: rgba(203,213,225,.42) !important;
+            border-color: rgba(148,163,184,.22) !important;
+        }
+
+        body .stApp .history-hidden-pill {
+            color: var(--theme-muted) !important;
+            border: 1px solid var(--theme-border) !important;
+            background: rgba(248,250,252,.74) !important;
+            border-radius: 999px !important;
+            margin-top: 6px !important;
+            padding: 4px 8px !important;
+            font-size: .68rem !important;
+            font-weight: 800 !important;
+            text-align: center !important;
+        }
+
+        body .stApp [class*="st-key-history_actions_"] {
+            margin: -7px 0 10px !important;
+        }
+
+        body .stApp button[data-testid="stBaseButton-pills"],
+        body .stApp button[kind="pills"] {
+            color: var(--theme-muted) !important;
+            -webkit-text-fill-color: var(--theme-muted) !important;
+            border: 1px solid var(--theme-border) !important;
+            background: rgba(248,250,252,.88) !important;
+            box-shadow: 0 1px 2px rgba(15,23,42,.04) !important;
+        }
+
+        body .stApp button[data-testid="stBaseButton-pills"] *,
+        body .stApp button[kind="pills"] * {
+            color: var(--theme-muted) !important;
+            -webkit-text-fill-color: var(--theme-muted) !important;
+        }
+
+        body .stApp button[data-testid="stBaseButton-pillsActive"],
+        body .stApp button[kind="pillsActive"] {
+            color: var(--theme-accent) !important;
+            -webkit-text-fill-color: var(--theme-accent) !important;
+            border: 1px solid rgba(36,87,197,.24) !important;
+            background: rgba(219,234,254,.92) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.72), 0 3px 10px rgba(36,87,197,.10) !important;
+        }
+
+        body .stApp button[data-testid="stBaseButton-pillsActive"] *,
+        body .stApp button[kind="pillsActive"] * {
+            color: var(--theme-accent) !important;
+            -webkit-text-fill-color: var(--theme-accent) !important;
+        }
+
+        body .stApp .history-card-top,
+        body .stApp .history-title-row,
+        body .stApp .history-row-footer,
+        body .stApp .history-legend {
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        body .stApp .history-card-top {
+            justify-content: space-between !important;
+            gap: 10px !important;
+            margin-bottom: 12px !important;
+        }
+
+        body .stApp .history-title-row {
+            gap: 10px !important;
+            min-width: 0 !important;
+        }
+
+        body .stApp .history-title-row > div {
+            min-width: 0 !important;
+        }
+
+        body .stApp .history-icon {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex: 0 0 auto !important;
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 12px !important;
+            border: 1px solid rgba(36,87,197,.14) !important;
+            background: linear-gradient(145deg, rgba(255,255,255,.96), rgba(226,232,240,.74)) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.78), 0 5px 14px rgba(15,23,42,.08) !important;
+        }
+
+        body .stApp .history-rate-pill {
+            flex: 0 0 auto !important;
+            color: var(--theme-accent) !important;
+            border: 1px solid rgba(36,87,197,.18) !important;
+            background: rgba(219,234,254,.78) !important;
+            border-radius: 999px !important;
+            padding: 6px 9px !important;
+            font-size: .76rem !important;
+            font-weight: 800 !important;
+        }
+
+        body .stApp .history-benefit-name {
+            font-size: .98rem !important;
+            font-weight: 850 !important;
+            line-height: 1.18 !important;
+        }
+
+        body .stApp .history-benefit-meta {
+            margin-top: 3px !important;
+            font-size: .80rem !important;
+            font-weight: 650 !important;
+            line-height: 1.25 !important;
+        }
+
+        body .stApp .history-month-labels,
+        body .stApp .history-grid {
+            display: grid !important;
+            grid-template-columns: repeat(12, minmax(20px, 1fr)) !important;
+            gap: 5px !important;
+        }
+
+        body .stApp .history-month-labels {
+            margin: 2px 0 5px !important;
+        }
+
+        body .stApp .history-month-labels span {
+            color: var(--theme-soft) !important;
+            text-align: center !important;
+            font-size: .64rem !important;
+            font-weight: 800 !important;
+        }
+
+        body .stApp .history-cell {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            aspect-ratio: 1 / 1 !important;
+            min-height: 20px !important;
+            border-radius: 7px !important;
+            font-size: .68rem !important;
+            font-weight: 900 !important;
+            line-height: 1 !important;
+            border: 1px solid transparent !important;
+        }
+
+        body .stApp .history-cell-used,
+        body .stApp .history-dot-used {
+            color: #064e3b !important;
+            background: linear-gradient(180deg, #86efac, #34d399) !important;
+            border-color: rgba(4,120,87,.16) !important;
+        }
+
+        body .stApp .history-cell-partial,
+        body .stApp .history-dot-partial {
+            color: #713f12 !important;
+            background: linear-gradient(180deg, #fde68a, #fbbf24) !important;
+            border-color: rgba(161,98,7,.18) !important;
+        }
+
+        body .stApp .history-cell-missed,
+        body .stApp .history-dot-missed {
+            color: #7f1d1d !important;
+            background: linear-gradient(180deg, #fecaca, #f87171) !important;
+            border-color: rgba(185,28,28,.18) !important;
+        }
+
+        body .stApp .history-cell-open,
+        body .stApp .history-dot-open {
+            background: rgba(219,234,254,.64) !important;
+            border-color: rgba(36,87,197,.16) !important;
+        }
+
+        body .stApp .history-cell-future {
+            background: rgba(226,232,240,.56) !important;
+            border-color: rgba(148,163,184,.22) !important;
+        }
+
+        body .stApp .history-cell-untracked {
+            background: rgba(226,232,240,.22) !important;
+            border-color: rgba(148,163,184,.10) !important;
+        }
+
+        body .stApp .history-row-footer,
+        body .stApp .history-legend {
+            gap: 10px !important;
+            flex-wrap: wrap !important;
+            margin-top: 10px !important;
+            font-size: .74rem !important;
+            font-weight: 750 !important;
+        }
+
+        body .stApp .history-dot {
+            display: inline-flex !important;
+            width: 10px !important;
+            height: 10px !important;
+            border-radius: 3px !important;
+            margin-right: 5px !important;
+            vertical-align: -1px !important;
+        }
+
+        @media (max-width: 640px) {
+            body .stApp .history-summary-strip {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+
+            body .stApp .history-card {
+                padding: 13px !important;
+            }
+
+            body .stApp .history-card-top {
+                align-items: flex-start !important;
+            }
+
+            body .stApp .history-rate-pill {
+                font-size: .68rem !important;
+                padding: 5px 7px !important;
+            }
+
+            body .stApp .history-month-labels,
+            body .stApp .history-grid {
+                gap: 4px !important;
+            }
+        }
+
+        body .stApp .benefit-title-row,
+        body .stApp .mobile-benefit-title-row {
+            display: flex !important;
+            align-items: flex-start !important;
+            gap: 10px !important;
+            min-width: 0 !important;
+        }
+
+        body .stApp .benefit-title-row > div,
+        body .stApp .mobile-benefit-title-row > div {
+            min-width: 0 !important;
+        }
+
+        body .stApp .benefit-visual-cue,
+        body .stApp .mobile-benefit-visual,
+        body .stApp .mobile-section-emoji {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex: 0 0 auto !important;
+            width: 30px !important;
+            height: 30px !important;
+            border-radius: 12px !important;
+            border: 1px solid rgba(36,87,197,.14) !important;
+            background:
+                linear-gradient(145deg, rgba(255,255,255,.96), rgba(226,232,240,.74)) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.78), 0 5px 14px rgba(15,23,42,.08) !important;
+            font-size: 1rem !important;
+            line-height: 1 !important;
+            -webkit-text-fill-color: currentColor !important;
+        }
+
+        body .stApp .mobile-section-heading {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+        }
+
+        body .stApp .mobile-section-heading:before {
+            content: none !important;
+            display: none !important;
+        }
+
+        body .stApp .mobile-section-emoji {
+            width: 24px !important;
+            height: 24px !important;
+            border-radius: 9px !important;
+            font-size: .86rem !important;
+        }
+
+        body .stApp [data-testid="stExpander"] summary,
+        body .stApp [data-testid="stExpander"] summary *,
+        body .stApp [data-testid="stExpander"] [data-testid="stMarkdownContainer"],
+        body .stApp [data-testid="stExpander"] [data-testid="stMarkdownContainer"] * {
+            color: var(--theme-text) !important;
+        }
+
+        body .stApp [data-testid="stExpander"] summary {
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.92), rgba(248,250,252,.72)) !important;
+            border-bottom: 1px solid rgba(148,163,184,.22) !important;
+        }
+
+        body .stApp [data-testid="stExpander"] details,
+        body .stApp [data-testid="stExpander"] details > div,
+        body .stApp [data-testid="stExpander"] div[role="region"] {
+            background: rgba(248,250,252,.58) !important;
+        }
+
+        body .stApp [data-testid="stExpander"] summary [class*="stMarkdownColoredText"],
+        body .stApp [data-testid="stExpander"] summary [class*="stMarkdownColoredText"] *,
+        body .stApp [data-testid="stCaptionContainer"],
+        body .stApp [data-testid="stCaptionContainer"] *,
+        body .stApp .benefit-secondary,
+        body .stApp .mobile-benefit-card-name,
+        body .stApp .mobile-benefit-owner,
+        body .stApp .mobile-card-group-owner,
+        body .stApp .mobile-card-group-stats,
+        body .stApp .dashboard-kpi-card span,
+        body .stApp .card-stat-grid span,
+        body .stApp .mini-label,
+        body .stApp .mobile-benefit-facts span,
+        body .stApp .mobile-benefit-facts small,
+        body .stApp .card-section-owner,
+        body .stApp [data-testid="stWidgetLabel"] p {
+            color: var(--theme-muted) !important;
+        }
+
+        body .stApp .benefit-title,
+        body .stApp .mobile-benefit-name,
+        body .stApp .mobile-card-group-title,
+        body .stApp .card-section-header h3,
+        body .stApp .dashboard-kpi-card strong,
+        body .stApp div[data-testid="stMetric"] [data-testid="stMetricValue"],
+        body .stApp .card-stat-grid strong,
+        body .stApp .mini-value,
+        body .stApp .mobile-benefit-facts strong,
+        body .stApp .mobile-card-group-stats strong {
+            color: var(--theme-text) !important;
+            text-shadow: none !important;
+        }
+
+        body .stApp .mobile-card-group-header {
+            color: var(--theme-text) !important;
+            border: 1px solid var(--theme-border) !important;
+            background:
+                linear-gradient(145deg, rgba(255,255,255,.96), rgba(248,250,252,.86)) !important;
+            box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 10px 22px rgba(15,23,42,.07) !important;
+        }
+
+        body .stApp .mobile-card-group-header,
+        body .stApp .mobile-card-group-header * {
+            background-color: transparent !important;
+        }
+
+        body .stApp .mobile-card-group-image,
+        body .stApp .mobile-card-group-fallback,
+        body .stApp .card-cue,
+        body .stApp .card-cue-fallback {
+            border-color: rgba(15,23,42,.12) !important;
+            background: #eef2f7 !important;
+            box-shadow: 0 5px 14px rgba(15,23,42,.12) !important;
+        }
+
+        body .stApp .status-pill,
+        body .stApp .badge,
+        body .stApp .glass-chip,
+        body .stApp .chip,
+        body .stApp .chip-muted,
+        body .stApp .card-section-status,
+        body .stApp .deadline,
+        body .stApp .mobile-status {
+            color: var(--theme-muted) !important;
+            border-color: var(--theme-border) !important;
+            background: rgba(248,250,252,.92) !important;
+            box-shadow: none !important;
+        }
+
+        body .stApp .deadline.soon,
+        body .stApp .mobile-status-expiring-soon {
+            color: var(--theme-danger) !important;
+            background: #ffe4e6 !important;
+            border-color: rgba(190,18,60,.16) !important;
+        }
+
+        body .stApp .deadline.done,
+        body .stApp .mobile-status-used {
+            color: var(--theme-accent-2) !important;
+            background: #ccfbf1 !important;
+            border-color: rgba(15,118,110,.18) !important;
+        }
+
+        body .stApp .mobile-status-available,
+        body .stApp .mobile-status-partially-used {
+            color: var(--theme-accent) !important;
+            background: #dbeafe !important;
+            border-color: rgba(36,87,197,.18) !important;
+        }
+
+        body .stApp .st-key-dashboard_controls,
+        body .stApp div[data-testid="stTabs"] [role="tablist"],
+        body .stApp .st-key-mobile_dashboard div[data-testid="stRadio"] [role="radiogroup"],
+        body .stApp .st-key-mobile_theme_switch [role="radiogroup"],
+        body .stApp .st-key-desktop_theme_switch [role="radiogroup"] {
+            border-color: var(--theme-border) !important;
+            background: rgba(226,232,240,.62) !important;
+            box-shadow: inset 0 1px 2px rgba(15,23,42,.04) !important;
+        }
+
+        body .stApp div[data-testid="stRadio"] [data-baseweb="radio"],
+        body .stApp div[data-testid="stTabs"] button,
+        body .stApp .st-key-mobile_theme_switch [data-baseweb="radio"],
+        body .stApp .st-key-desktop_theme_switch [data-baseweb="radio"] {
+            color: var(--theme-muted) !important;
+            background: transparent !important;
+        }
+
+        body .stApp div[data-testid="stRadio"] [data-baseweb="radio"]:has(input:checked),
+        body .stApp div[data-testid="stTabs"] button[aria-selected="true"],
+        body .stApp .st-key-mobile_dashboard div[data-testid="stRadio"] [data-baseweb="radio"]:has(input:checked),
+        body .stApp .st-key-mobile_theme_switch [data-baseweb="radio"]:has(input:checked),
+        body .stApp .st-key-desktop_theme_switch [data-baseweb="radio"]:has(input:checked) {
+            color: var(--theme-accent) !important;
+            border-color: rgba(36,87,197,.18) !important;
+            background: var(--theme-surface-strong) !important;
+            box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 6px 14px rgba(36,87,197,.10) !important;
+        }
+
+        body .stApp .st-key-mobile_theme_switch [data-testid="stWidgetLabel"] p,
+        body .stApp .st-key-desktop_theme_switch [data-testid="stWidgetLabel"] p {
+            color: var(--theme-muted) !important;
+        }
+
+        body .stApp div[data-testid="stButton"] button,
+        body .stApp div[data-testid="stFormSubmitButton"] button,
+        body .stApp div[data-testid="stLinkButton"] a,
+        body .stApp div[data-testid="stDownloadButton"] button {
+            color: var(--theme-text) !important;
+            border-color: var(--theme-border) !important;
+            background: var(--theme-surface-strong) !important;
+            box-shadow: 0 1px 2px rgba(15,23,42,.04) !important;
+        }
+
+        body .stApp div[data-testid="stButton"] button[kind="primary"],
+        body .stApp div[data-testid="stFormSubmitButton"] button[kind="primary"] {
+            color: #ffffff !important;
+            border-color: rgba(36,87,197,.24) !important;
+            background: linear-gradient(180deg, #2f63dc, #2457c5) !important;
+            box-shadow: 0 10px 22px rgba(36,87,197,.22) !important;
+        }
+
+        body .stApp div[data-baseweb="select"] > div,
+        body .stApp div[data-baseweb="input"] > div,
+        body .stApp div[data-baseweb="textarea"] > div,
+        body .stApp div[data-baseweb="popover"],
+        body .stApp div[data-baseweb="popover"] > div,
+        body .stApp ul[role="listbox"] {
+            color: var(--theme-text) !important;
+            border-color: var(--theme-border) !important;
+            background: var(--theme-surface-strong) !important;
+        }
+
+        body .stApp input,
+        body .stApp textarea,
+        body .stApp select,
+        body .stApp [role="option"],
+        body .stApp [role="option"] *,
+        body .stApp [role="listbox"],
+        body .stApp [role="listbox"] * {
+            color: var(--theme-text) !important;
+        }
+
+        body .stApp input::placeholder,
+        body .stApp textarea::placeholder {
+            color: rgba(82,97,115,.62) !important;
+        }
+
+        body .stApp a,
+        body .stApp [data-testid="stMarkdownContainer"] a {
+            color: var(--theme-accent) !important;
+        }
+
+        body .stApp .st-key-mobile_dashboard [data-testid="stMarkdownContainer"]:has(.mobile-section-heading),
+        body .stApp [class*="st-key-mobile_dashboard"] [data-testid="stMarkdownContainer"]:has(.mobile-section-heading) {
+            margin: 18px 0 10px !important;
+        }
+
+        body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] {
+            margin: 0 0 13px !important;
+            border-radius: 18px !important;
+        }
+
+        body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] summary {
+            min-height: 54px !important;
+            padding: 12px 14px !important;
+        }
+
+        body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] details > div {
+            padding: 12px 12px 16px !important;
+        }
+
+        body .stApp .mobile-card-group-header {
+            margin: 8px 0 14px !important;
+            padding: 10px 12px !important;
+            border-radius: 18px !important;
+        }
+
+        body .stApp .mobile-benefit-card {
+            margin: 8px 0 12px !important;
+            padding: 14px !important;
+            border-radius: 20px !important;
+        }
+
+        body .stApp .mobile-benefit-facts {
+            gap: 8px !important;
+            margin-top: 12px !important;
+        }
+
+        body .stApp .mobile-benefit-facts > div {
+            min-height: 72px !important;
+            padding: 10px 11px !important;
+            border-radius: 16px !important;
+        }
+
+        body .stApp .mobile-detail-note {
+            color: var(--theme-text) !important;
+            border: 1px solid var(--theme-border) !important;
+            background: var(--theme-surface-strong) !important;
+            border-radius: 18px !important;
+            margin: 12px 0 6px !important;
+            padding: 13px 14px !important;
+            box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 10px 22px rgba(15,23,42,.06) !important;
+        }
+
+        body .stApp .mobile-detail-note span {
+            color: var(--theme-text) !important;
+        }
+
+        body .stApp .mobile-detail-note p {
+            color: var(--theme-muted) !important;
+        }
+
+        body .stApp .mobile-adjust-summary {
+            color: var(--theme-muted) !important;
+            border: 1px solid var(--theme-border) !important;
+            background: var(--theme-surface-strong) !important;
+            border-radius: 16px !important;
+            margin: 12px 0 10px !important;
+            padding: 11px 13px !important;
+            box-shadow: 0 1px 2px rgba(15,23,42,.04) !important;
+        }
+
+        body .stApp .mobile-empty-state {
+            color: var(--theme-muted) !important;
+            border: 1px solid var(--theme-border) !important;
+            background: var(--theme-surface-soft) !important;
+            border-radius: 16px !important;
+            padding: 10px 12px !important;
+            margin: 8px 0 12px !important;
+            box-shadow: none !important;
+        }
+
+        body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] [data-testid="stVerticalBlock"] {
+            gap: 8px !important;
+            row-gap: 8px !important;
+        }
+
+        body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] [data-testid="stMarkdownContainer"]:has(.mobile-section-heading),
+        body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] .mobile-section-heading {
+            margin-top: 4px !important;
+            margin-bottom: 2px !important;
+        }
+
+        body .stApp [data-testid="stSlider"] [data-baseweb="slider"] > div {
+            background:
+                linear-gradient(180deg, rgba(203, 213, 225, .82), rgba(148, 163, 184, .58)) !important;
+            border-radius: 999px !important;
+            box-shadow: inset 0 1px 2px rgba(15, 23, 42, .08) !important;
+        }
+
+        body .stApp [data-testid="stSlider"] [data-baseweb="slider"] > div > div {
+            background-color: transparent !important;
+        }
+
+        body .stApp [data-testid="stSlider"] [data-baseweb="slider"] > div > div > div > div:last-child,
+        body .stApp [data-testid="stSlider"] [data-baseweb="slider"] div[class*="st-c7"] {
+            opacity: 1 !important;
+            filter: none !important;
+            border-radius: 999px !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.18) !important;
+        }
+
+        body .stApp [data-testid="stSlider"] [data-baseweb="slider"] [aria-valuenow] {
+            position: relative !important;
+            z-index: 3 !important;
+            background: #4f7fe8 !important;
+            border-color: #ffffff !important;
+            box-shadow: 0 0 0 4px rgba(79,127,232,.14), 0 5px 12px rgba(15,23,42,.16) !important;
+        }
+
+        body .stApp [data-testid="stSlider"] [data-testid="stSliderTickBar"],
+        body .stApp [data-testid="stSlider"] [data-testid="stSliderTickBar"] [data-testid="stMarkdownContainer"] {
+            background: transparent !important;
+        }
+        </style>
+        """
+
+    return """
+    <style>
+    html,
+    body,
+    body .stApp {
+        color-scheme: dark;
+    }
+
+    body .stApp .st-key-mobile_dashboard [data-testid="stMarkdownContainer"]:has(.mobile-section-heading),
+    body .stApp [class*="st-key-mobile_dashboard"] [data-testid="stMarkdownContainer"]:has(.mobile-section-heading) {
+        margin: 18px 0 10px !important;
+    }
+
+    body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] {
+        margin: 0 0 13px !important;
+        border-radius: 18px !important;
+    }
+
+    body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] summary {
+        min-height: 54px !important;
+        padding: 12px 14px !important;
+        color: #f7f3fb !important;
+        -webkit-text-fill-color: #f7f3fb !important;
+    }
+
+    body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] summary p,
+    body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] summary div,
+    body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] summary span,
+    body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] summary strong,
+    body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] summary b,
+    body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] summary [data-testid="stMarkdownContainer"],
+    body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] summary [data-testid="stMarkdownContainer"] * {
+        color: #f7f3fb !important;
+        -webkit-text-fill-color: #f7f3fb !important;
+    }
+
+    body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] summary [class*="stMarkdownColoredText"],
+    body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] summary [class*="stMarkdownColoredText"] *,
+    body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] summary p span:not(:first-child) {
+        color: #d7d0df !important;
+        -webkit-text-fill-color: #d7d0df !important;
+    }
+
+    body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] summary [class*="material"],
+    body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] summary [data-testid*="Icon"] {
+        color: #b8d1ff !important;
+        -webkit-text-fill-color: #b8d1ff !important;
+    }
+
+    body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] details > div {
+        padding: 12px 12px 16px !important;
+        background:
+            radial-gradient(circle at 92% 6%, rgba(242, 122, 77, .055), transparent 36%),
+            linear-gradient(180deg, rgba(255,255,255,.030), rgba(255,255,255,.010)) !important;
+    }
+
+    body .stApp .mobile-wallet-hero:before {
+        background:
+            linear-gradient(115deg, rgba(255,255,255,.10), transparent 34%),
+            radial-gradient(circle at 86% 4%, rgba(123,167,255,.08), transparent 44%) !important;
+        opacity: .64 !important;
+    }
+
+    body .stApp .mobile-card-group-header {
+        margin: 8px 0 14px !important;
+        padding: 10px 12px !important;
+        border-radius: 18px !important;
+    }
+
+    body .stApp .mobile-benefit-card {
+        margin: 8px 0 12px !important;
+        padding: 14px !important;
+        border-radius: 20px !important;
+    }
+
+    body .stApp .history-summary-strip {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+        margin: 10px 0 12px !important;
+    }
+
+    body .stApp .history-summary-strip > div,
+    body .stApp .history-card {
+        color: #f7f3fb !important;
+        border: 1px solid rgba(255,255,255,.10) !important;
+        background:
+            radial-gradient(circle at 94% 4%, rgba(242,122,77,.10), transparent 38%),
+            linear-gradient(145deg, rgba(255,255,255,.070), rgba(255,255,255,.024)),
+            rgba(31, 30, 38, .94) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.075), 0 10px 24px rgba(0,0,0,.24) !important;
+    }
+
+    body .stApp .history-summary-strip > div {
+        border-radius: 16px !important;
+        padding: 11px 12px !important;
+    }
+
+    body .stApp .history-summary-strip span,
+    body .stApp .history-benefit-meta,
+    body .stApp .history-row-footer,
+    body .stApp .history-legend {
+        color: #d7d0df !important;
+        -webkit-text-fill-color: #d7d0df !important;
+    }
+
+    body .stApp .history-summary-strip span,
+    body .stApp .history-summary-strip strong {
+        display: block !important;
+    }
+
+    body .stApp .history-summary-strip strong {
+        margin-top: 3px !important;
+        font-size: 1.18rem !important;
+        line-height: 1 !important;
+    }
+
+    body .stApp .history-summary-strip strong,
+    body .stApp .history-benefit-name {
+        color: #f7f3fb !important;
+        -webkit-text-fill-color: #f7f3fb !important;
+    }
+
+    body .stApp .history-owner-heading {
+        display: flex !important;
+        align-items: baseline !important;
+        justify-content: space-between !important;
+        gap: 10px !important;
+        margin: 18px 0 8px !important;
+        padding: 0 2px !important;
+    }
+
+    body .stApp .history-owner-heading span {
+        color: #f7f3fb !important;
+        -webkit-text-fill-color: #f7f3fb !important;
+        font-size: 1.05rem !important;
+        font-weight: 900 !important;
+        letter-spacing: 0 !important;
+    }
+
+    body .stApp .history-owner-heading small {
+        color: #d7d0df !important;
+        -webkit-text-fill-color: #d7d0df !important;
+        font-size: .76rem !important;
+        font-weight: 750 !important;
+    }
+
+    body .stApp .history-card {
+        margin: 10px 0 13px !important;
+        padding: 14px !important;
+        border-radius: 20px !important;
+        position: relative !important;
+    }
+
+    body .stApp .history-card-hidden {
+        opacity: .44 !important;
+        filter: grayscale(.88) saturate(.30) !important;
+        border-style: dashed !important;
+        background:
+            linear-gradient(145deg, rgba(72,72,84,.34), rgba(38,38,48,.40)),
+            rgba(24, 23, 30, .88) !important;
+        box-shadow: none !important;
+    }
+
+    body .stApp .history-card-hidden:after {
+        content: "Hidden" !important;
+        position: absolute !important;
+        top: 12px !important;
+        right: 14px !important;
+        color: #d7d0df !important;
+        -webkit-text-fill-color: #d7d0df !important;
+        border: 1px solid rgba(255,255,255,.10) !important;
+        background: rgba(255,255,255,.060) !important;
+        border-radius: 999px !important;
+        padding: 4px 8px !important;
+        font-size: .68rem !important;
+        font-weight: 850 !important;
+    }
+
+    body .stApp .history-card-hidden .history-rate-pill {
+        visibility: hidden !important;
+    }
+
+    body .stApp .history-card-hidden .history-cell-used,
+    body .stApp .history-card-hidden .history-cell-partial,
+    body .stApp .history-card-hidden .history-cell-missed,
+    body .stApp .history-card-hidden .history-cell-open,
+    body .stApp .history-card-hidden .history-cell-future,
+    body .stApp .history-card-hidden .history-cell-untracked {
+        color: rgba(215,208,223,.74) !important;
+        -webkit-text-fill-color: rgba(215,208,223,.74) !important;
+        background: rgba(255,255,255,.055) !important;
+        border-color: rgba(255,255,255,.08) !important;
+    }
+
+    body .stApp .history-hidden-pill {
+        color: #d7d0df !important;
+        -webkit-text-fill-color: #d7d0df !important;
+        border: 1px solid rgba(255,255,255,.10) !important;
+        background: rgba(255,255,255,.045) !important;
+        border-radius: 999px !important;
+        margin-top: 6px !important;
+        padding: 4px 8px !important;
+        font-size: .68rem !important;
+        font-weight: 800 !important;
+        text-align: center !important;
+    }
+
+    body .stApp [class*="st-key-history_actions_"] {
+        margin: -7px 0 10px !important;
+    }
+
+    body .stApp button[data-testid="stBaseButton-pills"],
+    body .stApp button[kind="pills"] {
+        color: #d7d0df !important;
+        -webkit-text-fill-color: #d7d0df !important;
+        border: 1px solid rgba(255,255,255,.12) !important;
+        background: rgba(255,255,255,.052) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.055), 0 1px 2px rgba(0,0,0,.18) !important;
+    }
+
+    body .stApp button[data-testid="stBaseButton-pills"] *,
+    body .stApp button[kind="pills"] * {
+        color: #d7d0df !important;
+        -webkit-text-fill-color: #d7d0df !important;
+    }
+
+    body .stApp button[data-testid="stBaseButton-pillsActive"],
+    body .stApp button[kind="pillsActive"] {
+        color: #f7f3fb !important;
+        -webkit-text-fill-color: #f7f3fb !important;
+        border: 1px solid rgba(123,167,255,.42) !important;
+        background:
+            linear-gradient(180deg, rgba(123,167,255,.26), rgba(88,124,220,.18)),
+            rgba(255,255,255,.070) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 4px 12px rgba(71,101,190,.20) !important;
+    }
+
+    body .stApp button[data-testid="stBaseButton-pillsActive"] *,
+    body .stApp button[kind="pillsActive"] * {
+        color: #f7f3fb !important;
+        -webkit-text-fill-color: #f7f3fb !important;
+    }
+
+    body .stApp .history-card-top,
+    body .stApp .history-title-row,
+    body .stApp .history-row-footer,
+    body .stApp .history-legend {
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    body .stApp .history-card-top {
+        justify-content: space-between !important;
+        gap: 10px !important;
+        margin-bottom: 12px !important;
+    }
+
+    body .stApp .history-title-row {
+        gap: 10px !important;
+        min-width: 0 !important;
+    }
+
+    body .stApp .history-title-row > div {
+        min-width: 0 !important;
+    }
+
+    body .stApp .history-icon {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex: 0 0 auto !important;
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(255,255,255,.12) !important;
+        background:
+            radial-gradient(circle at 35% 20%, rgba(255,255,255,.16), transparent 42%),
+            linear-gradient(145deg, rgba(255,255,255,.095), rgba(255,255,255,.032)),
+            rgba(36, 35, 45, .90) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.11), 0 8px 18px rgba(0,0,0,.20) !important;
+    }
+
+    body .stApp .history-rate-pill {
+        flex: 0 0 auto !important;
+        color: #eef4ff !important;
+        -webkit-text-fill-color: #eef4ff !important;
+        border: 1px solid rgba(168,193,255,.24) !important;
+        background: rgba(123,167,255,.15) !important;
+        border-radius: 999px !important;
+        padding: 6px 9px !important;
+        font-size: .76rem !important;
+        font-weight: 800 !important;
+    }
+
+    body .stApp .history-benefit-name {
+        font-size: .98rem !important;
+        font-weight: 850 !important;
+        line-height: 1.18 !important;
+    }
+
+    body .stApp .history-benefit-meta {
+        margin-top: 3px !important;
+        font-size: .80rem !important;
+        font-weight: 650 !important;
+        line-height: 1.25 !important;
+    }
+
+    body .stApp .history-month-labels,
+    body .stApp .history-grid {
+        display: grid !important;
+        grid-template-columns: repeat(12, minmax(20px, 1fr)) !important;
+        gap: 5px !important;
+    }
+
+    body .stApp .history-month-labels {
+        margin: 2px 0 5px !important;
+    }
+
+    body .stApp .history-month-labels span {
+        color: #a9a1b5 !important;
+        -webkit-text-fill-color: #a9a1b5 !important;
+        text-align: center !important;
+        font-size: .64rem !important;
+        font-weight: 800 !important;
+    }
+
+    body .stApp .history-cell {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        aspect-ratio: 1 / 1 !important;
+        min-height: 20px !important;
+        border-radius: 7px !important;
+        font-size: .68rem !important;
+        font-weight: 900 !important;
+        line-height: 1 !important;
+        border: 1px solid transparent !important;
+    }
+
+    body .stApp .history-cell-used,
+    body .stApp .history-dot-used {
+        color: #052e22 !important;
+        -webkit-text-fill-color: #052e22 !important;
+        background: linear-gradient(180deg, #8ee6b2, #38c989) !important;
+        border-color: rgba(142,230,178,.18) !important;
+    }
+
+    body .stApp .history-cell-partial,
+    body .stApp .history-dot-partial {
+        color: #3f2703 !important;
+        -webkit-text-fill-color: #3f2703 !important;
+        background: linear-gradient(180deg, #f8d982, #e7a83a) !important;
+        border-color: rgba(248,217,130,.20) !important;
+    }
+
+    body .stApp .history-cell-missed,
+    body .stApp .history-dot-missed {
+        color: #3f1010 !important;
+        -webkit-text-fill-color: #3f1010 !important;
+        background: linear-gradient(180deg, #f4a0a0, #df6464) !important;
+        border-color: rgba(244,160,160,.20) !important;
+    }
+
+    body .stApp .history-cell-open,
+    body .stApp .history-dot-open {
+        background: rgba(123,167,255,.20) !important;
+        border-color: rgba(168,193,255,.20) !important;
+    }
+
+    body .stApp .history-cell-future {
+        background: rgba(255,255,255,.060) !important;
+        border-color: rgba(255,255,255,.085) !important;
+    }
+
+    body .stApp .history-cell-untracked {
+        background: rgba(255,255,255,.026) !important;
+        border-color: rgba(255,255,255,.046) !important;
+    }
+
+    body .stApp .history-row-footer,
+    body .stApp .history-legend {
+        gap: 10px !important;
+        flex-wrap: wrap !important;
+        margin-top: 10px !important;
+        font-size: .74rem !important;
+        font-weight: 750 !important;
+    }
+
+    body .stApp .history-dot {
+        display: inline-flex !important;
+        width: 10px !important;
+        height: 10px !important;
+        border-radius: 3px !important;
+        margin-right: 5px !important;
+        vertical-align: -1px !important;
+    }
+
+    @media (max-width: 640px) {
+        body .stApp .history-summary-strip {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+
+        body .stApp .history-card {
+            padding: 13px !important;
+        }
+
+        body .stApp .history-card-top {
+            align-items: flex-start !important;
+        }
+
+        body .stApp .history-rate-pill {
+            font-size: .68rem !important;
+            padding: 5px 7px !important;
+        }
+
+        body .stApp .history-month-labels,
+        body .stApp .history-grid {
+            gap: 4px !important;
+        }
+    }
+
+    body .stApp .benefit-title-row,
+    body .stApp .mobile-benefit-title-row {
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+        min-width: 0 !important;
+    }
+
+    body .stApp .benefit-title-row > div,
+    body .stApp .mobile-benefit-title-row > div {
+        min-width: 0 !important;
+    }
+
+    body .stApp .benefit-visual-cue,
+    body .stApp .mobile-benefit-visual,
+    body .stApp .mobile-section-emoji {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex: 0 0 auto !important;
+        width: 30px !important;
+        height: 30px !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(255,255,255,.12) !important;
+        background:
+            radial-gradient(circle at 35% 20%, rgba(255,255,255,.16), transparent 42%),
+            linear-gradient(145deg, rgba(255,255,255,.095), rgba(255,255,255,.032)),
+            rgba(36, 35, 45, .90) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.11), 0 8px 18px rgba(0,0,0,.20) !important;
+        font-size: 1rem !important;
+        line-height: 1 !important;
+        -webkit-text-fill-color: currentColor !important;
+    }
+
+    body .stApp .mobile-section-heading {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+
+    body .stApp .mobile-section-heading:before {
+        content: none !important;
+        display: none !important;
+    }
+
+    body .stApp .mobile-section-emoji {
+        width: 24px !important;
+        height: 24px !important;
+        border-radius: 9px !important;
+        font-size: .86rem !important;
+    }
+
+    body .stApp .mobile-benefit-facts {
+        gap: 8px !important;
+        margin-top: 12px !important;
+    }
+
+    body .stApp .mobile-benefit-facts > div {
+        min-height: 72px !important;
+        padding: 10px 11px !important;
+        border-radius: 16px !important;
+    }
+
+    body .stApp .mobile-detail-note {
+        color: #f7f3fb !important;
+        border: 1px solid rgba(255,255,255,.11) !important;
+        background:
+            radial-gradient(circle at 94% 4%, rgba(242,122,77,.14), transparent 38%),
+            linear-gradient(145deg, rgba(255,255,255,.075), rgba(255,255,255,.026)),
+            rgba(28, 27, 35, .96) !important;
+        border-radius: 18px !important;
+        margin: 12px 0 6px !important;
+        padding: 13px 14px !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 12px 24px rgba(0,0,0,.26) !important;
+    }
+
+    body .stApp .mobile-detail-note,
+    body .stApp .mobile-detail-note * {
+        color: #f7f3fb !important;
+        -webkit-text-fill-color: #f7f3fb !important;
+    }
+
+    body .stApp .mobile-detail-note p {
+        color: #d7d0df !important;
+        -webkit-text-fill-color: #d7d0df !important;
+    }
+
+    body .stApp .mobile-adjust-summary {
+        color: #d7d0df !important;
+        -webkit-text-fill-color: #d7d0df !important;
+        border: 1px solid rgba(255,255,255,.10) !important;
+        background:
+            linear-gradient(145deg, rgba(255,255,255,.072), rgba(255,255,255,.024)),
+            rgba(31, 30, 38, .94) !important;
+        border-radius: 16px !important;
+        margin: 12px 0 10px !important;
+        padding: 11px 13px !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.075), 0 8px 18px rgba(0,0,0,.20) !important;
+    }
+
+    body .stApp .mobile-empty-state {
+        color: #cfc8d8 !important;
+        -webkit-text-fill-color: #cfc8d8 !important;
+        border: 1px solid rgba(255,255,255,.10) !important;
+        background:
+            linear-gradient(145deg, rgba(255,255,255,.060), rgba(255,255,255,.020)),
+            rgba(30, 29, 37, .88) !important;
+        border-radius: 16px !important;
+        margin: 8px 0 12px !important;
+        padding: 10px 12px !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.065) !important;
+    }
+
+    body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] [data-testid="stMarkdownContainer"]:has(.mobile-section-heading),
+    body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] .mobile-section-heading {
+        margin-top: 4px !important;
+        margin-bottom: 2px !important;
+    }
+
+    body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] [data-testid="stVerticalBlock"] {
+        gap: 8px !important;
+        row-gap: 8px !important;
+    }
+
+    body .stApp .st-key-mobile_dashboard div[data-testid="stExpander"] div[data-testid="stExpander"] {
+        margin: 6px 0 10px !important;
+    }
+
+    body .stApp [data-testid="stSlider"] label,
+    body .stApp [data-testid="stSlider"] label *,
+    body .stApp [data-testid="stSlider"] [data-testid="stTickBar"],
+    body .stApp [data-testid="stSlider"] [data-testid="stTickBar"] * {
+        color: #f7f3fb !important;
+        -webkit-text-fill-color: #f7f3fb !important;
+    }
+
+    body .stApp [data-testid="stSlider"] [data-baseweb="slider"] > div {
+        background:
+            linear-gradient(180deg, rgba(121, 128, 151, .42), rgba(72, 76, 92, .46)) !important;
+        border-radius: 999px !important;
+        box-shadow:
+            inset 0 1px 2px rgba(0,0,0,.28),
+            inset 0 -1px 0 rgba(255,255,255,.050) !important;
+    }
+
+    body .stApp [data-testid="stSlider"] [data-baseweb="slider"] [aria-valuenow] {
+        position: relative !important;
+        z-index: 3 !important;
+        background: #7ba7ff !important;
+        border-color: #eef4ff !important;
+        box-shadow:
+            0 0 0 4px rgba(123,167,255,.18),
+            0 8px 18px rgba(0,0,0,.28) !important;
+    }
+
+    body .stApp [data-testid="stSlider"] [data-baseweb="slider"] > div > div {
+        background-color: transparent !important;
+    }
+
+    body .stApp [data-testid="stSlider"] [data-baseweb="slider"] > div > div > div > div:last-child,
+    body .stApp [data-testid="stSlider"] [data-baseweb="slider"] div[class*="st-c7"] {
+        opacity: 1 !important;
+        filter: none !important;
+        border-radius: 999px !important;
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,.22),
+            0 0 14px rgba(123,167,255,.16) !important;
+    }
+
+    body .stApp [data-testid="stSlider"] [data-testid="stSliderTickBar"],
+    body .stApp [data-testid="stSlider"] [data-testid="stSliderTickBar"] [data-testid="stMarkdownContainer"] {
+        background: transparent !important;
+    }
+
+    body .stApp div[data-testid="stButton"] button[kind="primary"],
+    body .stApp div[data-testid="stButton"] button[data-testid="baseButton-primary"],
+    body .stApp .st-key-mobile_dashboard div[data-testid="stButton"] button[kind="primary"],
+    body .stApp .st-key-mobile_dashboard div[data-testid="stButton"] button[data-testid="baseButton-primary"] {
+        color: #eef4ff !important;
+        -webkit-text-fill-color: #eef4ff !important;
+        border-color: rgba(168, 193, 255, .24) !important;
+        background:
+            radial-gradient(circle at 28% 0%, rgba(168, 193, 255, .20), transparent 42%),
+            linear-gradient(180deg, rgba(86, 104, 162, .72), rgba(49, 53, 76, .94)) !important;
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,.16),
+            inset 0 -1px 0 rgba(0,0,0,.22),
+            0 10px 22px rgba(0,0,0,.22) !important;
+        text-shadow: 0 1px 1px rgba(0,0,0,.22) !important;
+    }
+
+    body .stApp div[data-testid="stButton"] button[kind="primary"]:hover,
+    body .stApp div[data-testid="stButton"] button[data-testid="baseButton-primary"]:hover,
+    body .stApp .st-key-mobile_dashboard div[data-testid="stButton"] button[kind="primary"]:hover,
+    body .stApp .st-key-mobile_dashboard div[data-testid="stButton"] button[data-testid="baseButton-primary"]:hover {
+        border-color: rgba(186, 207, 255, .34) !important;
+        background:
+            radial-gradient(circle at 28% 0%, rgba(186, 207, 255, .24), transparent 42%),
+            linear-gradient(180deg, rgba(96, 116, 176, .78), rgba(54, 58, 82, .96)) !important;
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,.18),
+            0 12px 24px rgba(0,0,0,.26) !important;
+    }
+
+    body .stApp section[data-testid="stSidebar"] {
+        color: #f7f3fb !important;
+        background:
+            radial-gradient(circle at 18% 8%, rgba(123,167,255,.16), transparent 15rem),
+            radial-gradient(circle at 84% 22%, rgba(242,122,77,.10), transparent 16rem),
+            linear-gradient(180deg, rgba(33,32,42,.94), rgba(18,17,24,.96)) !important;
+        border-right: 1px solid rgba(255,255,255,.10) !important;
+        box-shadow:
+            14px 0 34px rgba(0,0,0,.38),
+            inset -1px 0 0 rgba(255,255,255,.06) !important;
+        backdrop-filter: blur(28px) saturate(1.12) !important;
+        -webkit-backdrop-filter: blur(28px) saturate(1.12) !important;
+    }
+
+    body .stApp section[data-testid="stSidebar"] > div {
+        background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.010)) !important;
+    }
+
+    body .stApp section[data-testid="stSidebar"] h1,
+    body .stApp section[data-testid="stSidebar"] h2,
+    body .stApp section[data-testid="stSidebar"] h3,
+    body .stApp section[data-testid="stSidebar"] p,
+    body .stApp section[data-testid="stSidebar"] span,
+    body .stApp section[data-testid="stSidebar"] label,
+    body .stApp section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
+    body .stApp section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] * {
+        color: #f7f3fb !important;
+        -webkit-text-fill-color: #f7f3fb !important;
+    }
+
+    body .stApp section[data-testid="stSidebar"] .sidebar-brand,
+    body .stApp section[data-testid="stSidebar"] .sidebar-data-summary {
+        border-color: rgba(255,255,255,.14) !important;
+        background:
+            linear-gradient(145deg, rgba(255,255,255,.085), rgba(255,255,255,.030)),
+            rgba(34,33,43,.76) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 10px 22px rgba(0,0,0,.22) !important;
+    }
+
+    body .stApp section[data-testid="stSidebar"] [data-baseweb="radio"] {
+        color: #d7d0df !important;
+        border-color: rgba(255,255,255,.10) !important;
+        background: rgba(255,255,255,.045) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.06) !important;
+    }
+
+    body .stApp section[data-testid="stSidebar"] [data-baseweb="radio"]:has(input:checked) {
+        color: #f7f3fb !important;
+        border-color: rgba(168,193,255,.30) !important;
+        background: rgba(123,167,255,.16) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 8px 18px rgba(0,0,0,.24) !important;
+    }
+    </style>
+    """
+
+
+def inject_theme_styles(theme: str) -> None:
+    st.markdown(theme_override_css(theme), unsafe_allow_html=True)
+
+
+def apply_theme_selection(source_key: str) -> None:
+    selected_theme_label = st.session_state.get(source_key, "Dark Wallet")
+    selected_theme = THEME_OPTIONS.get(str(selected_theme_label), "dark")
+    st.session_state["app_theme"] = selected_theme
+    save_ui_settings(selected_theme)
+
+
+def render_theme_selector(key: str, *, horizontal: bool = False, label: str = "Appearance") -> None:
+    theme = active_app_theme()
+    theme_label = THEME_LABELS.get(theme, "Dark Wallet")
+    st.radio(
+        label,
+        list(THEME_OPTIONS.keys()),
+        index=list(THEME_OPTIONS.keys()).index(theme_label),
+        horizontal=horizontal,
+        key=key,
+        on_change=apply_theme_selection,
+        args=(key,),
+    )
+
+
 def format_amount(value: object) -> str:
     amount = normalize_money(value)
     return f"${amount:,.0f}" if amount == round(amount) else f"${amount:,.2f}"
@@ -633,6 +2298,62 @@ def category_color(category: object) -> tuple[str, str]:
         if key in text:
             return colors
     return CATEGORY_COLORS["other"]
+
+
+BENEFIT_VISUAL_PATTERNS = [
+    (["hotel", "fhr", "resort", "hilton", "hyatt", "marriott"], "🏨"),
+    (["resy", "dining", "restaurant", "doordash", "grubhub", "uber eats", "coffee", "wine"], "🍽️"),
+    (["uber", "rideshare", "lyft", "taxi"], "🚗"),
+    (["airline", "flight", "delta", "united", "southwest"], "✈️"),
+    (["saks", "shopping", "shop", "store"], "🛍️"),
+    (["lululemon", "wellness", "yoga"], "🧘"),
+    (["stubhub", "viagogo", "ticket", "entertainment", "disney", "hulu", "espn"], "🎟️"),
+    (["whoop", "fitness", "gym"], "💪"),
+    (["global entry", "tsa", "clear"], "🛂"),
+    (["grocery", "instacart"], "🛒"),
+    (["fee", "annual"], "💳"),
+    (["credit"], "💳"),
+]
+
+
+SECTION_VISUALS = {
+    "priority reminders": "⚡",
+    "not used this month": "🗓️",
+    "partially used": "◐",
+    "upcoming next": "⏳",
+    "available now": "✅",
+    "upcoming": "⏳",
+    "completed / hidden": "🗂️",
+    "completed": "✅",
+    "hidden": "🫥",
+    "annual fees": "💳",
+}
+
+MONTH_LABELS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
+MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+HISTORY_FREQUENCIES = ["Monthly", "Quarterly", "Semiannual", "Annual"]
+
+
+def benefit_visual_cue(row: pd.Series) -> str:
+    fields = [
+        row.get("benefit_name"),
+        row.get("category"),
+        row.get("benefit_type"),
+        row.get("card_name"),
+        row.get("notes"),
+    ]
+    text = " ".join(normalize_text(value) for value in fields).lower()
+    for keywords, icon in BENEFIT_VISUAL_PATTERNS:
+        if any(keyword in text for keyword in keywords):
+            return icon
+    return category_icon(row.get("category"))
+
+
+def section_visual_cue(title: str) -> str:
+    text = normalize_text(title).lower()
+    if text in SECTION_VISUALS:
+        return SECTION_VISUALS[text]
+    return category_icon(title)
 
 
 def title_block(title: str, subtitle: str = "", level: int = 2) -> None:
@@ -865,14 +2586,10 @@ def next_membership_fee_label(card: pd.Series) -> str:
     if annual_fee <= 0:
         return "No annual fee"
 
-    open_date = pd.to_datetime(card.get("open_date"), errors="coerce")
-    if pd.isna(open_date):
-        return "Fee date not set"
-
     today = pd.Timestamp.today().date()
-    fee_date = today.replace(month=int(open_date.month), day=int(open_date.day))
-    if fee_date <= today:
-        fee_date = fee_date.replace(year=fee_date.year + 1)
+    fee_date = annual_fee_date(card.get("open_date"), today)
+    if not fee_date:
+        return "Fee date not set"
 
     days = (fee_date - today).days
     return f"Annual fee in {days} days ({fee_date.strftime('%b')} {fee_date.day})"
@@ -1020,8 +2737,482 @@ def annual_fee_reminders(cards: pd.DataFrame, within_days: int = 30) -> pd.DataF
     return reminders.sort_values(["days_left", "card_name"])
 
 
+def cycle_year(value: object) -> int | None:
+    text = normalize_text(value)
+    if len(text) >= 4 and text[:4].isdigit():
+        return int(text[:4])
+    parsed = pd.to_datetime(text, errors="coerce")
+    if pd.isna(parsed):
+        return None
+    return int(parsed.year)
+
+
+def available_history_years(benefits: pd.DataFrame, usage: pd.DataFrame) -> list[int]:
+    years: set[int] = set()
+    for column in ["cycle_period", "used_date"]:
+        if column in usage:
+            for value in usage[column].dropna():
+                year = cycle_year(value)
+                if year:
+                    years.add(year)
+    for column in ["current_cycle", "expiration_date", "cycle_start_date"]:
+        if column in benefits:
+            for value in benefits[column].dropna():
+                year = cycle_year(value)
+                if year:
+                    years.add(year)
+    if not years:
+        years.add(pd.Timestamp.today().year)
+    return sorted(years)
+
+
+def cycle_start_from_text(value: object) -> pd.Timestamp | None:
+    text = normalize_text(value)
+    year = cycle_year(text)
+    if not year:
+        parsed = pd.to_datetime(text, errors="coerce")
+        return None if pd.isna(parsed) else pd.Timestamp(parsed).replace(day=1)
+    if "-Q" in text.upper():
+        quarter = text.upper().split("-Q", 1)[1][:1]
+        if quarter.isdigit() and 1 <= int(quarter) <= 4:
+            return pd.Timestamp(year=year, month=(int(quarter) - 1) * 3 + 1, day=1)
+    if "-H" in text.upper():
+        half = text.upper().split("-H", 1)[1][:1]
+        if half == "1":
+            return pd.Timestamp(year=year, month=1, day=1)
+        if half == "2":
+            return pd.Timestamp(year=year, month=7, day=1)
+    if len(text) >= 7 and text[4] == "-":
+        parsed = pd.to_datetime(f"{text[:7]}-01", errors="coerce")
+        if not pd.isna(parsed):
+            return pd.Timestamp(parsed)
+    return pd.Timestamp(year=year, month=1, day=1)
+
+
+def history_tracking_start(benefits: pd.DataFrame, usage: pd.DataFrame) -> pd.Timestamp:
+    starts: list[pd.Timestamp] = []
+    if "used_date" in usage:
+        for value in usage["used_date"].dropna():
+            parsed = pd.to_datetime(value, errors="coerce")
+            if not pd.isna(parsed):
+                starts.append(pd.Timestamp(parsed).replace(day=1))
+    if starts:
+        return min(starts)
+
+    if "cycle_period" in usage:
+        for value in usage["cycle_period"].dropna():
+            parsed = cycle_start_from_text(value)
+            if parsed is not None:
+                starts.append(parsed)
+    if starts:
+        return min(starts)
+
+    if "cycle_start_date" in benefits:
+        for value in benefits["cycle_start_date"].dropna():
+            parsed = pd.to_datetime(value, errors="coerce")
+            if not pd.isna(parsed):
+                starts.append(pd.Timestamp(parsed).replace(day=1))
+    return min(starts) if starts else pd.Timestamp.today().replace(day=1)
+
+
+def usage_cycle_lookup(usage: pd.DataFrame) -> dict[tuple[str, str], dict[str, object]]:
+    if usage.empty:
+        return {}
+
+    lookup: dict[tuple[str, str], dict[str, object]] = {}
+    for _, record in usage.iterrows():
+        benefit_id = clean_display(record.get("benefit_id"), "")
+        cycle = clean_display(record.get("cycle_period"), "")
+        if not benefit_id or not cycle:
+            continue
+        key = (benefit_id, cycle)
+        entry = lookup.setdefault(key, {"amount": 0.0, "fully_used": False})
+        entry["amount"] = float(entry["amount"]) + normalize_money(record.get("used_amount"))
+        entry["fully_used"] = bool(entry["fully_used"]) or clean_display(record.get("fully_used"), "").lower() == "yes"
+    return lookup
+
+
+def benefit_history_group(row: pd.Series, year: int, month: int) -> tuple[str, list[int], pd.Timestamp] | None:
+    frequency = clean_display(row.get("frequency"), "").lower()
+    cycle = clean_display(row.get("current_cycle"), "")
+    name = clean_display(row.get("benefit_name"), "")
+    expiration = pd.to_datetime(row.get("expiration_date"), errors="coerce")
+
+    if "month" in frequency:
+        end = pd.Timestamp(year=year, month=month, day=1) + pd.offsets.MonthEnd(0)
+        return f"{year}-{month:02d}", [month], end
+
+    if "quarter" in frequency:
+        quarter = None
+        marker_text = f"{cycle} {name}".upper()
+        for possible in [1, 2, 3, 4]:
+            if f"Q{possible}" in marker_text:
+                quarter = possible
+                break
+        if quarter is None and not pd.isna(expiration):
+            quarter = int((pd.Timestamp(expiration).month - 1) / 3) + 1
+        if quarter is None or int((month - 1) / 3) + 1 != quarter:
+            return None
+        months = list(range((quarter - 1) * 3 + 1, quarter * 3 + 1))
+        end = pd.Timestamp(year=year, month=months[-1], day=1) + pd.offsets.MonthEnd(0)
+        return f"{year}-Q{quarter}", months, end
+
+    if "semi" in frequency or "bi" in frequency:
+        half = None
+        marker_text = f"{cycle} {name}".upper()
+        if "H1" in marker_text:
+            half = 1
+        elif "H2" in marker_text:
+            half = 2
+        elif not pd.isna(expiration):
+            half = 1 if pd.Timestamp(expiration).month <= 6 else 2
+        if half is None or (month <= 6 and half != 1) or (month >= 7 and half != 2):
+            return None
+        months = list(range(1, 7)) if half == 1 else list(range(7, 13))
+        end = pd.Timestamp(year=year, month=months[-1], day=1) + pd.offsets.MonthEnd(0)
+        return f"{year}-H{half}", months, end
+
+    if "annual" in frequency or "year" in frequency:
+        end = pd.Timestamp(year=year, month=12, day=31)
+        return f"{year}", list(range(1, 13)), end
+
+    return None
+
+
+def history_frequency_kind(value: object) -> str:
+    text = clean_display(value, "").lower()
+    if "month" in text:
+        return "Monthly"
+    if "quarter" in text:
+        return "Quarterly"
+    if "semi" in text or "bi" in text:
+        return "Semiannual"
+    if "annual" in text or "year" in text:
+        return "Annual"
+    return "Other"
+
+
+def history_cell_state(
+    row: pd.Series,
+    year: int,
+    month: int,
+    lookup: dict[tuple[str, str], dict[str, object]],
+    tracking_start: pd.Timestamp,
+    today: pd.Timestamp,
+) -> tuple[str, str]:
+    group = benefit_history_group(row, year, month)
+    if group is None:
+        return "future", "outside this benefit cycle"
+
+    cycle_key, _, period_end = group
+    benefit_id = clean_display(row.get("benefit_id"), "")
+    face_value = normalize_money(row.get("face_value"))
+    usage_entry = lookup.get((benefit_id, cycle_key), {"amount": 0.0, "fully_used": False})
+    amount = normalize_money(usage_entry.get("amount"))
+    fully_used = bool(usage_entry.get("fully_used"))
+
+    if amount <= 0 and clean_display(row.get("current_cycle"), "") == cycle_key:
+        amount = normalize_money(row.get("used_amount"))
+        fully_used = fully_used or clean_display(row.get("status"), "") == "Used"
+
+    if fully_used or (face_value > 0 and amount >= face_value):
+        return "used", f"{format_amount(amount)} used"
+    if amount > 0:
+        return "partial", f"{format_amount(amount)} partially used"
+    if period_end < tracking_start:
+        return "untracked", "not tracked yet"
+    if period_end < today.normalize():
+        return "missed", "missed"
+    return "open", "still available"
+
+
+def history_cell_symbol(state: str) -> str:
+    symbols = {
+        "used": "Y",
+        "partial": "~",
+        "missed": "X",
+        "open": "",
+        "future": "",
+        "untracked": "",
+    }
+    return symbols.get(state, "")
+
+
+def history_row_stats(states: list[str]) -> tuple[int, int, int]:
+    used = sum(1 for state in states if state == "used")
+    partial = sum(1 for state in states if state == "partial")
+    missed = sum(1 for state in states if state == "missed")
+    return used, partial, missed
+
+
+def render_history_card(
+    row: pd.Series,
+    year: int,
+    lookup: dict[tuple[str, str], dict[str, object]],
+    tracking_start: pd.Timestamp,
+    today: pd.Timestamp,
+    *,
+    hidden: bool = False,
+    mobile: bool = False,
+) -> None:
+    states: list[str] = []
+    cells = []
+    for month in range(1, 13):
+        state, detail = history_cell_state(row, year, month, lookup, tracking_start, today)
+        states.append(state)
+        title = f"{MONTH_NAMES[month - 1]} {year}: {detail}"
+        cells.append(
+            f'<span class="history-cell history-cell-{state}" title="{escape(title)}" aria-label="{escape(title)}">'
+            f"{escape(history_cell_symbol(state))}</span>"
+        )
+
+    used, partial, missed = history_row_stats(states)
+    closed = used + partial + missed
+    rate = int(round(((used + partial) / closed) * 100)) if closed else 0
+    visual = benefit_visual_cue(row)
+    name = clean_display(row.get("benefit_name"), "Unnamed benefit")
+    card = clean_display(row.get("card_name"), "Card not set")
+    owner = clean_display(row.get("owner"), "")
+    frequency = clean_display(row.get("frequency"), "Benefit")
+    face_value = format_amount(row.get("face_value"))
+    owner_text = f" - {escape(owner)}" if owner else ""
+    hidden_class = " history-card-hidden" if hidden else ""
+
+    st.markdown(
+        f"""
+        <div class="history-card{hidden_class}">
+            <div class="history-card-top">
+                <div class="history-title-row">
+                    <span class="history-icon" aria-hidden="true">{escape(visual)}</span>
+                    <div>
+                        <div class="history-benefit-name">{escape(name)}</div>
+                        <div class="history-benefit-meta">{escape(card)}{owner_text} - {escape(frequency)} - {face_value}</div>
+                    </div>
+                </div>
+                <div class="history-rate-pill">{rate}% captured</div>
+            </div>
+            <div class="history-month-labels">
+                {"".join(f'<span>{label}</span>' for label in MONTH_LABELS)}
+            </div>
+            <div class="history-grid">
+                {"".join(cells)}
+            </div>
+            <div class="history-row-footer">
+                <span>{used} used</span>
+                <span>{partial} partial</span>
+                <span>{missed} missed</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    benefit_id = clean_display(row.get("benefit_id"), "")
+    if not benefit_id:
+        return
+    safe_key = benefit_id.replace(" ", "_").replace("-", "_").replace("/", "_")
+    with st.container(key=f"history_actions_{safe_key}"):
+        if mobile:
+            spacer_col, action_col = st.columns([2.3, 0.9])
+            with action_col:
+                if hidden:
+                    if st.button("Show", key=f"history_restore_{safe_key}", use_container_width=True):
+                        restore_to_history(benefit_id)
+                else:
+                    if st.button("Hide", key=f"history_hide_{safe_key}", use_container_width=True):
+                        hide_from_history(benefit_id)
+        else:
+            spacer_col, action_col = st.columns([3.5, 1.1])
+            with action_col:
+                if hidden:
+                    if st.button("Show in History", key=f"history_restore_{safe_key}", use_container_width=True):
+                        restore_to_history(benefit_id)
+                else:
+                    if st.button("Hide", key=f"history_hide_{safe_key}", use_container_width=True):
+                        hide_from_history(benefit_id)
+
+
+def show_usage_history_view(benefits: pd.DataFrame, usage: pd.DataFrame, *, mobile: bool = False) -> None:
+    if benefits.empty:
+        st.markdown('<div class="mobile-empty-state">No benefits to analyze yet.</div>', unsafe_allow_html=True)
+        return
+
+    recurring = benefits[
+        benefits["frequency"].fillna("").astype(str).str.lower().str.contains("month|quarter|semi|annual|year", na=False)
+    ].copy()
+    recurring = recurring[recurring["status"].fillna("").astype(str) != "Ignored"]
+    if recurring.empty:
+        st.markdown('<div class="mobile-empty-state">No recurring benefits to show yet.</div>', unsafe_allow_html=True)
+        return
+
+    years = available_history_years(recurring, usage)
+    current_year = pd.Timestamp.today().year
+    default_year_index = years.index(current_year) if current_year in years else len(years) - 1
+    hidden_ids = history_hidden_benefit_ids()
+    owner_options = ["All owners"] + sorted([owner for owner in recurring["owner"].dropna().unique() if normalize_text(owner)])
+
+    filter_container = st.container(key="mobile_history_filters" if mobile else "desktop_history_filters")
+    with filter_container:
+        if mobile:
+            if len(years) <= 4:
+                selected_year = st.pills(
+                    "Year",
+                    years,
+                    default=years[default_year_index],
+                    required=True,
+                    key="mobile_history_year_pills",
+                )
+            else:
+                selected_year = st.selectbox("Year", years, index=default_year_index, key="mobile_history_year")
+            selected_frequency = st.pills(
+                "Frequency",
+                ["All"] + HISTORY_FREQUENCIES,
+                default="All",
+                required=True,
+                key="mobile_history_frequency_pills",
+            )
+            selected_owner = st.pills(
+                "Owner",
+                owner_options,
+                default="All owners",
+                required=True,
+                key="mobile_history_owner_pills",
+            )
+            card_source = recurring if selected_owner == "All owners" else recurring[recurring["owner"] == selected_owner]
+            card_options = ["All cards"] + sorted([card for card in card_source["card_name"].dropna().unique() if normalize_text(card)])
+            if len(card_options) <= 16:
+                selected_card = st.pills(
+                    "Card",
+                    card_options,
+                    default="All cards",
+                    required=True,
+                    key="mobile_history_card_pills",
+                )
+            else:
+                selected_card = st.selectbox("Card", card_options, key="mobile_history_card")
+            show_history_hidden = st.toggle("Show hidden", value=False, key="mobile_history_show_hidden")
+        else:
+            year_col, frequency_col, owner_col, card_col, hidden_col = st.columns([0.82, 1.12, 1.14, 1.72, 0.92])
+            if len(years) <= 4:
+                selected_year = year_col.pills(
+                    "Year",
+                    years,
+                    default=years[default_year_index],
+                    required=True,
+                    key="desktop_history_year_pills",
+                )
+            else:
+                selected_year = year_col.selectbox("Year", years, index=default_year_index, key="desktop_history_year")
+            selected_frequency = frequency_col.pills(
+                "Frequency",
+                ["All"] + HISTORY_FREQUENCIES,
+                default="All",
+                required=True,
+                key="desktop_history_frequency_pills",
+            )
+            selected_owner = owner_col.pills(
+                "Owner",
+                owner_options,
+                default="All owners",
+                required=True,
+                key="desktop_history_owner_pills",
+            )
+            card_source = recurring if selected_owner == "All owners" else recurring[recurring["owner"] == selected_owner]
+            card_options = ["All cards"] + sorted([card for card in card_source["card_name"].dropna().unique() if normalize_text(card)])
+            if len(card_options) <= 16:
+                selected_card = card_col.pills(
+                    "Card",
+                    card_options,
+                    default="All cards",
+                    required=True,
+                    key="desktop_history_card_pills",
+                )
+            else:
+                selected_card = card_col.selectbox("Card", card_options, key="desktop_history_card")
+            show_history_hidden = hidden_col.toggle("Show hidden", value=False, key="desktop_history_show_hidden")
+
+    visible = recurring.copy()
+    if not show_history_hidden and hidden_ids:
+        visible = visible[~visible["benefit_id"].astype(str).isin(hidden_ids)]
+    if selected_frequency != "All":
+        visible = visible[visible["frequency"].map(history_frequency_kind) == selected_frequency]
+    if selected_owner != "All owners":
+        visible = visible[visible["owner"] == selected_owner]
+    if selected_card != "All cards":
+        visible = visible[visible["card_name"] == selected_card]
+
+    lookup = usage_cycle_lookup(usage)
+    tracking_start = history_tracking_start(recurring, usage)
+    today = pd.Timestamp.today()
+
+    all_states: list[str] = []
+    for _, row in visible.iterrows():
+        for month in range(1, 13):
+            state, _ = history_cell_state(row, int(selected_year), month, lookup, tracking_start, today)
+            all_states.append(state)
+    used = sum(1 for state in all_states if state == "used")
+    partial = sum(1 for state in all_states if state == "partial")
+    missed = sum(1 for state in all_states if state == "missed")
+    closed = used + partial + missed
+    rate = int(round(((used + partial) / closed) * 100)) if closed else 0
+
+    st.markdown(
+        f"""
+        <div class="history-summary-strip">
+            <div><span>Captured rate</span><strong>{rate}%</strong></div>
+            <div><span>Used cycles</span><strong>{used}</strong></div>
+            <div><span>Partial cycles</span><strong>{partial}</strong></div>
+            <div><span>Missed cycles</span><strong>{missed}</strong></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        """
+        <div class="history-legend">
+            <span><i class="history-dot history-dot-used"></i>Used</span>
+            <span><i class="history-dot history-dot-partial"></i>Partial</span>
+            <span><i class="history-dot history-dot-missed"></i>Missed</span>
+            <span><i class="history-dot history-dot-open"></i>Open/future</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if visible.empty:
+        st.markdown('<div class="mobile-empty-state">No benefits match this filter.</div>', unsafe_allow_html=True)
+        return
+
+    visible = visible.copy()
+    visible["_history_owner"] = visible["owner"].map(lambda value: clean_display(value, "Unassigned"))
+    for owner in sorted(visible["_history_owner"].dropna().unique()):
+        owner_group = visible[visible["_history_owner"] == owner]
+        if owner_group.empty:
+            continue
+        st.markdown(
+            f"""
+            <div class="history-owner-heading">
+                <span>{escape(owner)}</span>
+                <small>{len(owner_group)} benefits</small>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        for _, row in owner_group.sort_values(["card_name", "frequency", "benefit_name"]).iterrows():
+            benefit_id = clean_display(row.get("benefit_id"), "")
+            render_history_card(
+                row,
+                int(selected_year),
+                lookup,
+                tracking_start,
+                today,
+                hidden=benefit_id in hidden_ids,
+                mobile=mobile,
+            )
+
+
 def benefit_summary_label(row: pd.Series) -> str:
     name = clean_display(row.get("benefit_name"))
+    visual = benefit_visual_cue(row)
     status = clean_display(row.get("status"), "Not Used")
     upcoming = bool(row.get("is_upcoming", False))
     start_label = date_label(row.get("cycle_start_date"))
@@ -1044,7 +3235,7 @@ def benefit_summary_label(row: pd.Series) -> str:
     else:
         label = "Available"
 
-    return f"**{name}**  \n:gray[{label} \u00b7 {format_amount(remaining)} left \u00b7 {due_text} \u00b7 {progress}% used]"
+    return f"**{visual} {name}**  \n:gray[{label} \u00b7 {format_amount(remaining)} left \u00b7 {due_text} \u00b7 {progress}% used]"
 
 
 def benefit_summary_strip(row: pd.Series, expiring: bool) -> str:
@@ -1071,31 +3262,90 @@ def benefit_summary_strip(row: pd.Series, expiring: bool) -> str:
     """
 
 
+GENERATED_USAGE_NOTES = {
+    "Logged from benefit status update",
+    "Backfilled from current benefit status",
+    "Logged from Edit Benefits save",
+}
+
+
+def usage_record_from_benefit(
+    benefit: pd.Series,
+    amount_used: float,
+    fully_used: bool,
+    note: str,
+) -> dict[str, object]:
+    return {
+        "usage_id": f"usage_{uuid4().hex[:10]}",
+        "used_date": pd.Timestamp.today().date().isoformat(),
+        "owner": clean_display(benefit.get("owner"), ""),
+        "card_id": clean_display(benefit.get("card_id"), ""),
+        "benefit_id": clean_display(benefit.get("benefit_id"), ""),
+        "benefit_name": clean_display(benefit.get("benefit_name"), ""),
+        "cycle_period": clean_display(benefit.get("current_cycle"), ""),
+        "used_amount": amount_used,
+        "fully_used": "Yes" if fully_used else "No",
+        "merchant": "",
+        "notes": note,
+    }
+
+
 def append_usage_record(benefit: pd.Series, amount_used: float, fully_used: bool, note: str = "Logged from benefit status update") -> None:
     if amount_used <= 0:
         return
 
     usage = read_usage()
-    today = pd.Timestamp.today().date().isoformat()
     record = pd.DataFrame(
-        [
-            {
-                "usage_id": f"usage_{uuid4().hex[:10]}",
-                "used_date": today,
-                "owner": clean_display(benefit.get("owner"), ""),
-                "card_id": clean_display(benefit.get("card_id"), ""),
-                "benefit_id": clean_display(benefit.get("benefit_id"), ""),
-                "benefit_name": clean_display(benefit.get("benefit_name"), ""),
-                "cycle_period": clean_display(benefit.get("current_cycle"), ""),
-                "used_amount": amount_used,
-                "fully_used": "Yes" if fully_used else "No",
-                "merchant": "",
-                "notes": note,
-            }
-        ],
+        [usage_record_from_benefit(benefit, amount_used, fully_used, note)],
         columns=USAGE_COLUMNS,
     )
     save_usage(pd.concat([usage, record], ignore_index=True))
+
+
+def generated_usage_mask(usage: pd.DataFrame, benefit_id: str, cycle_period: str) -> pd.Series:
+    same_benefit_cycle = (
+        (usage["benefit_id"].fillna("").astype(str) == benefit_id)
+        & (usage["cycle_period"].fillna("").astype(str) == cycle_period)
+    )
+    generated_notes = usage["notes"].fillna("").astype(str).str.strip().isin(GENERATED_USAGE_NOTES)
+    return same_benefit_cycle & generated_notes
+
+
+def reconcile_generated_usage_record(
+    benefit: pd.Series,
+    target_used_amount: float,
+    fully_used: bool,
+    note: str = "Logged from benefit status update",
+) -> None:
+    benefit_id = clean_display(benefit.get("benefit_id"), "")
+    if not benefit_id:
+        return
+
+    usage = read_usage()
+    cycle_period = clean_display(benefit.get("current_cycle"), "")
+    same_benefit_cycle = (
+        (usage["benefit_id"].fillna("").astype(str) == benefit_id)
+        & (usage["cycle_period"].fillna("").astype(str) == cycle_period)
+    )
+    generated_mask = generated_usage_mask(usage, benefit_id, cycle_period)
+    manual_logged = (
+        usage.loc[same_benefit_cycle & ~generated_mask, "used_amount"].apply(normalize_money).sum()
+        if not usage.empty
+        else 0.0
+    )
+    generated_target = max(float(target_used_amount) - float(manual_logged), 0.0)
+
+    if not bool(generated_mask.any()) and generated_target <= 0.01:
+        return
+
+    next_usage = usage.loc[~generated_mask].copy()
+    if generated_target > 0.01:
+        record = pd.DataFrame(
+            [usage_record_from_benefit(benefit, generated_target, fully_used, note)],
+            columns=USAGE_COLUMNS,
+        )
+        next_usage = pd.concat([next_usage, record], ignore_index=True)
+    save_usage(next_usage)
 
 
 def sync_usage_log_from_benefits() -> int:
@@ -1111,8 +3361,8 @@ def sync_usage_log_from_benefits() -> int:
         benefit_id = clean_display(benefit.get("benefit_id"), "")
         cycle_period = clean_display(benefit.get("current_cycle"), "")
         existing = usage[
-            (usage["benefit_id"].astype(str) == benefit_id)
-            & (usage["cycle_period"].astype(str).fillna("") == cycle_period)
+            (usage["benefit_id"].fillna("").astype(str) == benefit_id)
+            & (usage["cycle_period"].fillna("").astype(str) == cycle_period)
         ]
         logged_amount = existing["used_amount"].apply(normalize_money).sum() if not existing.empty else 0.0
         missing_amount = used_amount - logged_amount
@@ -1121,19 +3371,12 @@ def sync_usage_log_from_benefits() -> int:
 
         fully_used = clean_display(benefit.get("status"), "Not Used") == "Used"
         new_records.append(
-            {
-                "usage_id": f"usage_{uuid4().hex[:10]}",
-                "used_date": pd.Timestamp.today().date().isoformat(),
-                "owner": clean_display(benefit.get("owner"), ""),
-                "card_id": clean_display(benefit.get("card_id"), ""),
-                "benefit_id": benefit_id,
-                "benefit_name": clean_display(benefit.get("benefit_name"), ""),
-                "cycle_period": cycle_period,
-                "used_amount": missing_amount,
-                "fully_used": "Yes" if fully_used else "No",
-                "merchant": "",
-                "notes": "Backfilled from current benefit status",
-            }
+            usage_record_from_benefit(
+                benefit,
+                missing_amount,
+                fully_used,
+                "Backfilled from current benefit status",
+            )
         )
 
     if new_records:
@@ -1150,7 +3393,6 @@ def update_benefit_status(benefit_id: str, status: str, used_amount: float | Non
 
     existing = benefits.loc[match].iloc[0].copy()
     face_value = normalize_money(existing.get("face_value"))
-    previous_used_amount = normalize_money(existing.get("used_amount"))
     if used_amount is None:
         if status == "Used":
             used_amount = face_value
@@ -1173,19 +3415,31 @@ def update_benefit_status(benefit_id: str, status: str, used_amount: float | Non
     remaining_amount = max(face_value - used_amount, 0.0)
     usage_percent = used_amount / face_value if face_value else 0.0
 
-    benefits.loc[match, "status"] = status
-    benefits.loc[match, "used_amount"] = used_amount
-    benefits.loc[match, "remaining_amount"] = remaining_amount
-    benefits.loc[match, "usage_percent"] = usage_percent
-    save_benefits(benefits)
+    updated_benefits = benefits.copy()
+    updated_benefits.loc[match, "status"] = status
+    updated_benefits.loc[match, "used_amount"] = used_amount
+    updated_benefits.loc[match, "remaining_amount"] = remaining_amount
+    updated_benefits.loc[match, "usage_percent"] = usage_percent
+    updated_benefit = updated_benefits.loc[match].iloc[0].copy()
 
-    usage_delta = used_amount - previous_used_amount
-    if status in ["Used", "Partially Used"] and usage_delta > 0:
-        append_usage_record(
-            benefits.loc[match].iloc[0],
-            usage_delta,
+    benefits_saved = False
+    try:
+        save_benefits(updated_benefits)
+        benefits_saved = True
+        reconcile_generated_usage_record(
+            updated_benefit,
+            used_amount,
             status == "Used",
         )
+    except Exception as exc:
+        if benefits_saved:
+            try:
+                save_benefits(benefits)
+            except Exception:
+                pass
+        st.error("Could not finish updating this benefit.")
+        st.caption(str(exc))
+        return
 
     st.toast(f"Updated to {status}")
     st.rerun()
@@ -1254,6 +3508,7 @@ def render_benefit_tile(
     benefit_type = clean_display(row.get("benefit_type"), "Benefit")
     current_cycle = clean_display(row.get("current_cycle"), "")
     status_html = status_badge(status, expiring)
+    visual = benefit_visual_cue(row)
     read_only_progress = ""
     if status in ["Used", "Ignored"]:
         read_only_progress = f"""
@@ -1293,16 +3548,19 @@ def render_benefit_tile(
             f"""
             <div class="benefit-tile {'upcoming' if upcoming else ''}">
               <div class="benefit-topline">
-                <div>
-                  <div class="benefit-title">{escape(clean_display(row.get("benefit_name")))}</div>
-                  <div class="benefit-secondary">
-                    {escape(benefit_type)} \u00b7 {format_amount(face_value)} value{f" \u00b7 {escape(current_cycle)}" if current_cycle else ""}
-                  </div>
-                  <div class="benefit-meta">
-                    {status_html}
-                    {category_badge(category)}
-                    {muted_chip(frequency)}
-                    <span class="chip chip-muted">{format_amount(remaining_amount)} left</span>
+                <div class="benefit-title-row">
+                  <span class="benefit-visual-cue" aria-hidden="true">{escape(visual)}</span>
+                  <div>
+                    <div class="benefit-title">{escape(clean_display(row.get("benefit_name")))}</div>
+                    <div class="benefit-secondary">
+                      {escape(benefit_type)} \u00b7 {format_amount(face_value)} value{f" \u00b7 {escape(current_cycle)}" if current_cycle else ""}
+                    </div>
+                    <div class="benefit-meta">
+                      {status_html}
+                      {category_badge(category)}
+                      {muted_chip(frequency)}
+                      <span class="chip chip-muted">{format_amount(remaining_amount)} left</span>
+                    </div>
                   </div>
                 </div>
                 <div class="deadline {deadline_class}">
@@ -1391,9 +3649,14 @@ def show_importer() -> None:
     )
     uploaded = st.file_uploader("Excel file", type=["xlsx", "xlsm", "xls"])
     if uploaded is not None:
-        DATA_DIR.mkdir(exist_ok=True)
-        ORIGINAL_EXCEL.write_bytes(uploaded.getbuffer())
-        result = import_excel_to_csv(ORIGINAL_EXCEL)
+        try:
+            DATA_DIR.mkdir(exist_ok=True)
+            ORIGINAL_EXCEL.write_bytes(uploaded.getbuffer())
+            result = import_excel_to_csv(ORIGINAL_EXCEL)
+        except Exception as exc:
+            st.error("Could not import that Excel file.")
+            st.caption(str(exc))
+            return
         st.success(f"Imported {result['rows']} benefit rows from Excel.")
         with st.expander("Detected sheets and columns", expanded=True):
             for line in result["summary"]:
@@ -1406,7 +3669,7 @@ def show_importer() -> None:
         st.rerun()
 
 
-def show_dashboard(benefits: pd.DataFrame, cards: pd.DataFrame) -> None:
+def show_dashboard(benefits: pd.DataFrame, cards: pd.DataFrame, usage: pd.DataFrame) -> None:
     if benefits.empty:
         st.info("No benefits yet. Import your Excel tracker or add a benefit manually.")
         return
@@ -1427,7 +3690,7 @@ def show_dashboard(benefits: pd.DataFrame, cards: pd.DataFrame) -> None:
     if is_mobile_request():
         force_mobile_dashboard_css()
         with st.container(key="mobile_dashboard"):
-            show_mobile_checklist(flagged, active, expiring, used, remaining_value, cards)
+            show_mobile_checklist(flagged, active, expiring, used, remaining_value, cards, usage)
         return
 
     with st.container(key="desktop_dashboard"):
@@ -1440,7 +3703,7 @@ def show_dashboard(benefits: pd.DataFrame, cards: pd.DataFrame) -> None:
             with nav_col:
                 dashboard_view = st.radio(
                     "View",
-                    ["Home", "Cards", "Categories", "Archived"],
+                    ["Home", "Cards", "History", "Categories", "Archived"],
                     horizontal=True,
                     key="dashboard_view",
                 )
@@ -1457,6 +3720,8 @@ def show_dashboard(benefits: pd.DataFrame, cards: pd.DataFrame) -> None:
             show_home_view(active, expiring, needs_action)
         elif dashboard_view == "Cards":
             show_by_card_view(browse_data, cards, flagged)
+        elif dashboard_view == "History":
+            show_usage_history_view(flagged, usage)
         elif dashboard_view == "Categories":
             show_by_category_view(browse_data)
         else:
@@ -1484,6 +3749,7 @@ def mobile_status_class(label: str) -> str:
 
 def mobile_benefit_summary_label(row: pd.Series) -> str:
     name = clean_display(row.get("benefit_name"), "Unnamed benefit")
+    visual = benefit_visual_cue(row)
     label = mobile_status_label(row)
     upcoming = bool(row.get("is_upcoming", False))
     start_label = date_label(row.get("cycle_start_date"))
@@ -1493,7 +3759,7 @@ def mobile_benefit_summary_label(row: pd.Series) -> str:
     remaining = max(face_value - used_amount, 0)
     progress = int(min(max((used_amount / face_value) * 100 if face_value else 0, 0), 100))
     progress_text = f"{progress}% used" if face_value else "No progress"
-    return f"**{name}**  \n:gray[{label} - {due_text} - {format_amount(remaining)} left - {progress_text}]"
+    return f"**{visual} {name}**  \n:gray[{label} - {due_text} - {format_amount(remaining)} left - {progress_text}]"
 
 
 def render_mobile_benefit_card(row: pd.Series, key_prefix: str) -> None:
@@ -1518,6 +3784,7 @@ def render_mobile_benefit_card(row: pd.Series, key_prefix: str) -> None:
     current_cycle = clean_display(row.get("current_cycle"), "")
     notes = clean_display(row.get("notes"), "")
     source = clean_display(row.get("source_url"), "")
+    visual = benefit_visual_cue(row)
     safe_id = benefit_id or f"benefit_{key_prefix}"
     container_key = f"mobile_card_{key_prefix}_{safe_id}".replace(" ", "_").replace("-", "_")
 
@@ -1526,10 +3793,13 @@ def render_mobile_benefit_card(row: pd.Series, key_prefix: str) -> None:
             f"""
             <div class="mobile-benefit-card">
                 <div class="mobile-benefit-main">
-                    <div>
-                        <div class="mobile-benefit-name">{escape(benefit_name)}</div>
-                        <div class="mobile-benefit-card-name">{escape(card_name)}</div>
-                        {f'<div class="mobile-benefit-owner">{escape(owner)}</div>' if owner else ''}
+                    <div class="mobile-benefit-title-row">
+                        <span class="mobile-benefit-visual" aria-hidden="true">{escape(visual)}</span>
+                        <div>
+                            <div class="mobile-benefit-name">{escape(benefit_name)}</div>
+                            <div class="mobile-benefit-card-name">{escape(card_name)}</div>
+                            {f'<div class="mobile-benefit-owner">{escape(owner)}</div>' if owner else ''}
+                        </div>
                     </div>
                     <span class="mobile-status mobile-status-{mobile_status_class(label)}">{escape(label)}</span>
                 </div>
@@ -1727,7 +3997,11 @@ def render_mobile_card_group(card_label: str, group: pd.DataFrame, key_prefix: s
 
 
 def render_mobile_section(title: str, benefits: pd.DataFrame, key_prefix: str, limit: int | None = None) -> None:
-    st.markdown(f'<div class="mobile-section-heading">{escape(title)}</div>', unsafe_allow_html=True)
+    visual = section_visual_cue(title)
+    st.markdown(
+        f'<div class="mobile-section-heading"><span class="mobile-section-emoji" aria-hidden="true">{escape(visual)}</span>{escape(title)}</div>',
+        unsafe_allow_html=True,
+    )
     if benefits.empty:
         st.markdown('<div class="mobile-empty-state">Nothing here right now.</div>', unsafe_allow_html=True)
         return
@@ -1753,10 +4027,13 @@ def render_mobile_annual_fee_card(row: pd.Series, key_prefix: str) -> None:
             f"""
             <div class="mobile-benefit-card">
                 <div class="mobile-benefit-main">
-                    <div>
-                        <div class="mobile-benefit-name">{escape(card_name)}</div>
-                        <div class="mobile-benefit-card-name">Annual fee reminder</div>
-                        {f'<div class="mobile-benefit-owner">{escape(owner)}</div>' if owner else ''}
+                    <div class="mobile-benefit-title-row">
+                        <span class="mobile-benefit-visual" aria-hidden="true">💳</span>
+                        <div>
+                            <div class="mobile-benefit-name">{escape(card_name)}</div>
+                            <div class="mobile-benefit-card-name">Annual fee reminder</div>
+                            {f'<div class="mobile-benefit-owner">{escape(owner)}</div>' if owner else ''}
+                        </div>
                     </div>
                     <span class="mobile-status mobile-status-expiring-soon">{escape(label)}</span>
                 </div>
@@ -1779,7 +4056,10 @@ def render_mobile_annual_fee_card(row: pd.Series, key_prefix: str) -> None:
 
 
 def render_mobile_annual_fees(fee_reminders: pd.DataFrame, limit: int | None = None) -> None:
-    st.markdown('<div class="mobile-section-heading">Annual Fees</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="mobile-section-heading"><span class="mobile-section-emoji" aria-hidden="true">💳</span>Annual Fees</div>',
+        unsafe_allow_html=True,
+    )
     if fee_reminders.empty:
         st.markdown('<div class="mobile-empty-state">No annual fees due soon.</div>', unsafe_allow_html=True)
         return
@@ -1806,12 +4086,50 @@ def render_mobile_category_groups(benefits: pd.DataFrame) -> None:
         active_count = int(((~group["status"].isin(["Used", "Ignored"])) & (~group["is_upcoming"])).sum())
         upcoming_count = int(group["is_upcoming"].sum())
         remaining = group["remaining_amount"].apply(normalize_money).sum()
+        visual = category_icon(category)
         label = (
-            f"**{category}**  \n"
+            f"**{visual} {category}**  \n"
             f":gray[**{active_count} active** - **{upcoming_count} upcoming** - **{format_amount(remaining)} left**]"
         )
         with st.expander(label, expanded=False):
             render_mobile_section(category, group, f"mobile_category_{index}")
+
+
+def render_mobile_wallet_hero(
+    active_now_count: int,
+    upcoming_count: int,
+    archived_count: int,
+    due_soon_count: int,
+    monthly_count: int,
+    remaining_value: float,
+    cards: pd.DataFrame,
+) -> None:
+    open_cards = cards.copy()
+    if "status" in open_cards:
+        open_cards = open_cards[open_cards["status"].fillna("").astype(str).str.lower() != "closed"]
+    st.markdown(
+        f"""
+        <div class="mobile-wallet-hero">
+            <div class="mobile-wallet-topline">
+                <span>Benefit Wallet</span>
+                <span>{len(open_cards)} cards</span>
+            </div>
+            <div class="mobile-wallet-balance-label">Remaining value</div>
+            <div class="mobile-wallet-balance">{format_amount(remaining_value)}</div>
+            <div class="mobile-wallet-chip-row">
+                <span>{due_soon_count} due soon</span>
+                <span>{monthly_count} this month</span>
+                <span>{upcoming_count} upcoming</span>
+            </div>
+            <div class="mobile-wallet-stats" aria-label="Benefit summary">
+                <div><span>Active</span><strong>{active_now_count}</strong></div>
+                <div><span>Upcoming</span><strong>{upcoming_count}</strong></div>
+                <div><span>Archived</span><strong>{archived_count}</strong></div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def show_mobile_checklist(
@@ -1821,6 +4139,7 @@ def show_mobile_checklist(
     used: pd.DataFrame,
     remaining_value: float,
     cards: pd.DataFrame,
+    usage: pd.DataFrame,
 ) -> None:
     due_soon = mobile_attention_benefits(active)
     this_month = mobile_monthly_not_used(active)
@@ -1832,15 +4151,17 @@ def show_mobile_checklist(
     archived = flagged[flagged["status"].isin(["Used", "Ignored"])].copy()
     fee_reminders = annual_fee_reminders(cards)
 
-    st.markdown(
-        f"""
-        <div class="mobile-checklist-summary">
-            <div><span>Active</span><strong>{len(active_now)}</strong></div>
-            <div><span>Upcoming</span><strong>{len(upcoming)}</strong></div>
-            <div><span>Archived</span><strong>{len(archived)}</strong></div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    with st.container(key="mobile_theme_switch"):
+        render_theme_selector("mobile_theme_label", horizontal=True, label="Theme")
+
+    render_mobile_wallet_hero(
+        len(active_now),
+        len(upcoming),
+        len(archived),
+        len(due_soon),
+        len(this_month),
+        remaining_value,
+        cards,
     )
 
     selected_view = st.radio(
@@ -1848,6 +4169,7 @@ def show_mobile_checklist(
         [
             "Home",
             "Cards",
+            "History",
             "Categories",
             "Archived",
         ],
@@ -1868,6 +4190,14 @@ def show_mobile_checklist(
 
     if selected_view == "Categories":
         render_mobile_category_groups(active)
+        return
+
+    if selected_view == "History":
+        st.markdown(
+            '<div class="mobile-section-heading"><span class="mobile-section-emoji" aria-hidden="true">🗓️</span>Usage History</div>',
+            unsafe_allow_html=True,
+        )
+        show_usage_history_view(flagged, usage, mobile=True)
         return
 
     if selected_view == "Archived":
@@ -2390,8 +4720,16 @@ def main() -> None:
         initial_sidebar_state="expanded",
     )
     inject_app_icon_metadata()
-    ensure_data_files()
+    theme = active_app_theme()
     inject_styles()
+    inject_theme_styles(theme)
+
+    try:
+        ensure_data_files()
+    except Exception as exc:
+        st.error("Could not initialize the data backend.")
+        st.caption(str(exc))
+        st.stop()
 
     st.markdown(
         """
@@ -2402,10 +4740,18 @@ def main() -> None:
         """,
         unsafe_allow_html=True,
     )
+    if not is_mobile_request():
+        with st.container(key="desktop_theme_switch"):
+            render_theme_selector("desktop_theme_label", horizontal=True, label="Theme")
 
-    cards = read_cards()
-    benefits = read_benefits()
-    usage = read_usage()
+    try:
+        cards = read_cards()
+        benefits = read_benefits()
+        usage = read_usage()
+    except Exception as exc:
+        st.error("Could not load tracker data.")
+        st.caption(str(exc))
+        st.stop()
 
     with st.sidebar:
         # Desktop sidebar polish: separate app navigation from secondary local data counts.
@@ -2439,7 +4785,7 @@ def main() -> None:
         st.divider()
 
     if section == "Dashboard":
-        show_dashboard(benefits, cards)
+        show_dashboard(benefits, cards, usage)
     else:
         show_raw_data(cards, benefits, usage)
 
