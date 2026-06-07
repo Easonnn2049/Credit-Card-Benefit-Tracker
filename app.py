@@ -536,6 +536,104 @@ def benefit_status_flags(benefits: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def standard_cycle_window(frequency: object, today: pd.Timestamp | None = None) -> tuple[str, pd.Timestamp, pd.Timestamp] | None:
+    current_day = (today or pd.Timestamp.today()).normalize()
+    frequency_text = normalize_text(frequency).lower()
+    year = int(current_day.year)
+    month = int(current_day.month)
+
+    if "month" in frequency_text:
+        start = pd.Timestamp(year=year, month=month, day=1)
+        end = start + pd.offsets.MonthEnd(0)
+        return f"{year}-{month:02d}", start, end
+
+    if "quarter" in frequency_text:
+        quarter = int((month - 1) / 3) + 1
+        start = pd.Timestamp(year=year, month=(quarter - 1) * 3 + 1, day=1)
+        end = pd.Timestamp(year=year, month=quarter * 3, day=1) + pd.offsets.MonthEnd(0)
+        return f"{year}-Q{quarter}", start, end
+
+    if "semi" in frequency_text or "bi" in frequency_text:
+        half = 1 if month <= 6 else 2
+        start_month = 1 if half == 1 else 7
+        end_month = 6 if half == 1 else 12
+        start = pd.Timestamp(year=year, month=start_month, day=1)
+        end = pd.Timestamp(year=year, month=end_month, day=1) + pd.offsets.MonthEnd(0)
+        return f"{year}-H{half}", start, end
+
+    if "annual" in frequency_text or "year" in frequency_text:
+        start = pd.Timestamp(year=year, month=1, day=1)
+        end = pd.Timestamp(year=year, month=12, day=31)
+        return f"{year}", start, end
+
+    return None
+
+
+def has_explicit_half_cycle_label(row: pd.Series) -> bool:
+    text = f"{clean_display(row.get('benefit_id'), '')} {clean_display(row.get('benefit_name'), '')}".lower()
+    return any(marker in text for marker in ["_h1", "_h2", " h1", " h2"])
+
+
+def should_roll_benefit_cycle(row: pd.Series, target_cycle: str, target_start: pd.Timestamp, today: pd.Timestamp) -> bool:
+    current_cycle = clean_display(row.get("current_cycle"), "")
+    if current_cycle == target_cycle:
+        return False
+
+    frequency_text = clean_display(row.get("frequency"), "").lower()
+    if ("semi" in frequency_text or "bi" in frequency_text) and has_explicit_half_cycle_label(row):
+        return False
+
+    expiration = pd.to_datetime(row.get("expiration_date"), errors="coerce")
+    if pd.notna(expiration):
+        return pd.Timestamp(expiration).normalize() < today.normalize()
+
+    current_start = cycle_start_from_text(current_cycle)
+    return current_start is not None and current_start.normalize() < target_start.normalize()
+
+
+def roll_benefits_to_current_cycles(
+    benefits: pd.DataFrame,
+    today: pd.Timestamp | None = None,
+) -> tuple[pd.DataFrame, int]:
+    if benefits.empty:
+        return benefits.copy(), 0
+
+    current_day = (today or pd.Timestamp.today()).normalize()
+    rolled = benefits.copy()
+    changed = 0
+
+    for index, row in rolled.iterrows():
+        window = standard_cycle_window(row.get("frequency"), current_day)
+        if window is None:
+            continue
+
+        target_cycle, _, target_end = window
+        if not should_roll_benefit_cycle(row, target_cycle, window[1], current_day):
+            continue
+
+        face_value = normalize_money(row.get("face_value"))
+        status = clean_display(row.get("status"), "Not Used")
+        rolled.loc[index, "current_cycle"] = target_cycle
+        rolled.loc[index, "expiration_date"] = target_end.date().isoformat()
+        rolled.loc[index, "used_amount"] = 0.0
+        rolled.loc[index, "remaining_amount"] = face_value
+        rolled.loc[index, "usage_percent"] = 0.0
+        if "days_until_expiry" in rolled.columns:
+            rolled.loc[index, "days_until_expiry"] = int((target_end.normalize() - current_day).days)
+        if status != "Ignored":
+            rolled.loc[index, "status"] = "Not Used"
+        changed += 1
+
+    return rolled, changed
+
+
+def apply_cycle_rollover(benefits: pd.DataFrame) -> pd.DataFrame:
+    rolled, changed = roll_benefits_to_current_cycles(benefits)
+    if changed:
+        save_benefits(rolled)
+    return rolled
+
+
 def cycle_start_date(row: pd.Series) -> str:
     current_cycle = clean_display(row.get("current_cycle"), "")
     benefit_name = clean_display(row.get("benefit_name"), "")
@@ -4746,7 +4844,7 @@ def main() -> None:
 
     try:
         cards = read_cards()
-        benefits = read_benefits()
+        benefits = apply_cycle_rollover(read_benefits())
         usage = read_usage()
     except Exception as exc:
         st.error("Could not load tracker data.")
