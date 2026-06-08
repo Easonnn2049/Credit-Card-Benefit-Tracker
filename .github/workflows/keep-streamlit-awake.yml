@@ -1,0 +1,62 @@
+name: Keep Streamlit app awake
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: keep-streamlit-awake
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    env:
+      APP_URL: ${{ vars.STREAMLIT_APP_URL || secrets.STREAMLIT_APP_URL || secrets.ALERT_APP_URL }}
+
+    steps:
+      - name: Validate app URL
+        shell: bash
+        run: |
+          if [[ -z "${APP_URL}" ]]; then
+            echo "Set repository variable STREAMLIT_APP_URL or secret STREAMLIT_APP_URL / ALERT_APP_URL to your Streamlit app URL."
+            exit 1
+          fi
+
+          if [[ "${APP_URL}" != http://* && "${APP_URL}" != https://* ]]; then
+            echo "APP_URL must start with http:// or https://."
+            exit 1
+          fi
+
+      - name: Ping Streamlit app
+        shell: bash
+        run: |
+          echo "Pinging Streamlit app..."
+          status="$(
+            curl \
+              --location \
+              --silent \
+              --show-error \
+              --max-time 60 \
+              --retry 2 \
+              --retry-delay 10 \
+              --output /tmp/streamlit_keepalive.html \
+              --write-out "%{http_code}" \
+              "${APP_URL}"
+          )"
+          echo "HTTP ${status}"
+
+          if [[ "${status}" -lt 200 || "${status}" -ge 400 ]]; then
+            echo "Keepalive request failed."
+            exit 1
+          fi
+
+          if grep -qi "has gone to sleep" /tmp/streamlit_keepalive.html; then
+            echo "::warning::The app returned a sleep page. The next scheduled run should keep it warm after it is manually woken."
+          fi
