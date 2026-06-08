@@ -5408,3 +5408,181 @@ body .stApp .st-key-desktop_theme_switch [data-baseweb="radio"]:has(input:checke
         inset 0 1px 0 rgba(255, 255, 255, .10),
         0 8px 18px rgba(0, 0, 0, .22) !important;
 }
+
+/* Renewal Center: decision-focused card review using the existing wallet system. */
+.renewal-kpi-grid,
+.renewal-health-kpis {
+    margin-bottom: var(--wallet-gap-4, 16px);
+}
+
+.renewal-card {
+    display: block;
+}
+
+.renewal-card-top,
+.renewal-meta-row,
+.renewal-month-heading {
+    display: flex;
+    align-items: center;
+}
+
+.renewal-card-top {
+    justify-content: space-between;
+    gap: var(--wallet-gap-3, 12px);
+    min-width: 0;
+}
+
+.renewal-title-wrap {
+    min-width: 0;
+}
+
+.renewal-card-name {
+    color: var(--wallet-text) !important;
+    font-size: 1.02rem;
+    font-weight: 900;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+
+.renewal-card-meta {
+    color: var(--wallet-muted) !important;
+    margin-top: 3px;
+    font-size: .76rem;
+    font-weight: 750;
+}
+
+.renewal-status-pill {
+    flex: 0 0 auto;
+    min-height: 30px;
+    border: 1px solid var(--wallet-border);
+    border-radius: var(--wallet-radius-chip, 999px);
+    padding: 7px 10px;
+    font-size: .68rem;
+    font-weight: 900;
+    line-height: 1;
+    white-space: nowrap;
+    background: rgba(255, 255, 255, .075);
+}
+
+.renewal-status-keep {
+    color: var(--wallet-green) !important;
+    border-color: rgba(147, 229, 154, .24);
+    background: rgba(147, 229, 154, .10);
+}
+
+.renewal-status-watch {
+    color: var(--wallet-accent-2) !important;
+    border-color: rgba(255, 208, 120, .24);
+    background: rgba(255, 208, 120, .12);
+}
+
+.renewal-status-review,
+.renewal-status-warning {
+    color: var(--wallet-red) !important;
+    border-color: rgba(255, 138, 131, .24);
+    background: rgba(255, 138, 131, .12);
+}
+
+.renewal-status-neutral {
+    color: var(--wallet-muted) !important;
+}
+
+.renewal-meta-row {
+    flex-wrap: wrap;
+    gap: var(--wallet-gap-2, 9px);
+    margin-top: var(--wallet-gap-3, 12px);
+}
+
+.renewal-score-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: var(--wallet-gap-2, 9px);
+    margin-top: var(--wallet-gap-3, 12px);
+}
+
+.renewal-score-grid > div {
+    min-width: 0;
+    min-height: 58px;
+    border: 1px solid var(--wallet-border);
+    border-radius: var(--wallet-radius-card, 18px);
+    padding: 10px 11px;
+    background: rgba(255, 255, 255, .055);
+}
+
+.renewal-score-grid span,
+.renewal-progress-label,
+.renewal-month-heading small {
+    color: var(--wallet-muted) !important;
+    font-size: .66rem;
+    font-weight: 850;
+    line-height: 1.1;
+}
+
+.renewal-score-grid span,
+.renewal-score-grid strong {
+    display: block;
+}
+
+.renewal-score-grid strong {
+    color: var(--wallet-text) !important;
+    margin-top: 5px;
+    font-size: .98rem;
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.renewal-net.positive {
+    color: var(--wallet-green) !important;
+}
+
+.renewal-net.negative {
+    color: var(--wallet-red) !important;
+}
+
+.renewal-progress-label {
+    margin: var(--wallet-gap-3, 12px) 0 5px;
+}
+
+.renewal-month-heading {
+    justify-content: space-between;
+    gap: var(--wallet-gap-3, 12px);
+    margin: 20px 0 8px;
+    padding: 0 2px;
+}
+
+.renewal-month-heading span {
+    color: var(--wallet-text) !important;
+    font-size: 1.02rem;
+    font-weight: 900;
+    line-height: 1.2;
+}
+
+.renewal-month-heading small {
+    text-align: right;
+}
+
+@media (max-width: 767px) {
+    .renewal-card-top,
+    .renewal-month-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: var(--wallet-gap-2, 9px);
+    }
+
+    .renewal-status-pill {
+        white-space: normal;
+    }
+
+    .renewal-score-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .renewal-score-grid > div {
+        min-height: 56px;
+    }
+
+    .renewal-month-heading small {
+        text-align: left;
+    }
+}
