@@ -24,25 +24,44 @@ jobs:
       - name: Validate app URL
         shell: bash
         run: |
-          APP_URL="${APP_URL//$'\r'/}"
-          APP_URL="${APP_URL#\"}"
-          APP_URL="${APP_URL%\"}"
-          APP_URL="${APP_URL#\'}"
-          APP_URL="${APP_URL%\'}"
-          APP_URL="${APP_URL%/}"
-
           if [[ -z "${APP_URL}" ]]; then
             echo "Set repository variable STREAMLIT_APP_URL or secret STREAMLIT_APP_URL / ALERT_APP_URL to your Streamlit app URL."
             exit 1
           fi
 
-          if [[ "${APP_URL}" != http://* && "${APP_URL}" != https://* ]]; then
+          clean_url="${APP_URL//$'\r'/}"
+          clean_url="${clean_url//$'\n'/}"
+          clean_url="${clean_url#"${clean_url%%[![:space:]]*}"}"
+          clean_url="${clean_url%"${clean_url##*[![:space:]]}"}"
+          clean_url="${clean_url#\"}"
+          clean_url="${clean_url%\"}"
+          clean_url="${clean_url#\'}"
+          clean_url="${clean_url%\'}"
+
+          if [[ "${clean_url}" == https://* ]]; then
+            scheme="https"
+            host_and_path="${clean_url#https://}"
+          elif [[ "${clean_url}" == http://* ]]; then
+            scheme="http"
+            host_and_path="${clean_url#http://}"
+          else
             echo "APP_URL must start with http:// or https://."
             exit 1
           fi
 
-          echo "APP_URL=${APP_URL}" >> "${GITHUB_ENV}"
-          echo "HEALTH_URL=${APP_URL}/_stcore/health" >> "${GITHUB_ENV}"
+          host_and_path="${host_and_path%%\?*}"
+          host_and_path="${host_and_path%%#*}"
+          host="${host_and_path%%/*}"
+
+          if [[ -z "${host}" ]]; then
+            echo "APP_URL must include a host."
+            exit 1
+          fi
+
+          normalized_url="${scheme}://${host}"
+          echo "APP_URL=${normalized_url}" >> "${GITHUB_ENV}"
+          echo "HEALTH_URL=${normalized_url}/_stcore/health" >> "${GITHUB_ENV}"
+          echo "Using Streamlit host: ${normalized_url}"
 
       - name: Ping Streamlit app
         shell: bash
@@ -50,8 +69,6 @@ jobs:
           echo "Pinging Streamlit health endpoint..."
           status="$(
             curl \
-              --location \
-              --max-redirs 5 \
               --silent \
               --show-error \
               --max-time 60 \
