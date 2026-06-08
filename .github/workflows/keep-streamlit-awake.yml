@@ -24,6 +24,13 @@ jobs:
       - name: Validate app URL
         shell: bash
         run: |
+          APP_URL="${APP_URL//$'\r'/}"
+          APP_URL="${APP_URL#\"}"
+          APP_URL="${APP_URL%\"}"
+          APP_URL="${APP_URL#\'}"
+          APP_URL="${APP_URL%\'}"
+          APP_URL="${APP_URL%/}"
+
           if [[ -z "${APP_URL}" ]]; then
             echo "Set repository variable STREAMLIT_APP_URL or secret STREAMLIT_APP_URL / ALERT_APP_URL to your Streamlit app URL."
             exit 1
@@ -34,29 +41,29 @@ jobs:
             exit 1
           fi
 
+          echo "APP_URL=${APP_URL}" >> "${GITHUB_ENV}"
+          echo "HEALTH_URL=${APP_URL}/_stcore/health" >> "${GITHUB_ENV}"
+
       - name: Ping Streamlit app
         shell: bash
         run: |
-          echo "Pinging Streamlit app..."
+          echo "Pinging Streamlit health endpoint..."
           status="$(
             curl \
               --location \
+              --max-redirs 5 \
               --silent \
               --show-error \
               --max-time 60 \
               --retry 2 \
               --retry-delay 10 \
-              --output /tmp/streamlit_keepalive.html \
+              --output /tmp/streamlit_health.txt \
               --write-out "%{http_code}" \
-              "${APP_URL}"
+              "${HEALTH_URL}"
           )"
           echo "HTTP ${status}"
 
           if [[ "${status}" -lt 200 || "${status}" -ge 400 ]]; then
             echo "Keepalive request failed."
             exit 1
-          fi
-
-          if grep -qi "has gone to sleep" /tmp/streamlit_keepalive.html; then
-            echo "::warning::The app returned a sleep page. The next scheduled run should keep it warm after it is manually woken."
           fi
