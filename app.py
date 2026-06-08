@@ -2460,8 +2460,6 @@ SECTION_VISUALS = {
     "available now": "✅",
     "upcoming": "⏳",
     "renewal": "💳",
-    "renewal closeout": "🎯",
-    "data health": "🩺",
     "completed / hidden": "🗂️",
     "completed": "✅",
     "hidden": "🫥",
@@ -3007,9 +3005,9 @@ def tracked_value_before_renewal(
     benefits: pd.DataFrame,
     renewal_date: pd.Timestamp | None,
     today: pd.Timestamp | None = None,
-) -> tuple[float, pd.DataFrame]:
+) -> float:
     if benefits.empty:
-        return 0.0, benefits.copy()
+        return 0.0
 
     current_day = (today or pd.Timestamp.today()).normalize()
     candidates = benefits.copy()
@@ -3030,19 +3028,7 @@ def tracked_value_before_renewal(
     if renewal_date is not None:
         mask = mask & (starts.isna() | starts.le(renewal_date))
 
-    closeout = candidates[mask].copy()
-    closeout["_remaining_value"] = remaining[mask]
-    closeout["_expiration_sort"] = expirations[mask].fillna(pd.Timestamp.max)
-    if renewal_date is not None:
-        closeout["_before_renewal"] = closeout["_expiration_sort"].le(renewal_date)
-    else:
-        closeout["_before_renewal"] = False
-
-    if closeout.empty:
-        return 0.0, closeout
-
-    closeout = closeout.sort_values(["_before_renewal", "_expiration_sort", "priority", "benefit_name"], ascending=[False, True, True, True])
-    return closeout["_remaining_value"].sum(), closeout.drop(columns=["_remaining_value", "_expiration_sort"], errors="ignore")
+    return remaining[mask].sum()
 
 
 def renewal_signal(net_value: float, best_case_net: float, days_left: int | None, annual_fee: float, renewal_date: pd.Timestamp | None) -> tuple[str, str]:
@@ -3076,7 +3062,7 @@ def build_renewal_metrics(cards: pd.DataFrame, benefits: pd.DataFrame, usage: pd
         if captured_value <= 0 and not card_benefits.empty:
             captured_value = card_benefits["used_amount"].apply(normalize_money).sum()
 
-        remaining_before_renewal, closeout = tracked_value_before_renewal(card_benefits, renewal_date, today)
+        remaining_before_renewal = tracked_value_before_renewal(card_benefits, renewal_date, today)
         days_left = int((renewal_date - today).days) if renewal_date is not None else None
         net_value = captured_value - annual_fee
         best_case_net = captured_value + remaining_before_renewal - annual_fee
@@ -3096,7 +3082,6 @@ def build_renewal_metrics(cards: pd.DataFrame, benefits: pd.DataFrame, usage: pd
                 "renewal_signal": signal,
                 "renewal_tone": tone,
                 "benefit_count": len(card_benefits),
-                "closeout_count": len(closeout),
             }
         )
 
@@ -3116,124 +3101,6 @@ def build_renewal_metrics(cards: pd.DataFrame, benefits: pd.DataFrame, usage: pd
     metrics["_days_rank"] = pd.to_numeric(metrics["days_left"], errors="coerce").fillna(99999)
     metrics = metrics.sort_values(["_signal_rank", "_days_rank", "card_name"]).drop(columns=["_signal_rank", "_days_rank"])
     return metrics
-
-
-def build_renewal_closeout_rows(cards: pd.DataFrame, benefits: pd.DataFrame) -> pd.DataFrame:
-    rows = []
-    today = pd.Timestamp.today().normalize()
-    flagged_benefits = benefits.copy()
-    if "cycle_start_date" not in flagged_benefits:
-        flagged_benefits["cycle_start_date"] = flagged_benefits.apply(cycle_start_date, axis=1) if not flagged_benefits.empty else ""
-
-    for _, card in active_card_rows(cards).iterrows():
-        renewal_date = card_renewal_date(card, today)
-        if renewal_date is None:
-            continue
-        card_benefits = flagged_benefits[card_benefit_mask(flagged_benefits, card)].copy()
-        _, closeout = tracked_value_before_renewal(card_benefits, renewal_date, today)
-        for _, benefit in closeout.iterrows():
-            rows.append(
-                {
-                    **benefit.to_dict(),
-                    "renewal_date": renewal_date.date().isoformat(),
-                    "renewal_days_left": int((renewal_date - today).days),
-                    "annual_fee": normalize_money(card.get("annual_fee")),
-                }
-            )
-
-    closeout_rows = pd.DataFrame(rows)
-    if closeout_rows.empty:
-        return closeout_rows
-    closeout_rows["_days_until_expiration"] = pd.to_numeric(closeout_rows["days_until_expiration"], errors="coerce").fillna(99999)
-    return closeout_rows.sort_values(["renewal_days_left", "_days_until_expiration", "card_name", "benefit_name"]).drop(columns=["_days_until_expiration"])
-
-
-def add_health_issue(rows: list[dict[str, str]], severity: str, area: str, item: object, issue: str, suggested_fix: str) -> None:
-    rows.append(
-        {
-            "severity": severity,
-            "area": area,
-            "item": clean_display(item, "Unknown"),
-            "issue": issue,
-            "suggested_fix": suggested_fix,
-        }
-    )
-
-
-def build_data_health_checks(cards: pd.DataFrame, benefits: pd.DataFrame, usage: pd.DataFrame) -> pd.DataFrame:
-    rows: list[dict[str, str]] = []
-    today = pd.Timestamp.today().normalize()
-
-    if not cards.empty:
-        active_cards = active_card_rows(cards)
-        missing_card_ids = cards["card_id"].fillna("").astype(str).str.strip().eq("")
-        for _, card in cards[missing_card_ids].iterrows():
-            add_health_issue(rows, "High", "Cards", card.get("card_name"), "Missing card_id.", "Add a stable card_id in the Cards table.")
-
-        duplicate_card_ids = cards["card_id"].fillna("").astype(str).str.strip()
-        for card_id in duplicate_card_ids[duplicate_card_ids.ne("") & duplicate_card_ids.duplicated(keep=False)].unique():
-            add_health_issue(rows, "High", "Cards", card_id, "Duplicate card_id.", "Keep card_id unique so benefits and usage attach to the right card.")
-
-        for _, card in active_cards.iterrows():
-            annual_fee = normalize_money(card.get("annual_fee"))
-            opened = pd.to_datetime(card.get("open_date"), errors="coerce")
-            if annual_fee > 0 and pd.isna(opened) and not parse_renewal_month(card.get("renewal_month")):
-                add_health_issue(rows, "High", "Renewal", card.get("card_name"), "Annual fee card has no usable renewal date.", "Fill open_date or renewal_month.")
-            if annual_fee > 0 and card_renewal_date(card, today) is None:
-                add_health_issue(rows, "High", "Renewal", card.get("card_name"), "Could not calculate next renewal date.", "Check open_date, renewal_month, and annual_fee.")
-
-    if not benefits.empty:
-        duplicate_benefit_ids = benefits["benefit_id"].fillna("").astype(str).str.strip()
-        for benefit_id in duplicate_benefit_ids[duplicate_benefit_ids.ne("") & duplicate_benefit_ids.duplicated(keep=False)].unique():
-            add_health_issue(rows, "High", "Benefits", benefit_id, "Duplicate benefit_id.", "Keep benefit_id unique before editing usage/status.")
-
-        known_card_ids = set(cards["card_id"].fillna("").astype(str).str.strip()) if "card_id" in cards else set()
-        for _, benefit in benefits.iterrows():
-            benefit_id = clean_display(benefit.get("benefit_id"), "")
-            name = clean_display(benefit.get("benefit_name"), benefit_id)
-            card_id = clean_display(benefit.get("card_id"), "")
-            status = clean_display(benefit.get("status"), "Not Used")
-            face_value = normalize_money(benefit.get("face_value"))
-            used_amount = normalize_money(benefit.get("used_amount"))
-            remaining_amount = normalize_money(benefit.get("remaining_amount"))
-            expected_remaining = max(face_value - used_amount, 0)
-            expiration = pd.to_datetime(benefit.get("expiration_date"), errors="coerce")
-            window = standard_cycle_window(benefit.get("frequency"), today)
-
-            if not benefit_id:
-                add_health_issue(rows, "High", "Benefits", name, "Missing benefit_id.", "Add a stable benefit_id.")
-            if card_id and known_card_ids and card_id not in known_card_ids:
-                add_health_issue(rows, "Medium", "Benefits", name, f"Benefit references unknown card_id: {card_id}.", "Match card_id to an existing Cards row.")
-            if used_amount > face_value and face_value > 0:
-                add_health_issue(rows, "Medium", "Benefits", name, "used_amount is greater than face_value.", "Check used_amount or face_value.")
-            if abs(remaining_amount - expected_remaining) > 0.01:
-                add_health_issue(rows, "Medium", "Benefits", name, "remaining_amount does not match face_value minus used_amount.", "Save/reset the benefit amount so the computed remaining value is consistent.")
-            if status not in ["Used", "Ignored"] and pd.isna(expiration):
-                add_health_issue(rows, "Medium", "Benefits", name, "Active benefit has no expiration_date.", "Fill expiration_date so reminders and closeout sorting work.")
-            if window is not None:
-                target_cycle, _, _ = window
-                current_cycle = clean_display(benefit.get("current_cycle"), "")
-                if current_cycle and current_cycle != target_cycle and status not in ["Used", "Ignored"] and pd.notna(expiration) and expiration.normalize() < today:
-                    add_health_issue(rows, "Medium", "Benefits", name, "Recurring benefit appears stuck in an expired cycle.", "Let rollover run or update current_cycle and expiration_date.")
-
-    if not usage.empty:
-        duplicate_usage_ids = usage["usage_id"].fillna("").astype(str).str.strip()
-        for usage_id in duplicate_usage_ids[duplicate_usage_ids.ne("") & duplicate_usage_ids.duplicated(keep=False)].unique():
-            add_health_issue(rows, "Medium", "Usage", usage_id, "Duplicate usage_id.", "Keep usage_id unique for cleaner history.")
-
-        known_benefit_ids = set(benefits["benefit_id"].fillna("").astype(str).str.strip()) if "benefit_id" in benefits else set()
-        used_dates = pd.to_datetime(usage["used_date"], errors="coerce") if "used_date" in usage else pd.Series(pd.NaT, index=usage.index)
-        for _, record in usage[used_dates.isna()].iterrows():
-            add_health_issue(rows, "Low", "Usage", record.get("usage_id"), "Usage row has no valid used_date.", "Fill used_date so history and renewal captured value are accurate.")
-        if known_benefit_ids and "benefit_id" in usage:
-            unknown_usage = usage[
-                usage["benefit_id"].fillna("").astype(str).str.strip().ne("")
-                & ~usage["benefit_id"].fillna("").astype(str).str.strip().isin(known_benefit_ids)
-            ]
-            for _, record in unknown_usage.iterrows():
-                add_health_issue(rows, "Low", "Usage", record.get("benefit_id"), "Usage row references a benefit_id not in Benefits.", "Check whether the benefit was renamed, removed, or imported with a different ID.")
-
-    return pd.DataFrame(rows, columns=["severity", "area", "item", "issue", "suggested_fix"])
 
 
 def full_date_label(value: object, fallback: str = "Not set") -> str:
@@ -3278,7 +3145,6 @@ def render_renewal_kpis(metrics: pd.DataFrame) -> None:
     next_90 = metrics[days.between(0, 90, inclusive="both")]
     review_count = int(metrics["renewal_signal"].eq("Review / Cancel").sum())
     captured_value = metrics["captured_value"].apply(normalize_money).sum()
-    remaining_value = metrics["remaining_before_renewal"].apply(normalize_money).sum()
     fees_90 = next_90["annual_fee"].apply(normalize_money).sum() if not next_90.empty else 0.0
     review_tone = "calm" if review_count == 0 else "warning"
 
@@ -3301,10 +3167,6 @@ def render_renewal_kpis(metrics: pd.DataFrame) -> None:
                 <span>Captured cycle</span>
                 <strong>{format_amount(captured_value)}</strong>
             </div>
-            <div class="dashboard-kpi-card secondary">
-                <span>Closeout value</span>
-                <strong>{format_amount(remaining_value)}</strong>
-            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -3325,7 +3187,6 @@ def render_renewal_card(row: pd.Series, key_prefix: str) -> None:
     renewal_date = full_date_label(row.get("renewal_date"))
     membership_start = full_date_label(row.get("membership_start"), "Window not set")
     days_label = renewal_days_label(row.get("days_left"))
-    closeout_count = safe_int(row.get("closeout_count"))
     benefit_count = safe_int(row.get("benefit_count"))
     fee_progress = int(min(max((captured_value / annual_fee) * 100 if annual_fee else 0, 0), 100))
     progress_label = f"{fee_progress}% of fee captured" if annual_fee else "No annual fee"
@@ -3345,7 +3206,6 @@ def render_renewal_card(row: pd.Series, key_prefix: str) -> None:
                 <span class="chip chip-muted">{escape(days_label)}</span>
                 <span class="chip chip-muted">Cycle from {escape(membership_start)}</span>
                 <span class="chip chip-muted">{benefit_count} benefits</span>
-                <span class="chip chip-muted">{closeout_count} closeout</span>
             </div>
             <div class="renewal-score-grid">
                 <div><span>Annual fee</span><strong>{format_amount(annual_fee)}</strong></div>
@@ -3431,72 +3291,6 @@ def render_renewal_timeline(metrics: pd.DataFrame) -> None:
             render_renewal_card(row, f"renewal_missing_{index}")
 
 
-def render_renewal_closeout(closeout_rows: pd.DataFrame) -> None:
-    if closeout_rows.empty:
-        st.success("No pre-renewal closeout benefits need attention right now.")
-        return
-
-    grouped = closeout_rows.copy()
-    grouped["_renewal_date"] = pd.to_datetime(grouped["renewal_date"], errors="coerce")
-    grouped["_card_key"] = grouped["card_name"].fillna("").astype(str) + " / " + grouped["owner"].fillna("").astype(str)
-    for group_index, (card_key, group) in enumerate(grouped.groupby("_card_key", sort=False)):
-        renewal_date = full_date_label(group["renewal_date"].iloc[0])
-        remaining_total = group["remaining_amount"].apply(normalize_money).sum()
-        st.markdown(
-            f"""
-            <div class="renewal-month-heading">
-                <span>{escape(card_key)}</span>
-                <small>Renewal {escape(renewal_date)} · {format_amount(remaining_total)} still usable</small>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        for item_index, (_, benefit) in enumerate(group.iterrows()):
-            render_benefit_tile(
-                benefit,
-                f"renewal_closeout_{group_index}_{item_index}",
-                quick_actions_layout="vertical",
-            )
-
-
-def render_health_checks(health: pd.DataFrame) -> None:
-    if health.empty:
-        st.success("Data health check passed. No obvious renewal, benefit, or usage issues found.")
-        return
-
-    severity_order = {"High": 0, "Medium": 1, "Low": 2}
-    health = health.copy()
-    health["_severity_rank"] = health["severity"].map(severity_order).fillna(9)
-    health = health.sort_values(["_severity_rank", "area", "item"]).drop(columns=["_severity_rank"])
-    high = int(health["severity"].eq("High").sum())
-    medium = int(health["severity"].eq("Medium").sum())
-    low = int(health["severity"].eq("Low").sum())
-
-    st.markdown(
-        f"""
-        <div class="dashboard-kpi-grid renewal-health-kpis">
-            <div class="dashboard-kpi-card {'warning' if high else 'secondary'}"><span>High</span><strong>{high}</strong></div>
-            <div class="dashboard-kpi-card {'warning' if medium else 'secondary'}"><span>Medium</span><strong>{medium}</strong></div>
-            <div class="dashboard-kpi-card secondary"><span>Low</span><strong>{low}</strong></div>
-            <div class="dashboard-kpi-card emphasis"><span>Total checks</span><strong>{len(health)}</strong></div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.dataframe(
-        health,
-        hide_index=True,
-        use_container_width=True,
-        column_config={
-            "severity": st.column_config.TextColumn("severity"),
-            "area": st.column_config.TextColumn("area"),
-            "item": st.column_config.TextColumn("item"),
-            "issue": st.column_config.TextColumn("issue"),
-            "suggested_fix": st.column_config.TextColumn("suggested_fix"),
-        },
-    )
-
-
 def show_renewal_view(cards: pd.DataFrame, benefits: pd.DataFrame, usage: pd.DataFrame, *, mobile: bool = False) -> None:
     if mobile:
         st.markdown(
@@ -3511,18 +3305,12 @@ def show_renewal_view(cards: pd.DataFrame, benefits: pd.DataFrame, usage: pd.Dat
         )
 
     metrics = build_renewal_metrics(cards, benefits, usage)
-    closeout_rows = build_renewal_closeout_rows(cards, benefits)
-    health = build_data_health_checks(cards, benefits, usage)
 
-    overview_tab, timeline_tab, closeout_tab, health_tab = st.tabs(["Overview", "Timeline", "Closeout", "Health"])
+    overview_tab, timeline_tab = st.tabs(["Overview", "Timeline"])
     with overview_tab:
         render_renewal_overview(metrics)
     with timeline_tab:
         render_renewal_timeline(metrics)
-    with closeout_tab:
-        render_renewal_closeout(closeout_rows)
-    with health_tab:
-        render_health_checks(health)
 
 
 def cycle_year(value: object) -> int | None:

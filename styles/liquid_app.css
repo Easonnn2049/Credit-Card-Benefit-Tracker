@@ -5410,8 +5410,10 @@ body .stApp .st-key-desktop_theme_switch [data-baseweb="radio"]:has(input:checke
 }
 
 /* Renewal Center: decision-focused card review using the existing wallet system. */
-.renewal-kpi-grid,
-.renewal-health-kpis {
+.renewal-kpi-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    align-items: stretch;
     margin-bottom: var(--wallet-gap-4, 16px);
 }
 
@@ -5563,6 +5565,10 @@ body .stApp .st-key-desktop_theme_switch [data-baseweb="radio"]:has(input:checke
 }
 
 @media (max-width: 767px) {
+    .renewal-kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
     .renewal-card-top,
     .renewal-month-heading {
         align-items: flex-start;
