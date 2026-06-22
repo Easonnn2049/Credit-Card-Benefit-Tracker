@@ -91,7 +91,6 @@ jobs:
             curl \
               --silent \
               --show-error \
-              --location \
               --max-time 60 \
               --retry 2 \
               --retry-delay 10 \
