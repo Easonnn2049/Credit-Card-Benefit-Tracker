@@ -2828,7 +2828,9 @@ def sort_mobile_benefits(benefits: pd.DataFrame) -> pd.DataFrame:
 
     sorted_benefits = benefits.copy()
     priority_rank = {"High": 0, "Medium": 1, "Low": 2}
-    sorted_benefits["_priority_rank"] = sorted_benefits["priority"].map(priority_rank).fillna(3)
+    sorted_benefits["_priority_rank"] = (
+        sorted_benefits["priority"].fillna("").astype(str).str.strip().map(priority_rank).fillna(3)
+    )
     sorted_benefits["_days_until_expiration"] = pd.to_numeric(
         sorted_benefits["days_until_expiration"],
         errors="coerce",
@@ -4585,10 +4587,16 @@ def render_mobile_section(title: str, benefits: pd.DataFrame, key_prefix: str, l
         return
 
     visible = sort_mobile_benefits(benefits)
-    if limit is not None:
+    remaining = visible.iloc[0:0]
+    if limit is not None and len(visible) > limit:
+        remaining = visible.iloc[limit:]
         visible = visible.head(limit)
     for index, (_, benefit) in enumerate(visible.iterrows()):
         render_mobile_benefit_card(benefit, f"{key_prefix}_{index}")
+    if not remaining.empty:
+        with st.expander(f"Show all ({len(remaining)} more)"):
+            for index, (_, benefit) in enumerate(remaining.iterrows(), start=len(visible)):
+                render_mobile_benefit_card(benefit, f"{key_prefix}_{index}")
 
 
 def render_mobile_annual_fee_card(row: pd.Series, key_prefix: str) -> None:
