@@ -60,9 +60,12 @@ jobs:
           fi
 
           normalized_url="${scheme}://${host}"
+          runtime_url="${normalized_url}/~/+"
           echo "APP_URL=${normalized_url}" >> "${GITHUB_ENV}"
-          echo "HEALTH_URL=${normalized_url}/_stcore/health" >> "${GITHUB_ENV}"
+          echo "APP_RUNTIME_URL=${runtime_url}/" >> "${GITHUB_ENV}"
+          echo "HEALTH_URL=${runtime_url}/_stcore/health" >> "${GITHUB_ENV}"
           echo "Using Streamlit host: ${normalized_url}"
+          echo "Using Streamlit runtime: ${runtime_url}/"
 
       - name: Ping Streamlit endpoints
         shell: bash
@@ -96,7 +99,7 @@ jobs:
               --retry-delay 10 \
               --output /tmp/streamlit_app.html \
               --write-out "%{http_code}" \
-              "${APP_URL}"
+              "${APP_RUNTIME_URL}"
           )"
           echo "App shell HTTP ${app_status}"
 
@@ -120,7 +123,7 @@ jobs:
           const fs = require("fs");
           const { chromium } = require("playwright-core");
 
-          const appUrl = process.env.APP_URL;
+          const appUrl = process.env.APP_RUNTIME_URL || process.env.APP_URL;
           const readyText = process.env.READY_TEXT || "Credit Card Benefit Tracker";
           const chromeCandidates = [
             "/usr/bin/google-chrome",
