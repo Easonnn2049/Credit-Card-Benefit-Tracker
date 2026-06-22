@@ -108,13 +108,11 @@ jobs:
             exit 1
           fi
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
       - name: Install browser automation dependency
-        run: npm install --no-save --no-package-lock playwright-core@1.60.0
+        run: |
+          node --version
+          npm --version
+          npm install --no-save --no-package-lock playwright-core@1.60.0
 
       - name: Open Streamlit app in browser
         shell: bash
@@ -153,7 +151,15 @@ jobs:
             });
 
             await page.goto(appUrl, { waitUntil: "domcontentloaded", timeout: 120000 });
-            await page.getByText(readyText, { exact: false }).first().waitFor({ timeout: 180000 });
+            try {
+              await page.getByText(readyText, { exact: false }).first().waitFor({ timeout: 180000 });
+            } catch (error) {
+              console.log(`Final URL: ${page.url()}`);
+              console.log(`Page title: ${await page.title()}`);
+              const bodyText = await page.locator("body").innerText({ timeout: 5000 }).catch(() => "");
+              console.log(`Body text sample: ${bodyText.slice(0, 1200)}`);
+              throw error;
+            }
 
             const elapsedSeconds = ((Date.now() - start) / 1000).toFixed(1);
             console.log(`Streamlit app rendered "${readyText}" in ${elapsedSeconds}s.`);
