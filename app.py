@@ -4544,7 +4544,7 @@ def render_mobile_card_group(card_label: str, group: pd.DataFrame, key_prefix: s
             render_mobile_section("Completed / Hidden", archived, f"{key_prefix}_archived")
 
 
-def render_mobile_section(title: str, benefits: pd.DataFrame, key_prefix: str, limit: int | None = None) -> None:
+def render_mobile_section(title: str, benefits: pd.DataFrame, key_prefix: str) -> None:
     visual = section_visual_cue(title)
     st.markdown(
         f'<div class="mobile-section-heading"><span class="mobile-section-emoji" aria-hidden="true">{escape(visual)}</span>{escape(title)}</div>',
@@ -4555,16 +4555,8 @@ def render_mobile_section(title: str, benefits: pd.DataFrame, key_prefix: str, l
         return
 
     visible = sort_mobile_benefits(benefits)
-    remaining = visible.iloc[0:0]
-    if limit is not None and len(visible) > limit:
-        remaining = visible.iloc[limit:]
-        visible = visible.head(limit)
     for index, (_, benefit) in enumerate(visible.iterrows()):
         render_mobile_benefit_card(benefit, f"{key_prefix}_{index}")
-    if not remaining.empty:
-        with st.expander(f"Show all ({len(remaining)} more)"):
-            for index, (_, benefit) in enumerate(remaining.iterrows(), start=len(visible)):
-                render_mobile_benefit_card(benefit, f"{key_prefix}_{index}")
 
 
 def render_mobile_annual_fee_card(row: pd.Series, key_prefix: str) -> None:
@@ -4609,7 +4601,7 @@ def render_mobile_annual_fee_card(row: pd.Series, key_prefix: str) -> None:
         )
 
 
-def render_mobile_annual_fees(fee_reminders: pd.DataFrame, limit: int | None = None) -> None:
+def render_mobile_annual_fees(fee_reminders: pd.DataFrame) -> None:
     st.markdown(
         '<div class="mobile-section-heading"><span class="mobile-section-emoji" aria-hidden="true">💳</span>Annual Fees</div>',
         unsafe_allow_html=True,
@@ -4618,8 +4610,7 @@ def render_mobile_annual_fees(fee_reminders: pd.DataFrame, limit: int | None = N
         st.markdown('<div class="mobile-empty-state">No annual fees due soon.</div>', unsafe_allow_html=True)
         return
 
-    visible = fee_reminders.head(limit) if limit is not None else fee_reminders
-    for index, (_, fee) in enumerate(visible.iterrows()):
+    for index, (_, fee) in enumerate(fee_reminders.iterrows()):
         render_mobile_annual_fee_card(fee, f"annual_fee_{index}")
 
 
@@ -4734,11 +4725,11 @@ def show_mobile_checklist(
     )
 
     if selected_view == "Home":
-        render_mobile_section("Priority Reminders", due_soon, "mobile_home_due", limit=6)
-        render_mobile_section("Not Used This Month", this_month, "mobile_home_month", limit=6)
-        render_mobile_section("Partially Used", partial, "mobile_home_partial", limit=4)
-        render_mobile_section("Upcoming Next", upcoming, "mobile_home_upcoming", limit=4)
-        render_mobile_annual_fees(fee_reminders, limit=4)
+        render_mobile_section("Priority Reminders", due_soon, "mobile_home_due")
+        render_mobile_section("Not Used This Month", this_month, "mobile_home_month")
+        render_mobile_section("Partially Used", partial, "mobile_home_partial")
+        render_mobile_section("Upcoming Next", upcoming, "mobile_home_upcoming")
+        render_mobile_annual_fees(fee_reminders)
         if due_soon.empty and this_month.empty and partial.empty and upcoming.empty and fee_reminders.empty:
             st.success("No urgent benefit actions right now.")
         return
@@ -4795,11 +4786,11 @@ def show_home_view(active: pd.DataFrame, expiring: pd.DataFrame, needs_action: p
 
     lane1, lane2, lane3 = st.columns(3)
     with lane1:
-        show_priority_lane("Expiring soon", expiring.sort_values(["expiration_date", "priority"]).head(6), "home_expiring")
+        show_priority_lane("Expiring soon", expiring.sort_values(["expiration_date", "priority"]), "home_expiring")
     with lane2:
-        show_priority_lane("Not used this month", monthly_not_used.sort_values(["expiration_date", "priority"]).head(6), "home_monthly")
+        show_priority_lane("Not used this month", monthly_not_used.sort_values(["expiration_date", "priority"]), "home_monthly")
     with lane3:
-        show_priority_lane("Partially used", partial.sort_values(["expiration_date", "priority"]).head(6), "home_partial")
+        show_priority_lane("Partially used", partial.sort_values(["expiration_date", "priority"]), "home_partial")
 
     if needs_action.empty:
         st.success("No active benefits need attention right now.")
