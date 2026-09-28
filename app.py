@@ -4495,20 +4495,6 @@ def render_mobile_benefit_card(row: pd.Series, key_prefix: str) -> None:
                     update_benefit_status(benefit_id, "Ignored")
 
 
-def mobile_card_group_art(row: pd.Series) -> str:
-    image_path = find_card_image(row)
-    card_name = clean_display(row.get("card_name"), "Card")
-    if image_path:
-        return f'<img class="mobile-card-group-image" src="{card_image_data_uri(image_path)}" alt="{escape(card_name)}">'
-
-    start, end, text_color, brand, _ = card_art_style(row.get("card_name"), row.get("issuer"))
-    return f"""
-    <div class="mobile-card-group-fallback" style="background: linear-gradient(135deg, {start}, {end}); color: {text_color};">
-        <span>{escape(brand)}</span>
-    </div>
-    """
-
-
 def mobile_card_group_label_art(row: pd.Series) -> str:
     card_name = clean_display(row.get("card_name"), "Card")
     image_path = find_card_image(row)
@@ -4550,24 +4536,6 @@ def render_mobile_card_group(card_label: str, group: pd.DataFrame, key_prefix: s
     )
 
     with st.expander(expander_label, expanded=False):
-        st.markdown(
-            f"""
-            <div class="mobile-card-group-header">
-                {mobile_card_group_art(first_row)}
-                <div>
-                    <div class="mobile-card-group-title">{escape(card_label)}</div>
-                    {f'<div class="mobile-card-group-owner">{escape(owner)}</div>' if owner else ''}
-                </div>
-                <div class="mobile-card-group-stats">
-                    <span>{available_count} active</span>
-                    <span>{upcoming_count} upcoming</span>
-                    <span>{expiring_count} soon</span>
-                    <strong>{format_amount(remaining_value)}</strong>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
         if not active_now.empty:
             render_mobile_section("Available now", active_now, f"{key_prefix}_active")
         if not upcoming.empty:
