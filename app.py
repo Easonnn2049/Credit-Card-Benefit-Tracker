@@ -1128,6 +1128,41 @@ def theme_override_css(theme: str) -> str:
             -webkit-text-fill-color: var(--theme-accent) !important;
         }
 
+        body .stApp .st-key-mobile_history_filters div[data-baseweb="button-group"] button,
+        body .stApp .st-key-mobile_history_filters button[data-testid="stBaseButton-pills"],
+        body .stApp .st-key-mobile_history_filters button[kind="pills"] {
+            min-height: 42px !important;
+            color: var(--theme-muted) !important;
+            -webkit-text-fill-color: var(--theme-muted) !important;
+            border: 1px solid var(--theme-border) !important;
+            background: rgba(248,250,252,.90) !important;
+            box-shadow: 0 1px 2px rgba(15,23,42,.05) !important;
+        }
+
+        body .stApp .st-key-mobile_history_filters div[data-baseweb="button-group"] button *,
+        body .stApp .st-key-mobile_history_filters button[data-testid="stBaseButton-pills"] *,
+        body .stApp .st-key-mobile_history_filters button[kind="pills"] * {
+            color: var(--theme-muted) !important;
+            -webkit-text-fill-color: var(--theme-muted) !important;
+        }
+
+        body .stApp .st-key-mobile_history_filters div[data-baseweb="button-group"] button[aria-checked="true"],
+        body .stApp .st-key-mobile_history_filters button[data-testid="stBaseButton-pillsActive"],
+        body .stApp .st-key-mobile_history_filters button[kind="pillsActive"] {
+            color: var(--theme-accent) !important;
+            -webkit-text-fill-color: var(--theme-accent) !important;
+            border-color: rgba(36,87,197,.34) !important;
+            background: rgba(219,234,254,.94) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.76), 0 4px 12px rgba(36,87,197,.12) !important;
+        }
+
+        body .stApp .st-key-mobile_history_filters div[data-baseweb="button-group"] button[aria-checked="true"] *,
+        body .stApp .st-key-mobile_history_filters button[data-testid="stBaseButton-pillsActive"] *,
+        body .stApp .st-key-mobile_history_filters button[kind="pillsActive"] * {
+            color: var(--theme-accent) !important;
+            -webkit-text-fill-color: var(--theme-accent) !important;
+        }
+
         body .stApp .history-card-top,
         body .stApp .history-title-row,
         body .stApp .history-row-footer,
@@ -1943,6 +1978,45 @@ def theme_override_css(theme: str) -> str:
 
     body .stApp button[data-testid="stBaseButton-pillsActive"] *,
     body .stApp button[kind="pillsActive"] * {
+        color: #f7f3fb !important;
+        -webkit-text-fill-color: #f7f3fb !important;
+    }
+
+    body .stApp .st-key-mobile_history_filters div[data-baseweb="button-group"] button,
+    body .stApp .st-key-mobile_history_filters button[data-testid="stBaseButton-pills"],
+    body .stApp .st-key-mobile_history_filters button[kind="pills"] {
+        min-height: 42px !important;
+        color: #d7d0df !important;
+        -webkit-text-fill-color: #d7d0df !important;
+        border: 1px solid rgba(255,255,255,.14) !important;
+        background:
+            linear-gradient(145deg, rgba(255,255,255,.070), rgba(255,255,255,.026)),
+            rgba(27, 26, 34, .88) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.070), 0 2px 8px rgba(0,0,0,.18) !important;
+    }
+
+    body .stApp .st-key-mobile_history_filters div[data-baseweb="button-group"] button *,
+    body .stApp .st-key-mobile_history_filters button[data-testid="stBaseButton-pills"] *,
+    body .stApp .st-key-mobile_history_filters button[kind="pills"] * {
+        color: #d7d0df !important;
+        -webkit-text-fill-color: #d7d0df !important;
+    }
+
+    body .stApp .st-key-mobile_history_filters div[data-baseweb="button-group"] button[aria-checked="true"],
+    body .stApp .st-key-mobile_history_filters button[data-testid="stBaseButton-pillsActive"],
+    body .stApp .st-key-mobile_history_filters button[kind="pillsActive"] {
+        color: #f7f3fb !important;
+        -webkit-text-fill-color: #f7f3fb !important;
+        border-color: rgba(123,167,255,.56) !important;
+        background:
+            linear-gradient(180deg, rgba(123,167,255,.32), rgba(88,124,220,.22)),
+            rgba(255,255,255,.080) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 0 0 1px rgba(123,167,255,.12), 0 4px 12px rgba(71,101,190,.22) !important;
+    }
+
+    body .stApp .st-key-mobile_history_filters div[data-baseweb="button-group"] button[aria-checked="true"] *,
+    body .stApp .st-key-mobile_history_filters button[data-testid="stBaseButton-pillsActive"] *,
+    body .stApp .st-key-mobile_history_filters button[kind="pillsActive"] * {
         color: #f7f3fb !important;
         -webkit-text-fill-color: #f7f3fb !important;
     }
